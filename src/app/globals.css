@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #09090b;
+  --foreground: #ffffff;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: 'Inter', sans-serif;
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-card/60 backdrop-blur-md border border-white/5 rounded-2xl;
+  }
+  
+  .btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply border border-white/10 hover:bg-white/5 text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 active:scale-95;
+  }
+}
+
+/* Custom scrollbar for gaming feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #09090b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e1e20;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff2d55;
+}
+
+@layer utilities {
+  .pb-safe-area {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pt-safe-area {
+    padding-top: env(safe-area-inset-top);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
