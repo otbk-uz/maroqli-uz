@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Play, Users, Heart, Award, ArrowLeft, Send, Sparkles, Gift } from "lucide-react";
+import { Play, Users, Heart, Award, ArrowLeft, Send, Sparkles, Gift, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { BackButton } from "@/components/ui/BackButton";
