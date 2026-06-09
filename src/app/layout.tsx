@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import MobileNav from "@/components/MobileNav";
+import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,6 +25,7 @@ export default function RootLayout({
         <Providers>
           <div className="min-h-screen flex flex-col bg-background text-foreground pb-20 lg:pb-0">
             {children}
+            <Footer />
             <MobileNav />
           </div>
         </Providers>
