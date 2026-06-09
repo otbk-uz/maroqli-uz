@@ -189,3 +189,67 @@ class AdminUserTestCase(APITestCase):
         
         self.user.refresh_from_db()
         self.assertEqual(self.user.role, 'GAMEDEV')
+
+
+from unittest.mock import patch
+
+class GoogleLoginTestCase(APITestCase):
+    def setUp(self):
+        self.google_login_url = reverse('google-login')
+
+    @patch('requests.get')
+    def test_google_login_success_existing_user(self, mock_get):
+        # Create user first
+        user = User.objects.create_user(
+            username="gamer_boss",
+            email="boss@playnation.uz",
+            password="BossPassword1",
+            full_name="Gamer Boss",
+            age=30,
+            region="TOSHKENT_S",
+            phone_number="+998909998877",
+            role=User.Role.GAMER
+        )
+        
+        # Mock Google tokeninfo API response
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "aud": "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+            "email": "boss@playnation.uz",
+            "name": "Gamer Boss"
+        }
+
+        response = self.client.post(self.google_login_url, {"id_token": "valid_mock_token"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertEqual(response.data['user']['email'], "boss@playnation.uz")
+
+    @patch('requests.get')
+    def test_google_login_success_create_user(self, mock_get):
+        # Mock Google tokeninfo API response for a new user
+        mock_response = mock_get.return_value
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "aud": "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+            "email": "newuser@playnation.uz",
+            "name": "New User"
+        }
+
+        response = self.client.post(self.google_login_url, {"id_token": "valid_mock_token"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
+        self.assertEqual(response.data['user']['email'], "newuser@playnation.uz")
+        
+        # Verify user is created in database
+        self.assertTrue(User.objects.filter(email="newuser@playnation.uz").exists())
+
+    @patch('requests.get')
+    def test_google_login_invalid_token(self, mock_get):
+        mock_response = mock_get.return_value
+        mock_response.status_code = 400
+
+        response = self.client.post(self.google_login_url, {"id_token": "invalid_mock_token"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+

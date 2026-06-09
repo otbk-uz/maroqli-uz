@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
 import { loginSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
+import Script from "next/script";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -22,6 +23,51 @@ const LoginPage = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const handleGoogleLoginSuccess = async (response: any) => {
+    setErrorMsg("");
+    setIsLoading(true);
+    try {
+      const res = await api.post("/users/google-login/", {
+        id_token: response.credential,
+      });
+      const { access, user } = res.data;
+      setAuth(user, access);
+      router.push("/");
+    } catch (err: any) {
+      console.error("Google login error:", err);
+      setErrorMsg(err.response?.data?.error || "Google orqali kirishda xatolik yuz berdi.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const initGoogleLogin = () => {
+    if (typeof window !== "undefined" && (window as any).google) {
+      (window as any).google.accounts.id.initialize({
+        client_id: "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+        callback: handleGoogleLoginSuccess,
+      });
+
+      (window as any).google.accounts.id.renderButton(
+        document.getElementById("google-signin-btn"),
+        { 
+          theme: "outline", 
+          size: "large", 
+          width: 368,
+          text: "signin_with",
+          shape: "rectangular"
+        }
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).google) {
+      initGoogleLogin();
+    }
+  }, []);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -163,14 +209,12 @@ const LoginPage = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white">
-            <Chrome size={18} />
-            <span className="text-sm font-medium">Google</span>
-          </button>
-          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white">
+        <div className="space-y-4">
+          <div id="google-signin-btn" className="w-full flex justify-center"></div>
+          
+          <button className="w-full flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3.5 rounded-xl transition-colors text-white active:scale-95">
             <Send size={18} className="text-[#229ED9]" />
-            <span className="text-sm font-medium">Telegram</span>
+            <span className="text-sm font-medium">Telegram bilan kirish</span>
           </button>
         </div>
 
@@ -181,6 +225,11 @@ const LoginPage = () => {
           </Link>
         </p>
       </motion.div>
+      <Script 
+        src="https://accounts.google.com/gsi/client" 
+        onLoad={initGoogleLogin}
+        strategy="afterInteractive"
+      />
     </div>
   );
 };
