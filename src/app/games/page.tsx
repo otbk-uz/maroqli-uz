@@ -21,6 +21,7 @@ interface StoreGame {
   platform: string;
   rating: number;
   language: string;
+  description: string;
 }
 
 const GamesPage = () => {
