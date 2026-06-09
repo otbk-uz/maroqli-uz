@@ -236,7 +236,7 @@ class GoogleLoginTestCase(APITestCase):
         mock_response = mock_get.return_value
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "aud": "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+            "aud": "144019147996-mv63kns1oi2fsec4hsh7if7rp0pdk95g.apps.googleusercontent.com",
             "email": "boss@playnation.uz",
             "name": "Gamer Boss"
         }
@@ -252,7 +252,7 @@ class GoogleLoginTestCase(APITestCase):
         mock_response = mock_get.return_value
         mock_response.status_code = 200
         mock_response.json.return_value = {
-            "aud": "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+            "aud": "144019147996-mv63kns1oi2fsec4hsh7if7rp0pdk95g.apps.googleusercontent.com",
             "email": "newuser@playnation.uz",
             "name": "New User"
         }

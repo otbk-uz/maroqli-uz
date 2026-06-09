@@ -80,7 +80,7 @@ class GoogleLoginView(APIView):
         payload = response.json()
         
         # Verify audience (client ID) matches our app
-        expected_client_id = "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com"
+        expected_client_id = "144019147996-mv63kns1oi2fsec4hsh7if7rp0pdk95g.apps.googleusercontent.com"
         if payload.get("aud") != expected_client_id:
             return Response({"error": "Invalid audience (client ID mismatch)"}, status=status.HTTP_400_BAD_REQUEST)
 

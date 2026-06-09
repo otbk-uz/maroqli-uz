@@ -45,7 +45,7 @@ const LoginPage = () => {
   const initGoogleLogin = () => {
     if (typeof window !== "undefined" && (window as any).google) {
       (window as any).google.accounts.id.initialize({
-        client_id: "144019147996-mv63kns1oi2fsec4hsh7i7rp0pdk95g.apps.googleusercontent.com",
+        client_id: "144019147996-mv63kns1oi2fsec4hsh7if7rp0pdk95g.apps.googleusercontent.com",
         callback: handleGoogleLoginSuccess,
       });
 
