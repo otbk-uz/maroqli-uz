@@ -20,7 +20,9 @@ interface AdminUser {
   is_active: boolean;
   level: number;
   elo: number;
+  is_premium?: boolean;
 }
+
 
 export default function AdminPage() {
   const router = useRouter();

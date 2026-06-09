@@ -77,6 +77,14 @@ class User(AbstractUser):
     def __str__(self):
         return self.full_name or self.username or self.email
 
+    def save(self, *args, **kwargs):
+        if self.role == 'ADMIN':
+            self.is_staff = True
+        elif self.role != 'ADMIN' and not self.is_superuser:
+            self.is_staff = False
+        super().save(*args, **kwargs)
+
+
     @property
     def is_premium(self):
         from django.utils import timezone

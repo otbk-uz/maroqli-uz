@@ -96,8 +96,9 @@ class UserAdminSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'full_name', 'nickname', 'avatar', 
             'bio', 'role', 'age', 'region', 'phone_number',
-            'level', 'exp', 'elo', 'is_verified', 'is_active'
+            'level', 'exp', 'elo', 'is_verified', 'is_active', 'is_premium'
         ]
-        read_only_fields = ['id', 'username', 'email']
+        read_only_fields = ['id', 'username', 'email', 'is_premium']
+
 
 

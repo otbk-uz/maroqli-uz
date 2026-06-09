@@ -17,14 +17,17 @@ admin_user, _ = User.objects.get_or_create(
         'region': 'TOSHKENT_S',
         'phone_number': '+998991112233',
         'is_staff': True,
-        'is_superuser': True
+        'is_superuser': True,
+        'role': 'ADMIN'
     }
 )
-if not admin_user.is_superuser:
+if not admin_user.is_superuser or admin_user.role != 'ADMIN':
     admin_user.is_superuser = True
     admin_user.is_staff = True
+    admin_user.role = 'ADMIN'
     admin_user.set_password('Admin123!')
     admin_user.save()
+
 
 # Seed News
 news_data = [

@@ -190,6 +190,27 @@ class AdminUserTestCase(APITestCase):
         self.user.refresh_from_db()
         self.assertEqual(self.user.role, 'GAMEDEV')
 
+    def test_role_admin_syncs_is_staff(self):
+        self.client.force_authenticate(user=self.admin)
+        url = reverse('admin-users-detail', kwargs={'pk': self.user.id})
+        
+        # Change role to ADMIN -> is_staff should be True
+        response = self.client.patch(url, {'role': 'ADMIN'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.role, 'ADMIN')
+        self.assertTrue(self.user.is_staff)
+
+        # Change role back to GAMER -> is_staff should be False
+        response = self.client.patch(url, {'role': 'GAMER'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.role, 'GAMER')
+        self.assertFalse(self.user.is_staff)
+
+
 
 from unittest.mock import patch
 
