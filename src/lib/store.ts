@@ -8,6 +8,7 @@ interface User {
   role: string;
   avatar?: string;
   elo: number;
+  is_premium?: boolean;
 }
 
 interface AuthState {

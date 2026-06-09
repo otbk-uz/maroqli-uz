@@ -1,18 +1,91 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Chrome, Send, Github } from "lucide-react";
-
+import { Chrome, Send, LogIn, AlertCircle } from "lucide-react";
+import { useAuthStore } from "@/lib/store";
+import api from "@/lib/api";
+import { loginSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
 
 const LoginPage = () => {
+  const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
+  const [formData, setFormData] = useState({
+    email: "", // can be email, phone or username
+    password: "",
+  });
+  
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors((prev) => {
+        const copy = { ...prev };
+        delete copy[name];
+        return copy;
+      });
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg("");
+
+    const result = loginSchema.safeParse(formData);
+    if (!result.success) {
+      const formattedErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        if (err.path[0]) {
+          formattedErrors[err.path[0] as string] = err.message;
+        }
+      });
+      setErrors(formattedErrors);
+      return;
+    }
+
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      // Send login request. Note that backend uses 'username' field to lookup username/email/phone
+      const response = await api.post("/auth/login/", {
+        username: formData.email,
+        password: formData.password,
+      });
+
+      const { access, user } = response.data;
+      setAuth(user, access);
+
+      // Redirect to home or user profile
+      router.push("/");
+    } catch (err: any) {
+      console.error(err);
+      if (err.response?.status === 401) {
+        setErrorMsg("Email/Telefon yoki parol noto'g'ri.");
+      } else if (err.response?.data?.detail) {
+        setErrorMsg(err.response.data.detail);
+      } else {
+        setErrorMsg("Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background relative">
       <div className="absolute top-8 left-8">
         <BackButton />
       </div>
+      
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -26,14 +99,25 @@ const LoginPage = () => {
           <p className="text-secondary text-sm">Davom etish uchun hisobingizga kiring</p>
         </div>
 
-        <form className="space-y-6">
+        {errorMsg && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-4 mb-6 flex items-start space-x-2 animate-shake">
+            <AlertCircle size={16} className="mt-0.5 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary ml-1">Email yoki Telefon</label>
+            <label className="text-sm font-medium text-secondary ml-1">Email, Telefon yoki Username</label>
             <input
               type="text"
-              placeholder="example@mail.com"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="example@mail.com yoki +998XXXXXXXXX"
+              className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
             />
+            {errors.email && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.email}</p>}
           </div>
 
           <div className="space-y-2">
@@ -45,13 +129,28 @@ const LoginPage = () => {
             </div>
             <input
               type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
               placeholder="••••••••"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors"
+              className={`w-full bg-white/5 border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
             />
+            {errors.password && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.password}</p>}
           </div>
 
-          <button type="submit" className="btn-primary w-full py-4">
-            Kirish
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn-primary w-full py-4 text-sm font-bold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                <LogIn size={16} />
+                <span>Kirish</span>
+              </>
+            )}
           </button>
         </form>
 
@@ -60,16 +159,16 @@ const LoginPage = () => {
             <div className="w-full border-t border-white/5"></div>
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-[#121214] px-4 text-secondary">Yoki boshqa yo'l bilan</span>
+            <span className="bg-background px-4 text-secondary">Yoki boshqa yo'l bilan</span>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors">
+          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white">
             <Chrome size={18} />
             <span className="text-sm font-medium">Google</span>
           </button>
-          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors">
+          <button className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white">
             <Send size={18} className="text-[#229ED9]" />
             <span className="text-sm font-medium">Telegram</span>
           </button>
