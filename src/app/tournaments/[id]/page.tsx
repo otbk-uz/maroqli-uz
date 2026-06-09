@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import TournamentBracket from "../../../components/TournamentBracket";
-import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft } from "lucide-react";
+import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
