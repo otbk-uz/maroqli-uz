@@ -5,7 +5,7 @@ export const loginSchema = z.object({
   password: z.string().min(8, "Parol kamida 8 ta belgidan iborat bo'lishi kerak"),
 });
 
-export const registerSchema = z.object({
+export const registerBaseSchema = z.object({
   full_name: z.string()
     .min(3, "To'liq ism kamida 3 ta belgi bo'lishi kerak")
     .max(60, "To'liq ism 60 ta belgidan oshmasligi kerak"),
@@ -30,7 +30,9 @@ export const registerSchema = z.object({
     .regex(/[0-9]/, "Parolda kamida bitta raqam bo'lishi kerak"),
   confirmPassword: z.string(),
   avatar: z.any().optional(),
-}).refine((data) => data.password === data.confirmPassword, {
+});
+
+export const registerSchema = registerBaseSchema.refine((data) => data.password === data.confirmPassword, {
   message: "Parollar mos kelmadi",
   path: ["confirmPassword"],
 });

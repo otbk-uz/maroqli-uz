@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Chrome, Send, ArrowLeft, ArrowRight, UserCheck, Upload, Check, AlertCircle } from "lucide-react";
 import api from "@/lib/api";
-import { registerSchema } from "@/lib/validations";
+import { registerSchema, registerBaseSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
 
 const REGIONS = [
@@ -126,7 +126,7 @@ const RegisterPage = () => {
     };
 
     // Pick sub-schema for Step 1 validation
-    const step1Schema = registerSchema.pick({
+    const step1Schema = registerBaseSchema.pick({
       full_name: true,
       age: true,
       region: true,
