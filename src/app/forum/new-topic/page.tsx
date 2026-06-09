@@ -49,9 +49,9 @@ const NewTopicPage = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev: typeof formData) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => {
+      setErrors((prev: Record<string, string>) => {
         const copy = { ...prev };
         delete copy[name];
         return copy;
@@ -171,7 +171,7 @@ const NewTopicPage = () => {
                 className={`w-full bg-[#121214] border ${errors.section ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors`}
               >
                 <option value="">Tanlang...</option>
-                {sections.map((sec) => (
+                {sections.map((sec: Section) => (
                   <option key={sec.id} value={sec.id}>
                     {sec.name}
                   </option>

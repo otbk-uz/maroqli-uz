@@ -123,7 +123,7 @@ export default function StreamerDetailPage() {
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
       
-      setChatMessages((prev) => [
+      setChatMessages((prev: ChatMessage[]) => [
         ...prev,
         {
           id: Date.now(),
@@ -167,7 +167,7 @@ export default function StreamerDetailPage() {
     const now = new Date();
     const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-    setChatMessages((prev) => [
+    setChatMessages((prev: ChatMessage[]) => [
       ...prev,
       {
         id: Date.now(),
@@ -191,7 +191,7 @@ export default function StreamerDetailPage() {
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
       // 1. Add donation message in chat
-      setChatMessages((prev) => [
+      setChatMessages((prev: ChatMessage[]) => [
         ...prev,
         {
           id: Date.now(),
@@ -205,7 +205,7 @@ export default function StreamerDetailPage() {
       ]);
 
       // 2. Add to donation log
-      setDonations((prev) => [
+      setDonations((prev: typeof INITIAL_DONATIONS) => [
         {
           id: Date.now(),
           user: donorName,

@@ -135,8 +135,8 @@ const GameDetailPage = () => {
     );
   }
 
-  const isPurchased = libraryGames.some((lg) => lg.game === game.id);
-  const existingCdKey = libraryGames.find((lg) => lg.game === game.id)?.cd_key;
+  const isPurchased = libraryGames.some((lg: any) => lg.game === game.id);
+  const existingCdKey = libraryGames.find((lg: any) => lg.game === game.id)?.cd_key;
 
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
@@ -192,7 +192,7 @@ const GameDetailPage = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-black text-white">Screenshotlar</h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {game.screenshots.map((s) => (
+                  {game.screenshots.map((s: any) => (
                     <div key={s.id} className="aspect-video bg-white/5 rounded-xl border border-white/5 overflow-hidden">
                       <img src={s.image} alt="Screenshot" className="w-full h-full object-cover" />
                     </div>
@@ -222,7 +222,7 @@ const GameDetailPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {game.reviews.map((rev) => (
+                  {game.reviews.map((rev: Review) => (
                     <div key={rev.id} className="glass-card p-5 border-white/5 space-y-3">
                       <div className="flex justify-between items-center text-xs">
                         <span className="font-bold text-white">@{rev.user_details.username}</span>
