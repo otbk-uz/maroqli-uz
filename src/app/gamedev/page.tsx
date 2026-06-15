@@ -125,6 +125,35 @@ export default function GamedevPage() {
     }
   };
 
+  const handleBecomeDev = async () => {
+    if (!user) {
+      alert("Iltimos avval tizimga kiring.");
+      return;
+    }
+    const confirmDev = window.confirm("Rostdan ham GameDev (Dasturchi) roliga o'tmoqchimisiz?");
+    if (!confirmDev) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: 'GAMEDEV' })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local store
+      useAuthStore.getState().setAuth({ ...user, role: 'GAMEDEV' }, useAuthStore.getState().token || "");
+      
+      alert("Tabriklaymiz! Siz endi GameDevsiz. Boshqaruv paneli (Dashboard) ochildi.");
+      // The component will re-render automatically because `user` is from `useAuthStore()`
+      // But we can also switch the tab explicitly
+      setActiveTab("dashboard");
+    } catch (err: any) {
+      console.error(err);
+      alert("Rolni o'zgartirishda xatolik yuz berdi.");
+    }
+  };
+
   const isDeveloper = user?.role === "GAMEDEV";
 
   return (
@@ -241,7 +270,7 @@ export default function GamedevPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => alert("GameDev roliga o'tish uchun adminlarga murojaat qiling yoki ro'yxatdan o'tishda tanlang.")}
+                  onClick={handleBecomeDev}
                   className="py-3.5 px-8 bg-primary hover:bg-primary-hover font-bold rounded-xl text-sm transition-all whitespace-nowrap shadow-lg shadow-primary/10"
                 >
                   GameDev bo'lish
