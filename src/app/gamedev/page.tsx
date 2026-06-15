@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { Code2, Palette, Box, Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 
 interface DevelopedGame {
@@ -53,10 +53,29 @@ export default function GamedevPage() {
   }, [isAuthenticated, user]);
 
   const fetchDashboardData = async () => {
+    if (!user) return;
     try {
       setLoading(true);
-      const res = await api.get("/tournaments/store/developer_dashboard/");
-      setDashboardData(res.data);
+      const { data: games, error } = await supabase
+        .from("developed_games")
+        .select("*")
+        .eq("developer_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      let total_sales = 0;
+      let total_earnings = 0;
+      games?.forEach((g) => {
+        total_sales += g.sales_count || 0;
+        total_earnings += (g.price || 0) * (g.sales_count || 0);
+      });
+
+      setDashboardData({
+        games: games || [],
+        total_sales,
+        total_earnings
+      });
     } catch (err) {
       console.error("Dashboard yuklashda xatolik:", err);
     } finally {
@@ -66,16 +85,17 @@ export default function GamedevPage() {
 
   const handleUploadGame = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !price || !description) {
+    if (!title || !price || !description || !user) {
       alert("Iltimos barcha majburiy maydonlarni to'ldiring.");
       return;
     }
 
     setSubmitting(true);
-    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now();
 
     try {
-      await api.post("/tournaments/store/", {
+      const { error } = await supabase.from("developed_games").insert({
+        developer_id: user.id,
         title,
         slug,
         price: parseFloat(price),
@@ -84,6 +104,8 @@ export default function GamedevPage() {
         language,
         sys_requirements: sysRequirements,
       });
+
+      if (error) throw error;
 
       alert("O'yin muvaffaqiyatli yuklandi va do'konga qo'shildi!");
       setShowUploadForm(false);
@@ -97,7 +119,7 @@ export default function GamedevPage() {
       // Refresh dashboard data
       fetchDashboardData();
     } catch (err: any) {
-      alert(err.response?.data?.detail || "O'yin yuklashda xatolik yuz berdi.");
+      alert(err.message || "O'yin yuklashda xatolik yuz berdi.");
     } finally {
       setSubmitting(false);
     }
