@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Chrome, Send, LogIn, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/store";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { loginSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
 import Script from "next/script";
@@ -25,21 +25,8 @@ const LoginPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleGoogleLoginSuccess = async (response: any) => {
-    setErrorMsg("");
-    setIsLoading(true);
-    try {
-      const res = await api.post("/users/google-login/", {
-        id_token: response.credential,
-      });
-      const { access, user } = res.data;
-      setAuth(user, access);
-      router.push("/");
-    } catch (err: any) {
-      console.error("Google login error:", err);
-      setErrorMsg(err.response?.data?.error || "Google orqali kirishda xatolik yuz berdi.");
-    } finally {
-      setIsLoading(false);
-    }
+    // Google login with supabase (can be implemented later)
+    setErrorMsg("Google orqali kirish vaqtincha o'chirilgan.");
   };
 
   const initGoogleLogin = () => {
@@ -101,25 +88,45 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Send login request. Note that backend uses 'username' field to lookup username/email/phone
-      const response = await api.post("/auth/login/", {
-        username: formData.email,
+      // Supabase orqali kirish
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email, // email kiritilishi shart
         password: formData.password,
       });
 
-      const { access, user } = response.data;
-      setAuth(user, access);
+      if (authError) throw authError;
 
-      // Redirect to home or user profile
-      router.push("/");
+      if (authData.user && authData.session) {
+        // User profilini olish
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profileError) {
+          console.warn("Profil topilmadi:", profileError);
+        }
+
+        // Store'ga saqlash
+        setAuth({
+          id: authData.user.id,
+          nickname: profile?.username || "Foydalanuvchi",
+          full_name: profile?.full_name || "",
+          email: authData.user.email,
+          role: profile?.role || "GAMER",
+          avatar: profile?.avatar_url,
+          is_premium: false
+        }, authData.session.access_token);
+
+        router.push("/");
+      }
     } catch (err: any) {
       console.error(err);
-      if (err.response?.status === 401) {
-        setErrorMsg("Email/Telefon yoki parol noto'g'ri.");
-      } else if (err.response?.data?.detail) {
-        setErrorMsg(err.response.data.detail);
+      if (err.message.includes("Invalid login credentials")) {
+        setErrorMsg("Email yoki parol noto'g'ri.");
       } else {
-        setErrorMsg("Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.");
+        setErrorMsg(err.message || "Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.");
       }
     } finally {
       setIsLoading(false);
@@ -154,13 +161,13 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary ml-1">Email, Telefon yoki Username</label>
+            <label className="text-sm font-medium text-secondary ml-1">Email manzilingiz</label>
             <input
               type="text"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="example@mail.com yoki +998XXXXXXXXX"
+              placeholder="Emailingizni kiriting"
               className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
             />
             {errors.email && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.email}</p>}
