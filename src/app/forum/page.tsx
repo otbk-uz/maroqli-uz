@@ -7,7 +7,7 @@ import Navbar from "@/components/Navbar";
 import { MessageSquare, Pin, Lock, User, Calendar, MessageCircle, PlusCircle, Search, ThumbsUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 
 interface Section {
@@ -60,8 +60,9 @@ const ForumPage = () => {
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const response = await api.get("/community/sections/");
-        setSections(response.data);
+        const { data, error } = await supabase.from('forum_sections').select('*');
+        if (error) throw error;
+        if (data) setSections(data);
       } catch (err) {
         console.error("Forum sections fetch error:", err);
       }
@@ -73,15 +74,48 @@ const ForumPage = () => {
     const fetchTopics = async () => {
       setLoading(true);
       try {
-        const params: Record<string, any> = {};
+        let query = supabase
+          .from('forum_topics')
+          .select(`
+            *,
+            forum_sections(name),
+            profiles:author_id(username, full_name, role, avatar_url)
+          `)
+          .order('is_pinned', { ascending: false })
+          .order('created_at', { ascending: false });
+
         if (selectedSection !== null) {
-          params.section = selectedSection;
+          query = query.eq('section_id', selectedSection);
         }
         if (debouncedSearch) {
-          params.search = debouncedSearch;
+          query = query.ilike('title', `%${debouncedSearch}%`);
         }
-        const response = await api.get("/community/topics/", { params });
-        setTopics(response.data);
+
+        const { data, error } = await query;
+        if (error) throw error;
+        
+        if (data) {
+          const formattedTopics = data.map((t: any) => ({
+            id: t.id,
+            section: t.section_id,
+            section_name: t.forum_sections?.name || 'Unknown',
+            title: t.title,
+            content: t.content,
+            is_pinned: t.is_pinned,
+            is_locked: t.is_locked,
+            author_details: {
+              username: t.profiles?.username || 'Foydalanuvchi',
+              full_name: t.profiles?.full_name || '',
+              role: t.profiles?.role || 'GAMER',
+              avatar: t.profiles?.avatar_url
+            },
+            replies_count: t.replies_count,
+            likes_count: t.likes_count,
+            dislikes_count: t.dislikes_count,
+            created_at: t.created_at
+          }));
+          setTopics(formattedTopics);
+        }
       } catch (err) {
         console.error("Forum topics fetch error:", err);
       } finally {
@@ -96,50 +130,19 @@ const ForumPage = () => {
       router.push("/login");
       return;
     }
-    try {
-      await api.post(`/community/topics/${topicId}/react/`, { is_like: isLike });
-      // Update local topics list
-      setTopics((prev) =>
-        prev.map((t) => {
-          if (t.id === topicId) {
-            const currentReaction = t.user_reaction;
-            let likesDiff = 0;
-            let dislikesDiff = 0;
-            let newReaction: "like" | "dislike" | null = null;
-
-            if (isLike) {
-              if (currentReaction === "like") {
-                likesDiff = -1;
-                newReaction = null;
-              } else {
-                likesDiff = 1;
-                dislikesDiff = currentReaction === "dislike" ? -1 : 0;
-                newReaction = "like";
-              }
-            } else {
-              if (currentReaction === "dislike") {
-                dislikesDiff = -1;
-                newReaction = null;
-              } else {
-                dislikesDiff = 1;
-                likesDiff = currentReaction === "like" ? -1 : 0;
-                newReaction = "dislike";
-              }
-            }
-
-            return {
-              ...t,
-              likes_count: t.likes_count + likesDiff,
-              dislikes_count: t.dislikes_count + dislikesDiff,
-              user_reaction: newReaction,
-            };
-          }
-          return t;
-        })
-      );
-    } catch (err) {
-      console.error("Reaction toggle error:", err);
-    }
+    // Hozircha like bosish faqat UI da o'zgaradi (baza uchun keyin reaction jadvali qoshamiz)
+    setTopics((prev) =>
+      prev.map((t) => {
+        if (t.id === topicId) {
+          return {
+            ...t,
+            likes_count: isLike ? t.likes_count + 1 : t.likes_count,
+            user_reaction: isLike ? "like" : "dislike",
+          };
+        }
+        return t;
+      })
+    );
   };
 
   return (

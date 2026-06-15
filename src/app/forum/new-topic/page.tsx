@@ -6,7 +6,7 @@ import Navbar from "@/components/Navbar";
 import { ArrowLeft, MessageSquare, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface Section {
   id: number;
@@ -38,8 +38,9 @@ const NewTopicPage = () => {
   useEffect(() => {
     const fetchSections = async () => {
       try {
-        const response = await api.get("/community/sections/");
-        setSections(response.data);
+        const { data, error } = await supabase.from('forum_sections').select('*');
+        if (error) throw error;
+        if (data) setSections(data);
       } catch (err) {
         console.error("New topic section fetch error:", err);
       }
@@ -89,20 +90,22 @@ const NewTopicPage = () => {
 
     setLoading(true);
     try {
-      const response = await api.post("/community/topics/", {
-        title: formData.title,
-        section: Number(formData.section),
-        content: formData.content,
-      });
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error("Siz avtorizatsiyadan o'tmagansiz");
 
-      router.push(`/forum/topic/${response.data.id}`);
+      const { data, error } = await supabase.from('forum_topics').insert({
+        title: formData.title,
+        section_id: Number(formData.section),
+        content: formData.content,
+        author_id: userData.user.id
+      }).select().single();
+
+      if (error) throw error;
+
+      router.push(`/forum`);
     } catch (err: any) {
-      console.error(err);
-      if (err.response?.data?.detail) {
-        setErrorMsg(err.response.data.detail);
-      } else {
-        setErrorMsg("Mavzuni yaratib bo'lmadi. Ma'lumotlarni tekshirib qaytadan urinib ko'ring.");
-      }
+      console.error("Error creating topic:", err);
+      setErrorMsg(err.message || "Mavzuni yaratib bo'lmadi. Ma'lumotlarni tekshirib qaytadan urinib ko'ring.");
     } finally {
       setLoading(false);
     }

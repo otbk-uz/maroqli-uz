@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Chrome, Send, ArrowLeft, ArrowRight, UserCheck, Upload, Check, AlertCircle } from "lucide-react";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { registerSchema, registerBaseSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
 
@@ -184,60 +184,64 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      const submitData = new FormData();
-      submitData.append("username", formData.username);
-      submitData.append("email", formData.email);
-      submitData.append("password", formData.password);
-      submitData.append("full_name", formData.full_name);
-      submitData.append("age", formData.age);
-      submitData.append("region", formData.region);
-      submitData.append("phone_number", formData.phone_number);
-      submitData.append("role", formData.role);
-      
-      if (formData.avatar) {
-        submitData.append("avatar", formData.avatar);
-      }
-
-      await api.post("/users/register/", submitData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // 1. Supabase Auth orqali ro'yxatdan o'tish
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            username: formData.username,
+            full_name: formData.full_name,
+          }
+        }
       });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        let avatar_url = null;
+
+        // 2. Agar avatar bo'lsa, Storage'ga yuklash
+        if (formData.avatar) {
+          const fileExt = formData.avatar.name.split('.').pop();
+          const fileName = `${authData.user.id}-${Math.random()}.${fileExt}`;
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, formData.avatar);
+          
+          if (!uploadError && uploadData) {
+            // Supabase saqlagan rasmni ochiq URL'ini olish
+            const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+            avatar_url = publicUrlData.publicUrl;
+          } else {
+            console.warn("Avatar yuklashda xatolik:", uploadError);
+          }
+        }
+
+        // 3. Qolgan ma'lumotlarni profiles jadvaliga saqlash
+        const { error: profileError } = await supabase.from('profiles').insert({
+          id: authData.user.id,
+          full_name: formData.full_name,
+          username: formData.username,
+          age: formData.age ? parseInt(formData.age) : null,
+          region: formData.region,
+          phone_number: formData.phone_number,
+          role: formData.role,
+          avatar_url: avatar_url
+        });
+
+        if (profileError) throw profileError;
+      }
 
       setIsSuccess(true);
       setTimeout(() => {
         router.push("/login");
       }, 3000);
     } catch (err: any) {
-      console.error(err);
-      if (err.response?.data) {
-        const apiErrors = err.response.data;
-        const formattedErrors: Record<string, string> = {};
-        let mainError = "";
-
-        Object.keys(apiErrors).forEach((key) => {
-          if (Array.isArray(apiErrors[key])) {
-            formattedErrors[key] = apiErrors[key][0];
-          } else {
-            formattedErrors[key] = apiErrors[key];
-          }
-        });
-
-        if (apiErrors.non_field_errors) {
-          mainError = apiErrors.non_field_errors[0];
-        } else if (formattedErrors.username) {
-          mainError = `Foydalanuvchi nomi xatosi: ${formattedErrors.username}`;
-        } else if (formattedErrors.email) {
-          mainError = `Email xatosi: ${formattedErrors.email}`;
-        } else {
-          mainError = "Ro'yxatdan o'tishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.";
-        }
-
-        setErrors(formattedErrors);
-        setGlobalError(mainError);
-      } else {
-        setGlobalError("Server bilan aloqa o'rnatib bo'lmadi. Keyinroq urinib ko'ring.");
-      }
+      console.error("Registration error:", err);
+      // Xatolik xabarini to'g'rilash
+      const mainError = err.message || "Ro'yxatdan o'tishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.";
+      setGlobalError(mainError);
     } finally {
       setIsLoading(false);
     }

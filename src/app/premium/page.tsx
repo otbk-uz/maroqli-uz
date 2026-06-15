@@ -18,7 +18,7 @@ interface SubscriptionDetails {
 const PLANS = [
   {
     key: "monthly",
-    name: "Oylik Premium",
+    name: "1 Oylik Premium",
     price: "29 000 UZS",
     period: "oylik",
     desc: "Gaming dunyosiga ilk qadam va platforma yordami.",
@@ -36,8 +36,9 @@ const PLANS = [
   },
   {
     key: "yearly",
-    name: "Yillik Premium",
-    price: "290 000 UZS",
+    name: "1 Yillik Premium",
+    price: "149 000 UZS",
+    oldPrice: "348 000 UZS",
     period: "yillik",
     desc: "Haqiqiy professional geymerlar va kollektorlar uchun yillik to'liq paket.",
     popular: false,
@@ -231,6 +232,9 @@ export default function PremiumPage() {
                   <div className="mb-6">
                     <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
                     <span className="text-secondary text-sm ml-2">/ {plan.period}</span>
+                    {plan.oldPrice && (
+                      <div className="text-sm text-red-400 line-through mt-1 font-semibold">{plan.oldPrice}</div>
+                    )}
                   </div>
                 </div>
 
