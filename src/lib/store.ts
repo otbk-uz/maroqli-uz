@@ -2,12 +2,14 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface User {
-  id: number;
-  username: string;
+  id: string | number;
+  username?: string;
   nickname: string;
+  full_name?: string;
+  email?: string;
   role: string;
   avatar?: string;
-  elo: number;
+  elo?: number;
   is_premium?: boolean;
 }
 
