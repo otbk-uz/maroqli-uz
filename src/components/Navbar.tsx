@@ -162,7 +162,7 @@ const Navbar = () => {
 
             {mounted && isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
+                <Link href="/profile" className="flex items-center space-x-2 hover:opacity-80 transition-opacity cursor-pointer">
                   <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center overflow-hidden">
                     {user?.avatar ? (
                       <img src={user.avatar} alt={user.nickname} className="w-full h-full object-cover" />
@@ -172,7 +172,7 @@ const Navbar = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-xs font-semibold flex items-center gap-1">
-                      {user?.nickname}
+                      {user?.nickname || user?.username || 'Gamer'}
                       {user?.is_premium && (
                         <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[9px] text-black px-1 rounded-sm font-extrabold uppercase animate-pulse">
                           PRO
@@ -181,7 +181,7 @@ const Navbar = () => {
                     </span>
                     <span className="text-[10px] text-secondary font-medium uppercase tracking-wider">{user?.role}</span>
                   </div>
-                </div>
+                </Link>
                 <button
                   onClick={() => logout()}
                   className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
@@ -235,7 +235,7 @@ const Navbar = () => {
               <div className="pt-6 border-t border-white/5 flex flex-col space-y-4">
                 {mounted && isAuthenticated ? (
                   <div className="flex flex-col space-y-4">
-                    <div className="flex items-center space-x-3">
+                    <Link href="/profile" onClick={() => setIsOpen(false)} className="flex items-center space-x-3 cursor-pointer hover:opacity-80 transition-opacity">
                       <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center overflow-hidden">
                         {user?.avatar ? (
                           <img src={user.avatar} alt={user.nickname} className="w-full h-full object-cover" />
@@ -245,7 +245,7 @@ const Navbar = () => {
                       </div>
                       <div>
                         <div className="font-semibold flex items-center gap-1">
-                          {user?.nickname}
+                          {user?.nickname || user?.username || 'Gamer'}
                           {user?.is_premium && (
                             <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[10px] text-black px-1.5 py-0.5 rounded-sm font-extrabold uppercase">
                               PRO
@@ -254,7 +254,7 @@ const Navbar = () => {
                         </div>
                         <div className="text-xs text-secondary">{user?.role}</div>
                       </div>
-                    </div>
+                    </Link>
                     <button
                       onClick={() => {
                         logout();
