@@ -5,20 +5,18 @@ import Navbar from "../../components/Navbar";
 import { Search, Filter, Calendar, Trophy, Users, Gamepad2, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface Tournament {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  game_name: string;
+  game: string;
   status: string;
   prize_pool: string;
-  entry_fee: string;
-  max_participants: number;
-  participant_count: number;
+  max_teams: number;
+  participant_count?: number;
   start_date: string;
-  end_date?: string;
 }
 
 const TournamentsPage = () => {
@@ -40,16 +38,25 @@ const TournamentsPage = () => {
     const fetchTournaments = async () => {
       setLoading(true);
       try {
-        const params: Record<string, string> = {};
+        let query = supabase.from("tournaments").select("*, tournament_participants(count)");
+
         if (filter !== "ALL") {
-          params.status = filter;
+          query = query.eq("status", filter);
         }
         if (debouncedSearch) {
-          params.search = debouncedSearch;
+          query = query.ilike("title", `%${debouncedSearch}%`);
         }
 
-        const response = await api.get("/tournaments/", { params });
-        setTournaments(response.data);
+        const { data, error } = await query.order('created_at', { ascending: false });
+        if (error) throw error;
+        
+        if (data) {
+          const formatted = data.map((t: any) => ({
+            ...t,
+            participant_count: t.tournament_participants?.[0]?.count || 0
+          }));
+          setTournaments(formatted);
+        }
       } catch (err) {
         console.error("Tournaments fetch error:", err);
       } finally {
@@ -170,7 +177,7 @@ const TournamentsPage = () => {
                       {/* Card Header with Image */}
                       <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
                         <img 
-                          src={getGameImage(t.game_name)} 
+                          src={getGameImage(t.game)} 
                           alt={t.title}
                           className="w-full h-full object-cover opacity-50 group-hover:scale-110 group-hover:opacity-70 transition-all duration-700"
                         />
@@ -178,12 +185,12 @@ const TournamentsPage = () => {
                         
                         <div className="absolute top-4 left-4 flex gap-2">
                           <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl ${
-                            t.status === 'LIVE' ? 'bg-primary' : t.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
+                            t.status === 'LIVE' || t.status === 'ONGOING' ? 'bg-primary' : t.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
                           }`}>
                             {t.status}
                           </span>
                           <span className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                            {t.game_name}
+                            {t.game}
                           </span>
                         </div>
 
@@ -208,15 +215,15 @@ const TournamentsPage = () => {
                               <span className="text-[10px] font-black uppercase tracking-widest">Sovrin</span>
                             </div>
                             <p className="text-xl font-black text-white">
-                              {Number(t.prize_pool) > 0 ? `$${Number(t.prize_pool).toLocaleString()}` : "In-Game items"}
+                              {t.prize_pool}
                             </p>
                           </div>
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                             <div className="flex items-center space-x-2 text-secondary mb-1">
                               <Users size={14} className="text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Slots</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">Jamoalar</span>
                             </div>
-                            <p className="text-xl font-black text-white">{t.participant_count}/{t.max_participants}</p>
+                            <p className="text-xl font-black text-white">{t.participant_count || 0}/{t.max_teams}</p>
                           </div>
                         </div>
 

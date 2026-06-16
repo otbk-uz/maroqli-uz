@@ -7,50 +7,73 @@ import TournamentBracket from "../../../components/TournamentBracket";
 import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { BackButton } from "../../../components/ui/BackButton";
 
-interface JoinedUser {
-  id: number;
-  username: string;
-  full_name: string;
-  avatar?: string;
-  role: string;
-}
-
 interface Tournament {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  game_name: string;
+  game: string;
   status: string;
-  bracket_type: string;
+  format: string;
   prize_pool: string;
-  entry_fee: string;
-  max_participants: number;
-  participant_count: number;
-  joined_users: JoinedUser[];
+  max_teams: number;
   start_date: string;
-  end_date?: string;
 }
 
 const TournamentDetail = () => {
   const params = useParams();
   const router = useRouter();
-  const id = params.id;
+  const id = params.id as string;
   const { user, isAuthenticated } = useAuthStore();
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [participants, setParticipants] = useState<any[]>([]);
+  const [userTeam, setUserTeam] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState("BRACKET");
+  const [activeTab, setActiveTab] = useState("ISHTIROKCHILAR");
 
   useEffect(() => {
     if (!id) return;
     const fetchDetail = async () => {
       try {
-        const response = await api.get(`/tournaments/${id}/`);
-        setTournament(response.data);
+        const { data: tData, error: tErr } = await supabase
+          .from("tournaments")
+          .select("*")
+          .eq("id", id)
+          .single();
+          
+        if (tErr) throw tErr;
+        setTournament(tData);
+
+        const { data: pData, error: pErr } = await supabase
+          .from("tournament_participants")
+          .select("*, teams(id, name, logo_url, captain_id)")
+          .eq("tournament_id", id);
+          
+        if (pData) setParticipants(pData);
+
+        // check if current user has a team
+        if (user) {
+          const { data: memberData } = await supabase
+            .from("team_members")
+            .select("team_id, role")
+            .eq("user_id", user.id)
+            .single();
+            
+          if (memberData) {
+            const { data: teamData } = await supabase
+              .from("teams")
+              .select("*")
+              .eq("id", memberData.team_id)
+              .single();
+            if (teamData) {
+              setUserTeam({ ...teamData, currentUserRole: memberData.role });
+            }
+          }
+        }
       } catch (err) {
         console.error("Tournament detail fetch error:", err);
       } finally {
@@ -58,7 +81,7 @@ const TournamentDetail = () => {
       }
     };
     fetchDetail();
-  }, [id]);
+  }, [id, user]);
 
   const handleJoinLeave = async () => {
     if (!isAuthenticated) {
@@ -67,22 +90,54 @@ const TournamentDetail = () => {
     }
     if (!tournament) return;
 
+    if (!userTeam) {
+      alert("Sizda jamoa yo'q! Oldin profil sahifasidan jamoa yarating.");
+      return;
+    }
+
+    if (userTeam.currentUserRole !== 'CAPTAIN') {
+      alert("Faqat jamoa sardori ro'yxatdan o'tkaza oladi.");
+      return;
+    }
+
+    const isJoined = participants.some(p => p.team_id === userTeam.id);
+
     setActionLoading(true);
     try {
-      const response = await api.post(`/tournaments/${tournament.id}/join/`);
-      const { status } = response.data;
+      if (isJoined) {
+        // Leave
+        await supabase
+          .from("tournament_participants")
+          .delete()
+          .eq("tournament_id", tournament.id)
+          .eq("team_id", userTeam.id);
+        alert("Turnirdan muvaffaqiyatli chiqdingiz.");
+      } else {
+        // Join
+        if (participants.length >= tournament.max_teams) {
+          alert("Turnir to'lgan!");
+          setActionLoading(false);
+          return;
+        }
+        await supabase
+          .from("tournament_participants")
+          .insert({
+            tournament_id: tournament.id,
+            team_id: userTeam.id
+          });
+        alert("Turnirga muvaffaqiyatli ro'yxatdan o'tdingiz!");
+      }
       
-      // Re-fetch detail to get updated participants list
-      const updateResponse = await api.get(`/tournaments/${tournament.id}/`);
-      setTournament(updateResponse.data);
-      alert(response.data.message);
+      // refetch participants
+      const { data: pData } = await supabase
+        .from("tournament_participants")
+        .select("*, teams(id, name, logo_url, captain_id)")
+        .eq("tournament_id", tournament.id);
+      if (pData) setParticipants(pData);
+      
     } catch (err: any) {
       console.error(err);
-      if (err.response?.data?.detail) {
-        alert(err.response.data.detail);
-      } else {
-        alert("Amalni bajarib bo'lmadi. Qayta urinib ko'ring.");
-      }
+      alert("Xatolik yuz berdi");
     } finally {
       setActionLoading(false);
     }
@@ -108,7 +163,7 @@ const TournamentDetail = () => {
     );
   }
 
-  const isUserJoined = user && tournament.joined_users.some((ju) => ju.id === user.id);
+  const isUserJoined = userTeam && participants.some((p) => p.team_id === userTeam.id);
 
   return (
     <main className="min-h-screen bg-background">
@@ -127,7 +182,7 @@ const TournamentDetail = () => {
             <div className="glass-card p-8 mb-8">
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase">{tournament.status}</span>
-                <span className="bg-white/10 px-4 py-1 rounded-full text-xs font-bold uppercase text-secondary">{tournament.game_name}</span>
+                <span className="bg-white/10 px-4 py-1 rounded-full text-xs font-bold uppercase text-secondary">{tournament.game}</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-white mb-6 leading-snug">{tournament.title}</h1>
               
@@ -135,16 +190,16 @@ const TournamentDetail = () => {
                 <div className="text-center md:text-left">
                   <p className="text-xs text-secondary uppercase tracking-widest mb-1">Sovrin</p>
                   <p className="text-2xl font-bold text-primary">
-                    {Number(tournament.prize_pool) > 0 ? `$${Number(tournament.prize_pool).toLocaleString()}` : "Bepul"}
+                    {tournament.prize_pool}
                   </p>
                 </div>
                 <div className="text-center md:text-left">
-                  <p className="text-xs text-secondary uppercase tracking-widest mb-1">Qatnashuvchilar</p>
-                  <p className="text-2xl font-bold text-white">{tournament.participant_count} / {tournament.max_participants}</p>
+                  <p className="text-xs text-secondary uppercase tracking-widest mb-1">Jamoalar</p>
+                  <p className="text-2xl font-bold text-white">{participants.length} / {tournament.max_teams}</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-xs text-secondary uppercase tracking-widest mb-1">Turi</p>
-                  <p className="text-2xl font-bold text-white">{tournament.bracket_type === 'SINGLE' ? 'Single Elim' : 'Round Robin'}</p>
+                  <p className="text-2xl font-bold text-white">{tournament.format}</p>
                 </div>
                 <div className="text-center md:text-left">
                   <p className="text-xs text-secondary uppercase tracking-widest mb-1">Boshlanish</p>
@@ -163,7 +218,7 @@ const TournamentDetail = () => {
 
             {/* Tabs */}
             <div className="flex space-x-8 border-b border-white/5 mb-8 overflow-x-auto no-scrollbar">
-              {["BRACKET", "ISHTIROKCHILAR", "QOIDALAR"].map((tab) => (
+              {["ISHTIROKCHILAR", "BRACKET", "QOIDALAR"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -188,21 +243,16 @@ const TournamentDetail = () => {
               )}
               {activeTab === "ISHTIROKCHILAR" && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {tournament.joined_users.length === 0 ? (
+                  {participants.length === 0 ? (
                     <p className="text-secondary text-xs text-center col-span-full py-10">Hali hech kim ro'yxatdan o'tmadi.</p>
                   ) : (
-                    tournament.joined_users.map((ju) => (
-                      <div key={ju.id} className="glass-card p-4 flex items-center space-x-3 hover:border-white/10 transition-colors">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center font-bold text-xs text-white">
-                          {ju.avatar ? (
-                            <img src={ju.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                          ) : (
-                            <User size={16} className="text-secondary" />
-                          )}
+                    participants.map((p) => (
+                      <div key={p.id} className="glass-card p-4 flex items-center space-x-3 hover:border-white/10 transition-colors">
+                        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center font-bold text-xs text-white uppercase">
+                          {p.teams?.name?.substring(0, 2)}
                         </div>
                         <div>
-                          <p className="font-bold text-sm text-white">@{ju.username}</p>
-                          <p className="text-[10px] text-secondary">{ju.full_name}</p>
+                          <p className="font-bold text-sm text-white">{p.teams?.name}</p>
                         </div>
                       </div>
                     ))
@@ -213,7 +263,7 @@ const TournamentDetail = () => {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4 text-secondary text-sm leading-relaxed max-w-2xl">
                   <p className="font-bold text-white mb-2">Asosiy qoidalar:</p>
                   <ol className="list-decimal list-inside space-y-3">
-                    <li>Barcha ishtirokchilar o'yin boshlanishidan 30 daqiqa oldin Check-in dan o'tishi shart.</li>
+                    <li>Barcha ishtirokchilar o'yin boshlanishidan 30 daqiqa oldin tayyor bo'lishi shart.</li>
                     <li>O'yinda haqoratli so'zlar ishlatish taqiqlanadi (autodiskvalifikatsiya).</li>
                     <li>Har qanday turdagi cheat dasturlardan foydalanish doimiy bloklanishga olib keladi.</li>
                     <li>Nizoli vaziyatlarda admin qarori yakuniy hisoblanadi.</li>
@@ -231,19 +281,21 @@ const TournamentDetail = () => {
                 Ro'yxatdan o'tish
               </h3>
               <p className="text-sm text-secondary mb-6 leading-relaxed">
-                Ushbu turnirda qatnashish uchun ro'yxatdan o'tish tugmasini bosing. Ro'yxatdan o'tgandan keyin siz ishtirokchilar ro'yxatida ko'rinasiz.
+                Ushbu turnirda qatnashish uchun ro'yxatdan o'tish tugmasini bosing. Ro'yxatdan faqat jamoa sardori o'tkaza oladi.
               </p>
               
               <div className="space-y-4 mb-8">
                 <div className="flex justify-between text-sm">
                   <span className="text-secondary">Kirish to'lovi:</span>
                   <span className="font-bold text-green-500">
-                    {Number(tournament.entry_fee) > 0 ? `${Number(tournament.entry_fee).toLocaleString()} UZS` : "BEPUL"}
+                    BEPUL
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Platforma:</span>
-                  <span className="font-bold text-white">PC</span>
+                  <span className="text-secondary">Sizning Jamoangiz:</span>
+                  <span className="font-bold text-primary">
+                    {userTeam ? userTeam.name : "Mavjud emas"}
+                  </span>
                 </div>
               </div>
 
@@ -264,24 +316,12 @@ const TournamentDetail = () => {
                   {actionLoading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
                   ) : isUserJoined ? (
-                    "Turnirni tark etish"
+                    "Turnirdan chiqish"
                   ) : (
-                    "Hozir qo'shilish"
+                    "Jamoani ro'yxatdan o'tkazish"
                   )}
                 </button>
               )}
-              
-              <button 
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    navigator.clipboard.writeText(window.location.href);
-                    alert("Havola nusxalandi! Do'stlaringizga ulashing.");
-                  }
-                }}
-                className="w-full py-3 mt-4 text-sm text-secondary hover:text-white transition-colors"
-              >
-                Do'stlarni taklif qilish
-              </button>
             </div>
           </div>
         </div>
