@@ -27,6 +27,17 @@ const ProfilePage = () => {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [activeSetting, setActiveSetting] = useState<string | null>(null);
 
+  // Streamer state
+  const [streamerData, setStreamerData] = useState<any>(null);
+  const [streamForm, setStreamForm] = useState({
+    stream_url: "",
+    platform: "Twitch",
+    game: "",
+    title: "",
+    is_live: false
+  });
+  const [savingStream, setSavingStream] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
@@ -48,6 +59,24 @@ const ProfilePage = () => {
           full_name: data.full_name || "",
           username: data.username || "",
         });
+
+        // Fetch streamer data if exists
+        const { data: sData } = await supabase
+          .from("streamers")
+          .select("*")
+          .eq("user_id", user?.id)
+          .single();
+          
+        if (sData) {
+          setStreamerData(sData);
+          setStreamForm({
+            stream_url: sData.stream_url || "",
+            platform: sData.platform || "Twitch",
+            game: sData.game || "",
+            title: sData.title || "",
+            is_live: sData.is_live || false
+          });
+        }
       } catch (err) {
         console.error("Profile yuklashda xatolik:", err);
       } finally {
@@ -140,6 +169,47 @@ const ProfilePage = () => {
       alert("Rasm yuklashda xatolik yuz berdi.");
     } finally {
       setUploadingAvatar(false);
+    }
+  };
+
+  const handleSaveStreamer = async () => {
+    if (!streamForm.stream_url || !streamForm.platform) {
+      alert("Havola va platformani kiriting!");
+      return;
+    }
+
+    setSavingStream(true);
+    try {
+      let resultError;
+      if (streamerData) {
+        // Update
+        const { error } = await supabase
+          .from("streamers")
+          .update(streamForm)
+          .eq("id", streamerData.id);
+        resultError = error;
+      } else {
+        // Insert
+        const { data, error } = await supabase
+          .from("streamers")
+          .insert({
+            user_id: user?.id,
+            ...streamForm
+          })
+          .select()
+          .single();
+        if (data) setStreamerData(data);
+        resultError = error;
+      }
+
+      if (resultError) throw resultError;
+      alert("Strim sozlamalari saqlandi!");
+      setActiveSetting(null);
+    } catch (err) {
+      console.error("Strim sozlamalarini saqlashda xatolik:", err);
+      alert("Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    } finally {
+      setSavingStream(false);
     }
   };
 
@@ -316,7 +386,7 @@ const ProfilePage = () => {
                  </h3>
                </div>
                <div className="divide-y divide-white/5">
-                 {["Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
+                 {["Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
                    <button 
                      key={item} 
                      onClick={() => setActiveSetting(item)}
@@ -361,20 +431,91 @@ const ProfilePage = () => {
                 <h3 className="text-xl font-bold">{activeSetting}</h3>
               </div>
 
-              <div className="text-center py-8">
-                <Shield size={48} className="text-white/20 mx-auto mb-4" />
-                <h4 className="text-lg font-bold text-white mb-2">Tez orada!</h4>
-                <p className="text-secondary text-sm leading-relaxed">
-                  Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada PlayNationUz platformasida mavjud bo'ladi.
-                </p>
-              </div>
+              {activeSetting === "Striming sozlamalari" ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-secondary font-bold block mb-1">Strim havolasi (URL)</label>
+                    <input 
+                      type="text" 
+                      placeholder="https://twitch.tv/..."
+                      value={streamForm.stream_url}
+                      onChange={(e) => setStreamForm({...streamForm, stream_url: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-secondary font-bold block mb-1">Platforma</label>
+                    <select 
+                      value={streamForm.platform}
+                      onChange={(e) => setStreamForm({...streamForm, platform: e.target.value})}
+                      className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm text-white"
+                    >
+                      <option value="Twitch">Twitch</option>
+                      <option value="YouTube">YouTube</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-secondary font-bold block mb-1">O'yin nomi</label>
+                    <input 
+                      type="text" 
+                      placeholder="Dota 2, CS2..."
+                      value={streamForm.game}
+                      onChange={(e) => setStreamForm({...streamForm, game: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-secondary font-bold block mb-1">Strim sarlavhasi</label>
+                    <input 
+                      type="text" 
+                      placeholder="Bugun kuchli o'yin bo'ladi..."
+                      value={streamForm.title}
+                      onChange={(e) => setStreamForm({...streamForm, title: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl mt-4">
+                    <div>
+                      <h4 className="font-bold text-sm">Jonli efirda</h4>
+                      <p className="text-[10px] text-secondary">Hozir strim qilyapsizmi?</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={streamForm.is_live} 
+                        onChange={(e) => setStreamForm({...streamForm, is_live: e.target.checked})} 
+                        className="sr-only peer" 
+                      />
+                      <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                    </label>
+                  </div>
 
-              <button 
-                onClick={() => setActiveSetting(null)}
-                className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
-              >
-                Tushunarli
-              </button>
+                  <button 
+                    onClick={handleSaveStreamer}
+                    disabled={savingStream}
+                    className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-bold transition-all text-white"
+                  >
+                    {savingStream ? "Saqlanmoqda..." : "Saqlash"}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="text-center py-8">
+                    <Shield size={48} className="text-white/20 mx-auto mb-4" />
+                    <h4 className="text-lg font-bold text-white mb-2">Tez orada!</h4>
+                    <p className="text-secondary text-sm leading-relaxed">
+                      Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada PlayNationUz platformasida mavjud bo'ladi.
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={() => setActiveSetting(null)}
+                    className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
+                  >
+                    Tushunarli
+                  </button>
+                </>
+              )}
             </motion.div>
           </div>
         )}
