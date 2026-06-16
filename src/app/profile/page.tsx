@@ -25,6 +25,7 @@ const ProfilePage = () => {
   });
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [activeSetting, setActiveSetting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -316,7 +317,11 @@ const ProfilePage = () => {
                </div>
                <div className="divide-y divide-white/5">
                  {["Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
-                   <button key={item} className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group">
+                   <button 
+                     key={item} 
+                     onClick={() => setActiveSetting(item)}
+                     className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group"
+                   >
                      <span className="font-medium text-sm text-secondary group-hover:text-white transition-colors">{item}</span>
                      <ChevronRight size={18} className="text-secondary group-hover:text-primary transition-colors" />
                    </button>
@@ -326,6 +331,54 @@ const ProfilePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {activeSetting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setActiveSetting(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="glass-card relative z-10 w-full max-w-md p-6 overflow-hidden border-white/10 shadow-2xl"
+            >
+              <button 
+                onClick={() => setActiveSetting(null)}
+                className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="flex items-center space-x-3 mb-6">
+                <Settings size={24} className="text-primary" />
+                <h3 className="text-xl font-bold">{activeSetting}</h3>
+              </div>
+
+              <div className="text-center py-8">
+                <Shield size={48} className="text-white/20 mx-auto mb-4" />
+                <h4 className="text-lg font-bold text-white mb-2">Tez orada!</h4>
+                <p className="text-secondary text-sm leading-relaxed">
+                  Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada PlayNationUz platformasida mavjud bo'ladi.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setActiveSetting(null)}
+                className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
+              >
+                Tushunarli
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };
