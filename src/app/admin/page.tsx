@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw } from "lucide-react";
-import { motion } from "framer-motion";
+import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
 import { BackButton } from "@/components/ui/BackButton";
+import { supabase } from "@/lib/supabase";
 
 interface AdminUser {
   id: number;
@@ -24,10 +25,18 @@ interface AdminUser {
 }
 
 
+interface ActivityLog {
+  id: string;
+  type: 'user' | 'game';
+  message: string;
+  time: Date;
+}
+
 export default function AdminPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
+  const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -55,6 +64,50 @@ export default function AdminPage() {
       }, 800);
       return () => clearTimeout(timer);
     }
+  }, [isAuthenticated, user, router]);
+
+  useEffect(() => {
+    if (!isAuthenticated || user?.role !== "ADMIN") return;
+
+    const channel = supabase
+      .channel('admin-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'profiles' },
+        (payload) => {
+          const newProfile = payload.new;
+          setActivities(prev => [
+            {
+              id: `user-${newProfile.id}-${Date.now()}`,
+              type: 'user',
+              message: `Yangi a'zo: @${newProfile.username || 'Noma\\'lum'}`,
+              time: new Date()
+            },
+            ...prev
+          ].slice(0, 10)); // keep last 10
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'developed_games' },
+        (payload) => {
+          const newGame = payload.new;
+          setActivities(prev => [
+            {
+              id: `game-${newGame.id}-${Date.now()}`,
+              type: 'game',
+              message: `Yangi o'yin yuklandi: ${newGame.title || 'Nomsiz o\\'yin'}`,
+              time: new Date()
+            },
+            ...prev
+          ].slice(0, 10));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [isAuthenticated, user]);
 
   const fetchAdminData = async () => {
@@ -206,10 +259,12 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* Users Table */}
-        <h2 className="text-xl font-bold mb-6">Foydalanuvchilarni Boshqarish</h2>
-        <div className="glass-card overflow-x-auto border border-white/5 rounded-2xl">
-          <table className="w-full text-left border-collapse text-xs">
+        {/* Users Table & Live Feed Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <h2 className="text-xl font-bold mb-6">Foydalanuvchilarni Boshqarish</h2>
+            <div className="glass-card overflow-x-auto border border-white/5 rounded-2xl">
+              <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-white/5 border-b border-white/5 text-secondary uppercase tracking-wider text-[10px] font-bold">
                 <th className="p-4">Foydalanuvchi</th>
@@ -297,6 +352,42 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+            </div>
+          </div>
+
+          {/* Live Feed (Takes 1 col on lg) */}
+          <div className="lg:col-span-1">
+            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+              <Activity className="text-emerald-400" size={24} /> Jonli Faollik
+            </h2>
+            <div className="glass-card p-6 border border-white/5 rounded-2xl h-[600px] overflow-y-auto">
+              <div className="flex flex-col gap-4">
+                <AnimatePresence>
+                  {activities.length === 0 ? (
+                    <p className="text-secondary text-sm text-center py-10">Hozircha yangi faolliklar yo'q...</p>
+                  ) : (
+                    activities.map(act => (
+                      <motion.div
+                        key={act.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5"
+                      >
+                        <div className={`p-2 rounded-lg ${act.type === 'user' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                          {act.type === 'user' ? <UserPlus size={16} /> : <Gamepad2 size={16} />}
+                        </div>
+                        <div>
+                          <p className="text-sm text-white font-medium">{act.message}</p>
+                          <span className="text-[10px] text-secondary">{act.time.toLocaleTimeString()}</span>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </main>
