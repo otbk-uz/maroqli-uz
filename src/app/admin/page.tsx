@@ -79,15 +79,13 @@ export default function AdminPage() {
         { event: 'INSERT', schema: 'public', table: 'profiles' },
         (payload) => {
           const newProfile = payload.new;
-          setActivities(prev => [
-            {
-              id: `user-${newProfile.id}-${Date.now()}`,
-              type: 'user',
-              message: `Yangi a'zo: @${newProfile.username || "Noma'lum"}`,
-              time: new Date()
-            },
-            ...prev
-          ].slice(0, 10)); // keep last 10
+          const log: ActivityLog = {
+            id: `user-${newProfile.id}-${Date.now()}`,
+            type: 'user',
+            message: `Yangi a'zo: @${newProfile.username || "Noma'lum"}`,
+            time: new Date()
+          };
+          setActivities(prev => [log, ...prev].slice(0, 10)); // keep last 10
         }
       )
       .on(
@@ -95,15 +93,13 @@ export default function AdminPage() {
         { event: 'INSERT', schema: 'public', table: 'developed_games' },
         (payload) => {
           const newGame = payload.new;
-          setActivities(prev => [
-            {
-              id: `game-${newGame.id}-${Date.now()}`,
-              type: 'game',
-              message: `Yangi o'yin yuklandi: ${newGame.title || "Nomsiz o'yin"}`,
-              time: new Date()
-            },
-            ...prev
-          ].slice(0, 10));
+          const log: ActivityLog = {
+            id: `game-${newGame.id}-${Date.now()}`,
+            type: 'game',
+            message: `Yangi o'yin yuklandi: ${newGame.title || "Nomsiz o'yin"}`,
+            time: new Date()
+          };
+          setActivities(prev => [log, ...prev].slice(0, 10));
         }
       )
       .subscribe();
