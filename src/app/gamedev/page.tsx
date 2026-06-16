@@ -125,34 +125,9 @@ export default function GamedevPage() {
     }
   };
 
-  const handleBecomeDev = async () => {
-    if (!user) {
-      alert("Iltimos avval tizimga kiring.");
-      return;
-    }
-    const confirmDev = window.confirm("Rostdan ham GameDev (Dasturchi) roliga o'tmoqchimisiz?");
-    if (!confirmDev) return;
+  // GameDev bo'lish funksiyasi o'chirildi (Admin tomonidan nazorat qilinadi)
+  // Endi faqat ro'yxatdan o'tishda tanlaganlar yoki admindan ruxsat olganlar GAMEDEV bo'la oladi.
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: 'GAMEDEV' })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
-      // Update local store
-      useAuthStore.getState().setAuth({ ...user, role: 'GAMEDEV' }, useAuthStore.getState().token || "");
-      
-      alert("Tabriklaymiz! Siz endi GameDevsiz. Boshqaruv paneli (Dashboard) ochildi.");
-      // The component will re-render automatically because `user` is from `useAuthStore()`
-      // But we can also switch the tab explicitly
-      setActiveTab("dashboard");
-    } catch (err: any) {
-      console.error(err);
-      alert("Rolni o'zgartirishda xatolik yuz berdi.");
-    }
-  };
 
   const isDeveloper = user?.role === "GAMEDEV";
 
@@ -266,15 +241,9 @@ export default function GamedevPage() {
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Siz ham o'yin yaratuvchimisiz?</h3>
                   <p className="text-sm text-secondary max-w-2xl">
-                    O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang. Platformamizda GameDev roli orqali to'liq statistika va yuklash imkoniyatlariga ega bo'lasiz.
+                    O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang. Platformamizda GameDev bo'lish uchun ro'yxatdan o'tish vaqtida shu rolni tanlashingiz yoki ma'muriyat (Admin) bilan bog'lanishingiz kerak.
                   </p>
                 </div>
-                <button
-                  onClick={handleBecomeDev}
-                  className="py-3.5 px-8 bg-primary hover:bg-primary-hover font-bold rounded-xl text-sm transition-all whitespace-nowrap shadow-lg shadow-primary/10"
-                >
-                  GameDev bo'lish
-                </button>
               </div>
             </motion.div>
           ) : (

@@ -7,6 +7,8 @@ import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check,
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
+import { BackButton } from "@/components/ui/BackButton";
 
 interface Review {
   id: number;
@@ -43,7 +45,7 @@ const GameDetailPage = () => {
   const params = useParams();
   const router = useRouter();
   const id = params.id;
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const [game, setGame] = useState<GameDetail | null>(null);
   const [libraryGames, setLibraryGames] = useState<any[]>([]);
@@ -52,13 +54,64 @@ const GameDetailPage = () => {
   const [boughtCdKey, setBoughtCdKey] = useState<string | null>(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
 
+  // Reviews states
+  const [newReview, setNewReview] = useState("");
+  const [rating, setRating] = useState(5);
+  const [reviewLoading, setReviewLoading] = useState(false);
+
   useEffect(() => {
     if (!id) return;
 
     const fetchGameData = async () => {
       try {
-        const gameRes = await api.get(`/tournaments/store/${id}/`);
-        setGame(gameRes.data);
+        // Fetch from Supabase instead of Django
+        const { data: gameData, error: gameError } = await supabase
+          .from('developed_games')
+          .select('*, profiles:developer_id(username, full_name)')
+          .eq('id', id)
+          .single();
+
+        if (gameError) throw gameError;
+
+        // Fetch reviews
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from('game_reviews')
+          .select('*, profiles:user_id(username, full_name)')
+          .eq('game_id', id)
+          .order('created_at', { ascending: false });
+
+        if (reviewsError) throw reviewsError;
+
+        if (gameData) {
+          setGame({
+            id: gameData.id,
+            title: gameData.title,
+            slug: gameData.slug,
+            description: gameData.description,
+            price: gameData.price?.toString() || '0',
+            platform: gameData.platform,
+            language: gameData.language || 'O\'zbek',
+            rating: gameData.rating || 5.0,
+            sys_requirements: gameData.sys_requirements,
+            trailer_url: null,
+            developer_details: {
+              username: gameData.profiles?.username || 'developer',
+              full_name: gameData.profiles?.full_name || 'Developer'
+            },
+            cover: null,
+            screenshots: [],
+            reviews: reviewsData ? reviewsData.map((r: any) => ({
+              id: r.id,
+              user_details: {
+                username: r.profiles?.username || 'user',
+                full_name: r.profiles?.full_name || 'User'
+              },
+              rating: r.rating,
+              content: r.content,
+              created_at: r.created_at
+            })) : []
+          } as any);
+        }
         
         if (isAuthenticated) {
           const libraryRes = await api.get("/tournaments/library/");
@@ -73,6 +126,48 @@ const GameDetailPage = () => {
 
     fetchGameData();
   }, [id, isAuthenticated]);
+
+  const handlePostReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+    if (!newReview.trim()) return;
+
+    setReviewLoading(true);
+    try {
+      const { data, error } = await supabase.from('game_reviews').insert({
+        game_id: id,
+        user_id: user.id,
+        rating: rating,
+        content: newReview
+      }).select('*, profiles:user_id(username, full_name)').single();
+
+      if (error) throw error;
+
+      if (data) {
+        const newReviewObj = {
+          id: data.id,
+          user_details: {
+            username: data.profiles?.username || user.username || 'user',
+            full_name: data.profiles?.full_name || user.full_name || 'User'
+          },
+          rating: data.rating,
+          content: data.content,
+          created_at: data.created_at
+        };
+        setGame((prev: any) => prev ? { ...prev, reviews: [newReviewObj, ...prev.reviews] } : null);
+        setNewReview("");
+        setRating(5);
+      }
+    } catch (err) {
+      console.error("Post review error:", err);
+      alert("Izoh yuborishda xatolik yuz berdi.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
 
   const handleBuyGame = async () => {
     if (!isAuthenticated) {
@@ -215,6 +310,46 @@ const GameDetailPage = () => {
             {/* Reviews */}
             <div className="space-y-6">
               <h3 className="text-lg font-black text-white px-2">Foydalanuvchilar sharhlari ({game.reviews.length})</h3>
+
+              {/* Add Review Form */}
+              {isAuthenticated ? (
+                <form onSubmit={handlePostReview} className="glass-card p-6 border-white/5 space-y-4 mb-8">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">O'yin haqida fikringiz</h4>
+                  <div className="flex items-center space-x-2 mb-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        type="button"
+                        key={star}
+                        onClick={() => setRating(star)}
+                        className="focus:outline-none"
+                      >
+                        <Star 
+                          size={20} 
+                          className={star <= rating ? "text-yellow-500 fill-yellow-500 transition-all" : "text-white/20 hover:text-yellow-500/50 transition-all"} 
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    rows={3}
+                    value={newReview}
+                    onChange={(e) => setNewReview(e.target.value)}
+                    placeholder="Izoh yozing..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors resize-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={reviewLoading || !newReview.trim()}
+                    className="btn-primary py-3 px-6 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {reviewLoading ? "Yuborilmoqda..." : "Izoh qoldirish"}
+                  </button>
+                </form>
+              ) : (
+                <div className="bg-white/5 border border-white/5 text-secondary text-xs rounded-2xl p-6 text-center mb-8">
+                  Izoh qoldirish uchun iltimos <Link href="/login" className="text-primary font-bold hover:underline">tizimga kiring</Link>.
+                </div>
+              )}
               
               {game.reviews.length === 0 ? (
                 <div className="bg-white/5 border border-white/5 p-6 rounded-2xl text-center text-xs text-secondary">

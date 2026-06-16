@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import { Gamepad2, Users, Star, Search, Filter, Monitor, Smartphone, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 
 interface StoreGame {
@@ -43,15 +44,39 @@ const GamesPage = () => {
     const fetchGames = async () => {
       setLoading(true);
       try {
-        const params: Record<string, string> = {};
+        let query = supabase
+          .from('developed_games')
+          .select('*, profiles:developer_id(username, full_name)')
+          .order('created_at', { ascending: false });
+
         if (filter !== "ALL") {
-          params.platform = filter;
+          query = query.eq('platform', filter);
         }
         if (debouncedSearch) {
-          params.search = debouncedSearch;
+          query = query.ilike('title', `%${debouncedSearch}%`);
         }
-        const response = await api.get("/tournaments/store/", { params });
-        setGames(response.data);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (data) {
+          const mappedGames = data.map((g: any) => ({
+            id: g.id, // Supabase id is string/UUID, but we can treat as any
+            title: g.title,
+            slug: g.slug,
+            developer_details: {
+              username: g.profiles?.username || 'developer',
+              full_name: g.profiles?.full_name || 'Game Developer',
+            },
+            cover: null, // Default
+            price: g.price?.toString() || '0',
+            platform: g.platform,
+            rating: g.rating || 5.0,
+            language: g.language || 'O\'zbek',
+            description: g.description,
+          }));
+          setGames(mappedGames as any);
+        }
       } catch (err) {
         console.error("Games store fetch error:", err);
       } finally {
