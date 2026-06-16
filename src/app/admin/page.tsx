@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2 } from "lucide-react";
+import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2, KeyRound } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -34,10 +34,12 @@ interface ActivityLog {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCustomAdmin, setIsCustomAdmin] = useState(false);
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalActiveSubs: 0,
@@ -46,28 +48,29 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    // If not authenticated or not admin, we handle it
-    if (isAuthenticated && user?.role === "ADMIN") {
+    const savedAdmin = sessionStorage.getItem('customAdminLogin');
+    if (savedAdmin === 'true') {
+      setIsCustomAdmin(true);
       fetchAdminData();
-    } else if (isAuthenticated && user && user.role !== "ADMIN") {
-      setLoading(false);
     } else {
-      // Allow some time for mount and hydration
-      const timer = setTimeout(() => {
-        if (!isAuthenticated) {
-          router.push("/login?redirect=/admin");
-        } else if (user?.role !== "ADMIN") {
-          setLoading(false);
-        } else {
-          fetchAdminData();
-        }
-      }, 800);
-      return () => clearTimeout(timer);
+      setLoading(false);
     }
-  }, [isAuthenticated, user, router]);
+  }, []);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (loginForm.username === 'admin' && loginForm.password === 'playnation2026') {
+      setIsCustomAdmin(true);
+      sessionStorage.setItem('customAdminLogin', 'true');
+      setLoginError('');
+      fetchAdminData();
+    } else {
+      setLoginError('Login yoki parol xato!');
+    }
+  };
 
   useEffect(() => {
-    if (!isAuthenticated || user?.role !== "ADMIN") return;
+    if (!isCustomAdmin) return;
 
     const channel = supabase
       .channel('admin-realtime')
@@ -108,7 +111,7 @@ export default function AdminPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isAuthenticated, user]);
+  }, [isCustomAdmin]);
 
   const fetchAdminData = async () => {
     try {
@@ -186,18 +189,58 @@ export default function AdminPage() {
     );
   }
 
-  if (!isAuthenticated || user?.role !== "ADMIN") {
+  if (!isCustomAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-white p-4">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background text-white p-4">
         <Navbar />
-        <div className="max-w-md text-center p-8 glass-card border-red-500/20">
-          <ShieldAlert className="text-red-500 mx-auto mb-6" size={60} />
-          <h2 className="text-2xl font-black mb-3 text-red-400">Kirish Taqiqlandi</h2>
-          <p className="text-secondary text-sm leading-relaxed mb-6">
-            Ushbu sahifa faqatgina tizim administratorlari uchun mo'ljallangan. Agar bu xatolik deb o'ylasangiz, iltimos tizim boshqaruvchisiga murojaat qiling.
-          </p>
-          <BackButton />
-        </div>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md glass-card p-8 md:p-10 border border-white/10"
+        >
+          <div className="text-center mb-8">
+            <div className="bg-primary/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="text-primary" size={32} />
+            </div>
+            <h2 className="text-2xl font-black mb-2">Admin Panel</h2>
+            <p className="text-secondary text-sm">Kirish uchun maxsus login va parolni kiriting</p>
+          </div>
+
+          {loginError && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-4 mb-6 text-center">
+              {loginError}
+            </div>
+          )}
+
+          <form onSubmit={handleAdminLogin} className="space-y-5">
+            <div>
+              <label className="text-sm font-medium text-secondary ml-1 mb-1 block">Login</label>
+              <input
+                type="text"
+                value={loginForm.username}
+                onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                placeholder="Loginni kiriting"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-secondary ml-1 mb-1 block">Parol</label>
+              <input
+                type="password"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                placeholder="••••••••"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white"
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn-primary w-full py-3 mt-4 text-sm font-bold flex items-center justify-center space-x-2"
+            >
+              <span>Tizimga kirish</span>
+            </button>
+          </form>
+        </motion.div>
       </div>
     );
   }
