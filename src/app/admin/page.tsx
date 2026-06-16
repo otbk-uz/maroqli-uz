@@ -9,6 +9,7 @@ import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
 import { BackButton } from "@/components/ui/BackButton";
 import { supabase } from "@/lib/supabase";
+import { FileImage } from "lucide-react";
 
 interface AdminUser {
   id: number;
@@ -46,6 +47,12 @@ export default function AdminPage() {
     totalGames: 0,
     totalTournaments: 0,
   });
+
+  // News form state
+  const { user } = useAuthStore();
+  const [newsForm, setNewsForm] = useState({ title: '', content: '' });
+  const [newsFile, setNewsFile] = useState<File | null>(null);
+  const [savingNews, setSavingNews] = useState(false);
 
   useEffect(() => {
     const savedAdmin = sessionStorage.getItem('customAdminLogin');
@@ -160,13 +167,20 @@ export default function AdminPage() {
 
   const handleRoleChange = async (userId: number, newRole: string) => {
     try {
-      await api.patch(`/users/admin/users/${userId}/`, { role: newRole });
+      // Direct Supabase update for role
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
       setUsersList((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
       );
       alert("Foydalanuvchi roli muvaffaqiyatli o'zgartirildi!");
     } catch (err: any) {
-      alert(err.response?.data?.role?.[0] || "Rolni o'zgartirishda xatolik yuz berdi.");
+      alert("Rolni o'zgartirishda xatolik yuz berdi.");
     }
   };
 
@@ -198,7 +212,6 @@ export default function AdminPage() {
     }
   };
 
-  // Safe checks
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background text-white">
@@ -207,6 +220,57 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const handlePostNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsForm.title || !newsForm.content) {
+      alert("Sarlavha va matnni kiriting!");
+      return;
+    }
+    if (!user) {
+      alert("Iltimos, avval asosiy saytdan (Profil orqali) o'z profilingizga kiring. Ruxsat tekshiruvi uchun bu majburiy.");
+      return;
+    }
+    
+    setSavingNews(true);
+    try {
+      let imageUrl = null;
+      if (newsFile) {
+        const fileExt = newsFile.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const { data, error } = await supabase.storage
+          .from('news')
+          .upload(fileName, newsFile);
+          
+        if (error) throw error;
+        
+        const { data: pubData } = supabase.storage
+          .from('news')
+          .getPublicUrl(fileName);
+        imageUrl = pubData.publicUrl;
+      }
+
+      const { error } = await supabase
+        .from('news')
+        .insert({
+          title: newsForm.title,
+          content: newsForm.content,
+          image_url: imageUrl,
+          author_id: user.id
+        });
+        
+      if (error) throw error;
+      
+      alert("Yangilik muvaffaqiyatli chop etildi!");
+      setNewsForm({ title: '', content: '' });
+      setNewsFile(null);
+    } catch (err: any) {
+      console.error(err);
+      alert("Xatolik: " + (err.message || "Yuklashda muammo yuz berdi. (Siz ADMIN rolidamisiz?)"));
+    } finally {
+      setSavingNews(false);
+    }
+  };
 
   if (!isCustomAdmin) {
     return (
@@ -318,6 +382,59 @@ export default function AdminPage() {
             <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2">
               <AlertOctagon className="text-green-400" size={20} /> {stats.totalTournaments}
             </h3>
+          </div>
+        </div>
+
+        {/* News Management */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold mb-6">Yangilik Qo'shish</h2>
+          <div className="glass-card p-6 md:p-8 border border-white/5 rounded-2xl">
+            <form onSubmit={handlePostNews} className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">Yangilik sarlavhasi</label>
+                <input 
+                  type="text" 
+                  value={newsForm.title}
+                  onChange={(e) => setNewsForm({...newsForm, title: e.target.value})}
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white"
+                  placeholder="Masalan: Saytimizda yangi turnirlar boshlandi!"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">Asosiy rasm yuklash</label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-white/10 border-dashed rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <FileImage className="w-8 h-8 mb-3 text-secondary" />
+                      <p className="mb-2 text-sm text-secondary">
+                        <span className="font-bold text-white">Yuklash uchun bosing</span> yoki rasmni shu yerga tashlang
+                      </p>
+                      {newsFile && <p className="text-xs text-primary font-bold mt-2">Tanlandi: {newsFile.name}</p>}
+                    </div>
+                    <input type="file" className="hidden" accept="image/*" onChange={(e) => setNewsFile(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">Yangilik matni</label>
+                <textarea 
+                  value={newsForm.content}
+                  onChange={(e) => setNewsForm({...newsForm, content: e.target.value})}
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white min-h-[150px] custom-scrollbar"
+                  placeholder="Yangilik haqida batafsil ma'lumot yozing..."
+                ></textarea>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={savingNews}
+                className="btn-primary px-8 py-3 w-full md:w-auto"
+              >
+                {savingNews ? "Yuklanmoqda..." : "Yangilikni chop etish"}
+              </button>
+            </form>
           </div>
         </div>
 
