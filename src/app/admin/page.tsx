@@ -83,7 +83,7 @@ export default function AdminPage() {
             {
               id: `user-${newProfile.id}-${Date.now()}`,
               type: 'user',
-              message: `Yangi a'zo: @${newProfile.username || 'Noma\\'lum'}`,
+              message: `Yangi a'zo: @${newProfile.username || "Noma'lum"}`,
               time: new Date()
             },
             ...prev
@@ -99,7 +99,7 @@ export default function AdminPage() {
             {
               id: `game-${newGame.id}-${Date.now()}`,
               type: 'game',
-              message: `Yangi o'yin yuklandi: ${newGame.title || 'Nomsiz o\\'yin'}`,
+              message: `Yangi o'yin yuklandi: ${newGame.title || "Nomsiz o'yin"}`,
               time: new Date()
             },
             ...prev
