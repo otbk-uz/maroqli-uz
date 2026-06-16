@@ -38,6 +38,13 @@ const ProfilePage = () => {
   });
   const [savingStream, setSavingStream] = useState(false);
 
+  // Team state
+  const [teamData, setTeamData] = useState<any>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [teamForm, setTeamForm] = useState({ name: "", in_game_id: "" });
+  const [addMemberForm, setAddMemberForm] = useState({ username: "", in_game_id: "" });
+  const [savingTeam, setSavingTeam] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated) {
       router.push("/login");
@@ -76,6 +83,31 @@ const ProfilePage = () => {
             title: sData.title || "",
             is_live: sData.is_live || false
           });
+        }
+
+        // Fetch team data
+        const { data: memberData } = await supabase
+          .from("team_members")
+          .select("team_id, in_game_id, role")
+          .eq("user_id", user?.id)
+          .single();
+
+        if (memberData) {
+          const { data: tData } = await supabase
+            .from("teams")
+            .select("*")
+            .eq("id", memberData.team_id)
+            .single();
+          
+          if (tData) {
+            setTeamData({ ...tData, currentUserRole: memberData.role, currentUserInGameId: memberData.in_game_id });
+            // Fetch all members
+            const { data: mData } = await supabase
+              .from("team_members")
+              .select("*, profiles(username, avatar_url, full_name)")
+              .eq("team_id", tData.id);
+            if (mData) setTeamMembers(mData);
+          }
         }
       } catch (err) {
         console.error("Profile yuklashda xatolik:", err);
@@ -210,6 +242,79 @@ const ProfilePage = () => {
       alert("Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
     } finally {
       setSavingStream(false);
+    }
+  };
+
+  const handleCreateTeam = async () => {
+    if (!teamForm.name || !teamForm.in_game_id) {
+      alert("Jamoa nomi va o'yin ID'sini kiriting!");
+      return;
+    }
+    setSavingTeam(true);
+    try {
+      // 1. Create team
+      const { data: newTeam, error: teamError } = await supabase
+        .from("teams")
+        .insert({ name: teamForm.name, captain_id: user?.id })
+        .select()
+        .single();
+      if (teamError) throw teamError;
+
+      // 2. Add captain as member
+      const { error: memberError } = await supabase
+        .from("team_members")
+        .insert({
+          team_id: newTeam.id,
+          user_id: user?.id,
+          in_game_id: teamForm.in_game_id,
+          role: 'CAPTAIN'
+        });
+      if (memberError) throw memberError;
+
+      alert("Jamoa yaratildi!");
+      window.location.reload(); // Refresh to load team data
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Xatolik yuz berdi");
+    } finally {
+      setSavingTeam(false);
+    }
+  };
+
+  const handleAddMember = async () => {
+    if (!addMemberForm.username || !addMemberForm.in_game_id) return;
+    setSavingTeam(true);
+    try {
+      // Find user by username
+      const { data: userData, error: userError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", addMemberForm.username)
+        .single();
+      
+      if (userError || !userData) {
+        alert("Bunday foydalanuvchi topilmadi!");
+        return;
+      }
+
+      // Add to team
+      const { error: insertError } = await supabase
+        .from("team_members")
+        .insert({
+          team_id: teamData.id,
+          user_id: userData.id,
+          in_game_id: addMemberForm.in_game_id,
+          role: 'PLAYER'
+        });
+      
+      if (insertError) throw insertError;
+      alert("A'zo qo'shildi!");
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      alert("Xatolik yuz berdi: " + err.message);
+    } finally {
+      setSavingTeam(false);
     }
   };
 
@@ -386,7 +491,7 @@ const ProfilePage = () => {
                  </h3>
                </div>
                <div className="divide-y divide-white/5">
-                 {["Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
+                 {["Mening Jamoam", "Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
                    <button 
                      key={item} 
                      onClick={() => setActiveSetting(item)}
@@ -497,6 +602,118 @@ const ProfilePage = () => {
                   >
                     {savingStream ? "Saqlanmoqda..." : "Saqlash"}
                   </button>
+                </div>
+              ) : activeSetting === "Mening Jamoam" ? (
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  {!teamData ? (
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+                      <h4 className="text-lg font-bold mb-2">Jamoa yaratish</h4>
+                      <p className="text-secondary text-xs mb-6">Turnirlarda qatnashish uchun o'z jamoangizni yarating.</p>
+                      
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs text-secondary font-bold block mb-1">Jamoa nomi</label>
+                          <input 
+                            type="text" 
+                            placeholder="Masalan: NAVI Uzb"
+                            value={teamForm.name}
+                            onChange={(e) => setTeamForm({...teamForm, name: e.target.value})}
+                            className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs text-secondary font-bold block mb-1">Sizning O'yin ID raqamingiz (PUBG/CS2)</label>
+                          <input 
+                            type="text" 
+                            placeholder="5123456789"
+                            value={teamForm.in_game_id}
+                            onChange={(e) => setTeamForm({...teamForm, in_game_id: e.target.value})}
+                            className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm text-white"
+                          />
+                        </div>
+                        <button 
+                          onClick={handleCreateTeam}
+                          disabled={savingTeam}
+                          className="w-full py-3 bg-primary hover:bg-primary/90 rounded-xl text-sm font-bold transition-all text-white mt-2"
+                        >
+                          {savingTeam ? "Yaratilmoqda..." : "Jamoa yaratish"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="flex items-center space-x-4 bg-primary/10 border border-primary/20 rounded-2xl p-6">
+                        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center font-black text-2xl text-white">
+                          {teamData.name.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-black">{teamData.name}</h2>
+                          <span className="text-xs font-bold text-primary bg-primary/20 px-2 py-1 rounded-md uppercase tracking-wider">
+                            {teamData.currentUserRole === 'CAPTAIN' ? 'Siz Sardorsiz' : 'A\'zo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="text-lg font-bold mb-4 flex items-center justify-between">
+                          <span>Jamoa a'zolari ({teamMembers.length}/5)</span>
+                        </h4>
+                        <div className="space-y-3">
+                          {teamMembers.map(m => (
+                            <div key={m.id} className="flex items-center justify-between bg-white/5 border border-white/10 p-3 rounded-xl">
+                              <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 rounded-full bg-secondary/20 overflow-hidden">
+                                  {m.profiles?.avatar_url ? (
+                                    <img src={m.profiles.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center font-bold text-xs">
+                                      {m.profiles?.username?.substring(0,2).toUpperCase()}
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-sm">@{m.profiles?.username}</div>
+                                  <div className="text-xs text-secondary">ID: {m.in_game_id}</div>
+                                </div>
+                              </div>
+                              <div className="text-xs font-bold bg-white/10 px-2 py-1 rounded-md">
+                                {m.role}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {teamData.currentUserRole === 'CAPTAIN' && teamMembers.length < 5 && (
+                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-4">
+                          <h4 className="font-bold text-sm mb-4">Yangi a'zo qo'shish</h4>
+                          <div className="flex flex-col gap-3">
+                            <input 
+                              type="text" 
+                              placeholder="Foydalanuvchi nomi (@siz)"
+                              value={addMemberForm.username}
+                              onChange={(e) => setAddMemberForm({...addMemberForm, username: e.target.value.replace('@', '')})}
+                              className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
+                            />
+                            <input 
+                              type="text" 
+                              placeholder="Ularning O'yin ID si"
+                              value={addMemberForm.in_game_id}
+                              onChange={(e) => setAddMemberForm({...addMemberForm, in_game_id: e.target.value})}
+                              className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
+                            />
+                            <button 
+                              onClick={handleAddMember}
+                              disabled={savingTeam}
+                              className="w-full py-2 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary/90"
+                            >
+                              Qo'shish
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <>
