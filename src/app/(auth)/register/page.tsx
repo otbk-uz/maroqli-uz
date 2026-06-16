@@ -43,6 +43,11 @@ const ROLES = [
     description: "O'yinlar yuklash va sotish, daromad paneli, portfolio",
   },
   {
+    value: "STREAMER",
+    label: "Strimer",
+    description: "Jonli efirlar, obunachilar yig'ish, strimlar sahifasida ko'rinish",
+  },
+  {
     value: "INVESTOR",
     label: "Investor",
     description: "Loyiha taqdimotlari, Investor Hub va hamkorlik",
@@ -231,6 +236,17 @@ const RegisterPage = () => {
         });
 
         if (profileError) throw profileError;
+
+        // 4. Agar role === 'STREAMER' bo'lsa, streamers jadvaliga ham qo'shib qo'yamiz
+        if (formData.role === 'STREAMER') {
+          await supabase.from('streamers').insert({
+            user_id: authData.user.id,
+            stream_url: '#',
+            platform: 'Twitch',
+            title: 'Yangi Strimer',
+            game: 'O\'yin tanlanmagan'
+          });
+        }
       }
 
       setIsSuccess(true);
