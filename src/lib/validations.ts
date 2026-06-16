@@ -21,7 +21,7 @@ export const registerBaseSchema = z.object({
   phone_number: z.string()
     .regex(/^\+998\d{9}$/, "Telefon raqami +998XXXXXXXXX formatida bo'lishi kerak"),
   email: z.string().email("Noto'g'ri email manzili"),
-  role: z.enum(["VIEWER", "GAMER", "GAMEDEV", "INVESTOR"], {
+  role: z.enum(["VIEWER", "GAMER", "GAMEDEV", "INVESTOR", "STREAMER", "ADMIN"], {
     errorMap: () => ({ message: "Noto'g'ri rol tanlandi" }),
   }),
   password: z.string()

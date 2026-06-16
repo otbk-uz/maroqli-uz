@@ -50,20 +50,46 @@ export default function Home() {
   useEffect(() => {
     const fetchHomeData = async () => {
       try {
-        const [tournamentsRes, newsRes, statsRes] = await Promise.all([
-          api.get("/tournaments/"),
-          api.get("/community/news/"),
-          api.get("/community/stats/"),
-        ]);
+        const { supabase } = await import('@/lib/supabase');
         
-        // Only show live and upcoming tournaments on home page, limit to 6
-        const activeTournaments = tournamentsRes.data.filter(
-          (t: Tournament) => t.status === "LIVE" || t.status === "UPCOMING"
-        ).slice(0, 6);
+        // Fetch Tournaments
+        const { data: tData } = await supabase
+          .from('tournaments')
+          .select('*')
+          .in('status', ['LIVE', 'UPCOMING'])
+          .limit(6);
+          
+        if (tData) setTournaments(tData as any);
 
-        setTournaments(activeTournaments);
-        setNews(newsRes.data.slice(0, 4));
-        setStats(statsRes.data);
+        // Fetch News
+        const { data: nData } = await supabase
+          .from('news')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(4);
+          
+        if (nData) {
+          const mappedNews = nData.map(n => ({
+            id: n.id,
+            title: n.title,
+            category_display: 'YANGILIK',
+            created_at: n.created_at
+          }));
+          setNews(mappedNews as any);
+        }
+
+        // Stats (mock or count)
+        const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
+        const { count: tCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
+        
+        setStats({
+          users_count: usersCount || 0,
+          tournaments_count: tCount || 0,
+          games_count: 12,
+          total_views: 12450000,
+          streamers_count: 15,
+        });
+
       } catch (err) {
         console.error("Home page data fetch error:", err);
       } finally {
