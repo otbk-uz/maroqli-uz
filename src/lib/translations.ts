@@ -41,6 +41,35 @@ export const translations = {
     delete: "O'chirish",
     cancel: "Bekor qilish",
     add: "Qo'shish",
+
+    // Hero
+    hero_title: "O'zbekistonda gaming kelajagi",
+    hero_desc: "Turnirlar, jonli efirlar va hamjamiyat — barchasi bir joyda. O'zbekistonning eng yirik gaming platformasiga qo'shiling.",
+    join_tournament: "Turnirga qo'shil",
+    learn_more: "Ko'proq bilish",
+    active_players: "Faol o'yinchilar",
+    verified_tournaments: "Tasdiqlangan turnirlar",
+    total_prize_pool: "Jami sovrin jamg'armasi",
+
+    // Homepage
+    competitive_games: "Raqobatbardosh o'yinlar",
+    active_tournaments: "Faol turnirlar",
+    view_all_tournaments: "Barcha turnirlarni ko'rish",
+    no_active_tournaments: "Hozirda faol turnirlar mavjud emas.",
+    watch: "Tomosha qilish",
+    more_details: "Batafsil ma'lumot",
+    latest_news: "So'nggi Yangiliklar",
+    news_desc: "Platforma va gaming koinotidagi yangiliklar",
+    all_news: "Barcha yangiliklar",
+    no_news: "Yangiliklar mavjud emas.",
+    total_views: "Jami ko'rishlar",
+    tournaments_count: "Turnirlar soni",
+    active_users: "Faol foydalanuvchilar",
+    available_games: "Mavjud o'yinlar",
+    news_badge: "YANGILIK",
+    prize_label: "Sovrin",
+    free: "Bepul",
+    slots_label: "Slots",
   },
   ru: {
     // Nav links
@@ -84,6 +113,35 @@ export const translations = {
     delete: "Удалить",
     cancel: "Отмена",
     add: "Добавить",
+
+    // Hero
+    hero_title: "Будущее гейминга в Узбекистане",
+    hero_desc: "Турниры, стримы и сообщество — всё в одном месте. Присоединяйтесь к крупнейшей игровой платформе Узбекистана.",
+    join_tournament: "Присоединиться к турниру",
+    learn_more: "Узнать больше",
+    active_players: "Активные игроки",
+    verified_tournaments: "Подтвержденные турниры",
+    total_prize_pool: "Общий призовой фонд",
+
+    // Homepage
+    competitive_games: "Соревновательные игры",
+    active_tournaments: "Активные турниры",
+    view_all_tournaments: "Посмотреть все турниры",
+    no_active_tournaments: "В настоящее время нет активных турниров.",
+    watch: "Смотреть",
+    more_details: "Подробнее",
+    latest_news: "Последние Новости",
+    news_desc: "Новости платформы и игровой вселенной",
+    all_news: "Все новости",
+    no_news: "Новости отсутствуют.",
+    total_views: "Всего просмотров",
+    tournaments_count: "Количество турниров",
+    active_users: "Активные пользователи",
+    available_games: "Доступные игры",
+    news_badge: "НОВОСТЬ",
+    prize_label: "Приз",
+    free: "Бесплатно",
+    slots_label: "Слоты",
   },
   en: {
     // Nav links
@@ -127,6 +185,35 @@ export const translations = {
     delete: "Delete",
     cancel: "Cancel",
     add: "Add",
+
+    // Hero
+    hero_title: "The Future of Gaming in Uzbekistan",
+    hero_desc: "Tournaments, live streams and community — all in one place. Join the largest gaming platform in Uzbekistan.",
+    join_tournament: "Join Tournament",
+    learn_more: "Learn More",
+    active_players: "Active Players",
+    verified_tournaments: "Verified Tournaments",
+    total_prize_pool: "Total Prize Pool",
+
+    // Homepage
+    competitive_games: "Competitive Games",
+    active_tournaments: "Active Tournaments",
+    view_all_tournaments: "View all tournaments",
+    no_active_tournaments: "There are no active tournaments at the moment.",
+    watch: "Watch",
+    more_details: "More details",
+    latest_news: "Latest News",
+    news_desc: "Platform and gaming universe news",
+    all_news: "All news",
+    no_news: "No news available.",
+    total_views: "Total views",
+    tournaments_count: "Number of tournaments",
+    active_users: "Active users",
+    available_games: "Available games",
+    news_badge: "NEWS",
+    prize_label: "Prize",
+    free: "Free",
+    slots_label: "Slots",
   }
 };
 

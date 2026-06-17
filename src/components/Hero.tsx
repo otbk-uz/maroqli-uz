@@ -2,11 +2,13 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { ChevronRight, Play, Trophy, Users, Shield } from "lucide-react";
-
+import { Play, Trophy, Users, Shield } from "lucide-react";
 import Link from "next/link";
+import { useTranslation } from "@/lib/store";
 
 const Hero = () => {
+  const { t, locale } = useTranslation();
+
   return (
     <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-[#050506]">
       {/* Dynamic Background */}
@@ -46,9 +48,25 @@ const Hero = () => {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9] mb-10 text-white"
             >
-              O'zbekistonda <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> <br />
-              kelajagi
+              {locale === 'ru' ? (
+                <>
+                  Будущее <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">гейминга</span> <br />
+                  в Узбекистане
+                </>
+              ) : locale === 'en' ? (
+                <>
+                  Future of <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> <br />
+                  in Uzbekistan
+                </>
+              ) : (
+                <>
+                  O'zbekistonda <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> <br />
+                  kelajagi
+                </>
+              )}
             </motion.h1>
 
             <motion.p
@@ -57,8 +75,7 @@ const Hero = () => {
               transition={{ duration: 0.8, delay: 0.2 }}
               className="text-lg md:text-xl text-secondary max-w-xl mb-12 leading-relaxed"
             >
-              Turnirlar, jonli efirlar va hamjamiyat — barchasi bir joyda. 
-              O'zbekistonning eng yirik gaming platformasiga qo'shiling.
+              {t("hero_desc", "Turnirlar, jonli efirlar va hamjamiyat — barchasi bir joyda. O'zbekistonning eng yirik gaming platformasiga qo'shiling.")}
             </motion.p>
 
             <motion.div
@@ -70,13 +87,13 @@ const Hero = () => {
               <Link href="/tournaments" className="btn-primary group relative overflow-hidden flex items-center space-x-3 !py-4 !px-10">
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
                 <Trophy size={20} />
-                <span className="relative z-10">Turnirga qo'shil</span>
+                <span className="relative z-10">{t("join_tournament", "Turnirga qo'shil")}</span>
               </Link>
               <Link href="/tournaments" className="btn-outline flex items-center space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                   <Play size={14} fill="currentColor" />
                 </div>
-                <span>Ko'proq bilish</span>
+                <span>{t("learn_more", "Ko'proq bilish")}</span>
               </Link>
             </motion.div>
           </div>
@@ -93,7 +110,7 @@ const Hero = () => {
                 <Users size={24} />
               </div>
               <p className="text-4xl font-black text-white mb-2 tracking-tight">5,000+</p>
-              <p className="text-xs font-bold text-secondary uppercase tracking-widest">Faol o'yinchilar</p>
+              <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("active_players", "Faol o'yinchilar")}</p>
             </motion.div>
 
             <motion.div 
@@ -106,7 +123,7 @@ const Hero = () => {
                 <Shield size={24} />
               </div>
               <p className="text-4xl font-black text-white mb-2 tracking-tight">42</p>
-              <p className="text-xs font-bold text-secondary uppercase tracking-widest">Tasdiqlangan turnirlar</p>
+              <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("verified_tournaments", "Tasdiqlangan turnirlar")}</p>
             </motion.div>
 
             <motion.div 
@@ -121,11 +138,11 @@ const Hero = () => {
                     <Trophy size={24} />
                   </div>
                   <p className="text-4xl font-black text-white mb-2 tracking-tight">$8,500+</p>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-widest">Jami sovrin jamg'armasi</p>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("total_prize_pool", "Jami sovrin jamg'armasi")}</p>
                 </div>
                 <div className="hidden sm:block w-32 h-32 opacity-10">
                    <Trophy size={128} />
-                </div>
+                 </div>
               </div>
             </motion.div>
           </div>
