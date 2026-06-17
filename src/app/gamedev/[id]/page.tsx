@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Rocket, Users, MapPin, Calendar, Gift, RefreshCw, ShieldAlert, Award } from "lucide-react";
-import { motion } from "framer-motion";
+import { Rocket, Users, MapPin, Calendar, Gift, RefreshCw, ShieldAlert, Award, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 import { useTranslation } from "@/lib/store";
@@ -50,6 +50,7 @@ export default function StudioDetailPage() {
   const [games, setGames] = useState<DevelopedGame[]>([]);
   const [pastProjects, setPastProjects] = useState<PastProject[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<PastProject | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -272,11 +273,12 @@ export default function StudioDetailPage() {
                   {pastProjects.map((project) => (
                     <div
                       key={project.id}
-                      className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-all duration-300"
+                      className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col justify-between hover:border-primary/50 hover:bg-white/[0.04] transition-all duration-300 cursor-pointer group"
+                      onClick={() => setSelectedProject(project)}
                     >
                       <div>
                         <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold text-base text-white">{project.title}</h4>
+                          <h4 className="font-bold text-base text-white group-hover:text-primary transition-colors">{project.title}</h4>
                           <span className="bg-white/5 border border-white/10 text-[9px] text-secondary font-bold px-2 py-0.5 rounded">
                             {project.platform}
                           </span>
@@ -285,8 +287,13 @@ export default function StudioDetailPage() {
                         <p className="text-xs text-secondary/80 line-clamp-3 leading-relaxed mb-4">{project.description}</p>
                       </div>
 
-                      <div className="pt-3 border-t border-white/5 text-[10px] text-secondary/70">
-                        {locale === "ru" ? "Дата выпуска" : locale === "en" ? "Release date" : "Chiqarilgan sana"}: {project.release_date || "Noma'lum"}
+                      <div className="pt-3 border-t border-white/5 flex justify-between items-center text-[10px] text-secondary/70">
+                        <span>
+                          {locale === "ru" ? "Дата выпуска" : locale === "en" ? "Release date" : "Chiqarilgan sana"}: {project.release_date || "Noma'lum"}
+                        </span>
+                        <span className="text-primary opacity-0 group-hover:opacity-100 transition-opacity font-bold uppercase tracking-wider flex items-center gap-1">
+                          {locale === "ru" ? "Подробнее" : locale === "en" ? "More" : "Batafsil"} &rarr;
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -345,6 +352,71 @@ export default function StudioDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Past Project Details Modal */}
+      <AnimatePresence>
+        {selectedProject && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setSelectedProject(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-card relative z-10 w-full max-w-lg p-6 md:p-8 overflow-hidden border border-white/10 shadow-2xl bg-[#121214]/95 text-white rounded-3xl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedProject(null)}
+                className="absolute top-4 right-4 text-secondary hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all"
+              >
+                <X size={18} />
+              </button>
+
+              {/* Title & Platforms */}
+              <div className="mb-6 pr-8">
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="bg-primary/20 text-primary border border-primary/30 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                    {selectedProject.platform}
+                  </span>
+                  {selectedProject.genre && (
+                    <span className="bg-white/5 border border-white/10 text-[9px] text-secondary font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                      {selectedProject.genre}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-2xl font-black tracking-tight">{selectedProject.title}</h3>
+              </div>
+
+              {/* Content Description */}
+              <div className="mb-8 space-y-4 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar text-sm leading-relaxed text-secondary/80 whitespace-pre-wrap">
+                {selectedProject.description || (locale === "ru" ? "Описание отсутствует" : locale === "en" ? "No description available" : "Tavsif mavjud emas")}
+              </div>
+
+              {/* Footer Info */}
+              <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 text-xs text-secondary/80">
+                <div>
+                  <span className="font-medium">
+                    {locale === "ru" ? "Дата выпуска" : locale === "en" ? "Release date" : "Chiqarilgan sana"}:
+                  </span>{" "}
+                  <span className="text-white font-bold">{selectedProject.release_date || "Noma'lum"}</span>
+                </div>
+                <button
+                  onClick={() => setSelectedProject(null)}
+                  className="py-2.5 px-6 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs transition-colors self-end sm:self-auto"
+                >
+                  {locale === "ru" ? "Закрыть" : locale === "en" ? "Close" : "Yopish"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
