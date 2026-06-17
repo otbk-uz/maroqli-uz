@@ -302,31 +302,6 @@ export default function GamedevPage() {
               exit={{ opacity: 0, y: -15 }}
               className="space-y-16"
             >
-              {/* Category Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="glass-card p-8 border-primary/20 hover:border-primary/40 transition-colors">
-                  <Code2 size={40} className="text-primary mb-6" />
-                  <h3 className="text-xl font-bold mb-2">Dasturlash</h3>
-                  <p className="text-sm text-secondary leading-relaxed">
-                    Unity, Unreal Engine va Godot bo'yicha mahalliy darsliklar va hamjamiyat hamkorligi.
-                  </p>
-                </div>
-                <div className="glass-card p-8 hover:border-blue-500/40 transition-colors">
-                  <Palette size={40} className="text-blue-500 mb-6" />
-                  <h3 className="text-xl font-bold mb-2">Dizayn & Art</h3>
-                  <p className="text-sm text-secondary leading-relaxed">
-                    3D modellashtirish, konsept art va o'yin interfeyslari dizayni bo'yicha maslahatlar.
-                  </p>
-                </div>
-                <div className="glass-card p-8 hover:border-green-500/40 transition-colors">
-                  <Box size={40} className="text-green-500 mb-6" />
-                  <h3 className="text-xl font-bold mb-2">Publishing</h3>
-                  <p className="text-sm text-secondary leading-relaxed">
-                    O'yinlarni global do'konlarga (Steam, Google Play) yuklash va daromad qilish sirlari.
-                  </p>
-                </div>
-              </div>
-
               {/* Local Studios Section */}
               <div>
                 <h2 className="text-2xl font-bold mb-8">Mahalliy Studiyalar</h2>
