@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import { Search, Filter, Calendar, Trophy, Users, Gamepad2, ArrowRight } from "lucide-react";
+import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/lib/store";
 
 interface Tournament {
   id: string;
@@ -20,6 +21,7 @@ interface Tournament {
 }
 
 const TournamentsPage = () => {
+  const { t, locale } = useTranslation();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
@@ -51,9 +53,9 @@ const TournamentsPage = () => {
         if (error) throw error;
         
         if (data) {
-          const formatted = data.map((t: any) => ({
-            ...t,
-            participant_count: t.tournament_participants?.[0]?.count || 0
+          const formatted = data.map((tItem: any) => ({
+            ...tItem,
+            participant_count: tItem.tournament_participants?.[0]?.count || 0
           }));
           setTournaments(formatted);
         }
@@ -99,15 +101,29 @@ const TournamentsPage = () => {
               className="flex items-center space-x-2 text-primary font-bold text-xs uppercase tracking-widest mb-4"
             >
               <Trophy size={14} />
-              <span>Raqobat boshlanmoqda</span>
+              <span>{t("tournaments_subtitle", "Raqobat boshlanmoqda")}</span>
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter"
             >
-              Professional <br />
-              <span className="text-primary">Turnirlar</span>
+              {locale === "ru" ? (
+                <>
+                  Профессиональные <br />
+                  <span className="text-primary">Турниры</span>
+                </>
+              ) : locale === "en" ? (
+                <>
+                  Professional <br />
+                  <span className="text-primary">Tournaments</span>
+                </>
+              ) : (
+                <>
+                  Professional <br />
+                  <span className="text-primary">Turnirlar</span>
+                </>
+              )}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -115,8 +131,7 @@ const TournamentsPage = () => {
               transition={{ delay: 0.1 }}
               className="text-secondary text-lg md:text-xl leading-relaxed"
             >
-              O'z mahoratingizni ko'rsating, kuchli jamoalar bilan bellashing va 
-              O'zbekistonning eng yirik mukofot jamg'armalariga ega bo'ling.
+              {t("tournaments_desc", "O'z mahoratingizni ko'rsating, kuchli jamoalar bilan bellashing va O'zbekistonning eng yirik mukofot jamg'armalariga ega bo'ling.")}
             </motion.p>
           </div>
 
@@ -132,7 +147,7 @@ const TournamentsPage = () => {
                     : "text-secondary hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {statusOption === "ALL" ? "Barchasi" : statusOption}
+                  {statusOption === "ALL" ? t("all", "Barchasi") : statusOption}
                 </button>
               ))}
             </div>
@@ -144,7 +159,7 @@ const TournamentsPage = () => {
                   type="text" 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Turnir qidirish..." 
+                  placeholder={t("search_tournament", "Turnir qidirish...")}
                   className="bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 outline-none focus:border-primary/50 transition-all w-full text-sm font-medium text-white"
                 />
               </div>
@@ -164,37 +179,37 @@ const TournamentsPage = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <AnimatePresence mode="popLayout">
-                  {tournaments.map((t, i) => (
+                  {tournaments.map((tItem, i) => (
                     <motion.div
                       layout
                       initial={{ opacity: 0, scale: 0.9 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.9 }}
                       transition={{ duration: 0.4, delay: i * 0.05 }}
-                      key={t.id}
+                      key={tItem.id}
                       className="glass-card overflow-hidden group hover:border-primary/40 transition-all duration-500 flex flex-col h-full"
                     >
                       {/* Card Header with Image */}
                       <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
                         <img 
-                          src={getGameImage(t.game)} 
-                          alt={t.title}
+                          src={getGameImage(tItem.game)} 
+                          alt={tItem.title}
                           className="w-full h-full object-cover opacity-50 group-hover:scale-110 group-hover:opacity-70 transition-all duration-700"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#050506] via-[#050506]/20 to-transparent" />
                         
                         <div className="absolute top-4 left-4 flex gap-2">
                           <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl ${
-                            t.status === 'LIVE' || t.status === 'ONGOING' ? 'bg-primary' : t.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
+                            tItem.status === 'LIVE' || tItem.status === 'ONGOING' ? 'bg-primary' : tItem.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
                           }`}>
-                            {t.status}
+                            {tItem.status}
                           </span>
                           <span className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                            {t.game}
+                            {tItem.game}
                           </span>
                         </div>
 
-                        {t.status === 'LIVE' && (
+                        {tItem.status === 'LIVE' && (
                           <div className="absolute bottom-4 right-4 flex items-center space-x-2 bg-primary/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-primary/30">
                             <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                             <span className="text-[10px] font-black text-white uppercase tracking-widest">LIVE NOW</span>
@@ -205,54 +220,57 @@ const TournamentsPage = () => {
                       {/* Card Body */}
                       <div className="p-8 flex-1 flex flex-col">
                         <h3 className="text-2xl font-black text-white mb-6 group-hover:text-primary transition-colors line-clamp-2 min-h-[4rem]">
-                          {t.title}
+                          {tItem.title}
                         </h3>
                         
                         <div className="grid grid-cols-2 gap-4 mb-8">
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                             <div className="flex items-center space-x-2 text-secondary mb-1">
                               <Trophy size={14} className="text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Sovrin</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">{t("prize_label", "Sovrin")}</span>
                             </div>
                             <p className="text-xl font-black text-white">
-                              {t.prize_pool}
+                              {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : t("free", "Bepul")}
                             </p>
                           </div>
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
                             <div className="flex items-center space-x-2 text-secondary mb-1">
                               <Users size={14} className="text-primary" />
-                              <span className="text-[10px] font-black uppercase tracking-widest">Jamoalar</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest">{t("teams_label", "Jamoalar")}</span>
                             </div>
-                            <p className="text-xl font-black text-white">{t.participant_count || 0}/{t.max_teams}</p>
+                            <p className="text-xl font-black text-white">{tItem.participant_count || 0}/{tItem.max_teams}</p>
                           </div>
                         </div>
 
                         <div className="flex items-center space-x-3 text-secondary text-xs font-bold mb-8 bg-white/5 p-3 rounded-xl border border-white/5">
                           <Calendar size={14} className="text-primary" />
                           <span className="uppercase tracking-widest">
-                            {new Date(t.start_date).toLocaleDateString("uz-UZ", {
-                              day: "numeric",
-                              month: "long",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
+                            {new Date(tItem.start_date).toLocaleDateString(
+                              locale === "ru" ? "ru-RU" : locale === "en" ? "en-US" : "uz-UZ",
+                              {
+                                day: "numeric",
+                                month: "long",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }
+                            )}
                           </span>
                         </div>
 
                         <div className="mt-auto">
                           <Link 
-                            href={`/tournaments/${t.id}`}
+                            href={`/tournaments/${tItem.id}`}
                             className="w-full py-4 bg-white/5 hover:bg-primary text-white font-black rounded-2xl transition-all duration-300 border border-white/10 hover:border-primary active:scale-95 flex items-center justify-center space-x-2"
                           >
-                            {t.status === 'FINISHED' ? (
+                            {tItem.status === 'FINISHED' ? (
                               <>
-                                <span>Natijalarni ko'rish</span>
+                                <span>{t("view_results", "Natijalarni ko'rish")}</span>
                                 <ArrowRight size={18} />
                               </>
                             ) : (
                               <>
                                 <Gamepad2 size={18} />
-                                <span>Batafsil ma'lumot</span>
+                                <span>{t("more_details", "Batafsil ma'lumot")}</span>
                               </>
                             )}
                           </Link>
@@ -268,8 +286,8 @@ const TournamentsPage = () => {
                   <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
                     <Search size={32} className="text-secondary" />
                   </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">Turnirlar topilmadi</h3>
-                  <p className="text-secondary">Qidiruv so'rovini yoki filtrlarni o'zgartirib ko'ring</p>
+                  <h3 className="text-2xl font-bold text-white mb-2">{t("no_tournaments_found", "Turnirlar topilmadi")}</h3>
+                  <p className="text-secondary">{t("try_changing_filters", "Qidiruv so'rovini yoki filtrlarni o'zgartirib ko'ring")}</p>
                 </div>
               )}
             </>

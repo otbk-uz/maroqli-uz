@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Calendar, User, Newspaper } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useTranslation } from "@/lib/store";
 
 interface NewsItem {
   id: string;
@@ -20,6 +21,7 @@ interface NewsItem {
 }
 
 export default function NewsPage() {
+  const { t, locale } = useTranslation();
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -65,7 +67,19 @@ export default function NewsPage() {
               animate={{ opacity: 1, y: 0 }}
               className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter"
             >
-              So'nggi <span className="text-primary">Yangiliklar</span>
+              {locale === "ru" ? (
+                <>
+                  Последние <span className="text-primary">Новости</span>
+                </>
+              ) : locale === "en" ? (
+                <>
+                  Latest <span className="text-primary">News</span>
+                </>
+              ) : (
+                <>
+                  So'nggi <span className="text-primary">Yangiliklar</span>
+                </>
+              )}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -73,7 +87,7 @@ export default function NewsPage() {
               transition={{ delay: 0.1 }}
               className="text-secondary text-lg md:text-xl leading-relaxed"
             >
-              Platformamizdagi barcha o'zgarishlar, yangi turnirlar, o'yinlar va e-sport olamidagi muhim voqealar.
+              {t("news_subtitle", "So'nggi yangiliklar, e'lonlar va maqolalar")}
             </motion.p>
           </div>
         </div>
@@ -91,15 +105,15 @@ export default function NewsPage() {
               <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
                 <Newspaper size={32} className="text-secondary" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Hozircha yangiliklar yo'q</h3>
-              <p className="text-secondary">Tez orada yangi xabarlar chop etiladi.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">{t("no_news", "Yangiliklar mavjud emas.")}</h3>
+              <p className="text-secondary">{locale === "ru" ? "Новые сообщения будут опубликованы в ближайшее время." : locale === "en" ? "New messages will be published shortly." : "Tez orada yangi xabarlar chop etiladi."}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               <AnimatePresence>
-                {newsList.map((news, i) => (
+                {newsList.map((newsItem, i) => (
                   <motion.div
-                    key={news.id}
+                    key={newsItem.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
@@ -108,8 +122,8 @@ export default function NewsPage() {
                     {/* Image */}
                     <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
                       <img 
-                        src={news.image_url || "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=1200"} 
-                        alt={news.title}
+                        src={newsItem.image_url || "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=1200"} 
+                        alt={newsItem.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                     </div>
@@ -119,28 +133,32 @@ export default function NewsPage() {
                       <div className="flex items-center space-x-4 mb-4 text-xs font-bold text-secondary uppercase tracking-widest">
                         <div className="flex items-center space-x-1">
                           <Calendar size={14} className="text-primary" />
-                          <span>{new Date(news.created_at).toLocaleDateString('uz-UZ')}</span>
+                          <span>
+                            {new Date(newsItem.created_at).toLocaleDateString(
+                              locale === "ru" ? "ru-RU" : locale === "en" ? "en-US" : "uz-UZ"
+                            )}
+                          </span>
                         </div>
                         <div className="flex items-center space-x-1">
                           <User size={14} className="text-primary" />
-                          <span>{news.profiles?.username || "Admin"}</span>
+                          <span>{newsItem.profiles?.username || "Admin"}</span>
                         </div>
                       </div>
 
                       <h3 className="text-2xl font-black text-white mb-4 leading-tight group-hover:text-primary transition-colors">
-                        {news.title}
+                        {newsItem.title}
                       </h3>
                       
                       <p className="text-secondary text-sm leading-relaxed mb-6 whitespace-pre-line flex-1 line-clamp-4">
-                        {news.content}
+                        {newsItem.content}
                       </p>
 
                       <div className="mt-auto pt-6 border-t border-white/5">
                         <Link 
-                          href={`/news/${news.id}`}
+                          href={`/news/${newsItem.id}`}
                           className="text-primary font-bold text-sm hover:underline flex items-center space-x-1"
                         >
-                          <span>Batafsil o'qish</span>
+                          <span>{t("read_more", "Batafsil o'qish")}</span>
                         </Link>
                       </div>
                     </div>

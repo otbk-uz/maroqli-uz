@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers, MapPin, Users, Calendar, Gift, FileText, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 
@@ -44,6 +44,7 @@ interface StudioProfile {
 export default function GamedevPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"community" | "dashboard">("community");
   const [dashboardSubTab, setDashboardSubTab] = useState<"games" | "profile" | "past_projects">("games");
   
@@ -349,9 +350,9 @@ export default function GamedevPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 relative">
           <div className="absolute top-0 left-0 w-[200px] h-[200px] bg-primary/10 blur-[80px] rounded-full -z-10" />
           <div>
-            <h1 className="text-4xl md:text-5xl font-black mb-3">GameDev & Studios Hub</h1>
+            <h1 className="text-4xl md:text-5xl font-black mb-3">{t("gamedev_title", "GameDev & Studios Hub")}</h1>
             <p className="text-secondary text-base md:text-lg">
-              O'zbekistondagi o'yin yaratuvchilar jamoasi va indie studiyalar portali.
+              {t("gamedev_subtitle", "O'zbekistondagi o'yin yaratuvchilar jamoasi va indie studiyalar portali.")}
             </p>
           </div>
 
@@ -364,7 +365,7 @@ export default function GamedevPage() {
                   activeTab === "community" ? "bg-white/10 text-white" : "text-secondary hover:text-white"
                 }`}
               >
-                Hamjamiyat
+                {t("community_tab", "Hamjamiyat")}
               </button>
               <button
                 onClick={() => setActiveTab("dashboard")}
@@ -389,16 +390,16 @@ export default function GamedevPage() {
             >
               {/* Local Studios Section */}
               <div>
-                <h2 className="text-2xl font-bold mb-8">Mahalliy Studiyalar</h2>
+                <h2 className="text-2xl font-bold mb-8">{t("local_studios", "Mahalliy Studiyalar")}</h2>
                 
                 {studiosLoading ? (
                   <div className="flex justify-center items-center py-12">
                     <RefreshCw className="animate-spin text-primary mr-3" size={24} />
-                    <span className="text-secondary font-medium">Studiyalar yuklanmoqda...</span>
+                    <span className="text-secondary font-medium">{t("loading", "Studiyalar yuklanmoqda...")}</span>
                   </div>
                 ) : registeredStudios.length === 0 ? (
                   <div className="glass-card p-12 text-center border border-dashed border-white/10">
-                    <p className="text-secondary mb-4">Hozircha ro'yxatdan o'tgan studiyalar mavjud emas.</p>
+                    <p className="text-secondary mb-4">{t("no_studios", "Hozircha ro'yxatdan o'tgan studiyalar mavjud emas.")}</p>
                     {isDeveloper && (
                       <button
                         onClick={() => {
@@ -407,7 +408,7 @@ export default function GamedevPage() {
                         }}
                         className="py-2.5 px-6 bg-primary hover:bg-primary/80 rounded-xl text-sm transition-all font-bold"
                       >
-                        O'z studiyangizni birinchilardan bo'lib ro'yxatdan o'tkazing
+                        {t("first_register", "O'z studiyangizni birinchilardan bo'lib ro'yxatdan o'tkazing")}
                       </button>
                     )}
                   </div>
@@ -429,14 +430,14 @@ export default function GamedevPage() {
                           {s.team_members && (
                             <div className="flex items-center gap-2 text-xs text-secondary mb-3">
                               <Users size={14} className="text-primary" />
-                              <span className="line-clamp-1">Jamoa: {s.team_members}</span>
+                              <span className="line-clamp-1">{t("team_members", "Jamoa")}: {s.team_members}</span>
                             </div>
                           )}
                           
                           {s.release_date && (
                             <div className="flex items-center gap-2 text-xs text-secondary mb-4">
                               <Calendar size={14} className="text-blue-400" />
-                              <span>Kutilayotgan reliz: {s.release_date}</span>
+                              <span>{t("expected_release", "Kutilayotgan reliz")}: {s.release_date}</span>
                             </div>
                           )}
 
@@ -461,7 +462,7 @@ export default function GamedevPage() {
                             className="flex-1 py-2.5 px-4 bg-primary/10 hover:bg-primary text-primary hover:text-white border border-primary/20 hover:border-primary rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 group-hover:scale-[1.01]"
                           >
                             <Rocket size={14} />
-                            <span>Batafsil Sahifa</span>
+                            <span>{t("details_page", "Batafsil Sahifa")}</span>
                           </button>
                           
                           {s.donation_url && (
@@ -470,7 +471,7 @@ export default function GamedevPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               className="p-2.5 bg-amber-500/10 hover:bg-amber-500 border border-amber-500/20 hover:border-amber-500 text-amber-500 hover:text-black rounded-xl transition-all"
-                              title="Donat qilish"
+                              title={t("donate", "Donat qilish")}
                             >
                               <Gift size={14} />
                             </a>
@@ -485,9 +486,9 @@ export default function GamedevPage() {
               {/* How to join banner */}
               <div className="rounded-3xl bg-gradient-to-r from-primary/10 via-pink-500/5 to-transparent border border-primary/20 p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">Siz ham o'yin yaratuvchimisiz?</h3>
+                  <h3 className="text-2xl font-bold mb-2">{t("gamedev_banner_title", "Siz ham o'yin yaratuvchimisiz?")}</h3>
                   <p className="text-sm text-secondary max-w-2xl">
-                    O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang. Platformamizda GameDev bo'lish uchun ro'yxatdan o'tish vaqtida shu rolni tanlashingiz yoki ma'muriyat (Admin) bilan bog'lanishingiz kerak.
+                    {t("gamedev_banner_desc", "O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang.")}
                   </p>
                 </div>
               </div>

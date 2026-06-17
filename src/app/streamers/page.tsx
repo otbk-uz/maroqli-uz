@@ -7,7 +7,7 @@ import { Play, Users, ExternalLink, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 import { BackButton } from "../../components/ui/BackButton";
 import { supabase } from "@/lib/supabase";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 
 interface Streamer {
   id: string;
@@ -30,6 +30,7 @@ interface Streamer {
 const StreamersPage = () => {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
+  const { t } = useTranslation();
   
   const [streamers, setStreamers] = useState<Streamer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -145,19 +146,19 @@ const StreamersPage = () => {
         <BackButton />
         <div className="flex items-center justify-between mb-12">
           <div>
-            <h1 className="text-4xl font-black mb-2">Streamerlar</h1>
-            <p className="text-secondary">Jonli efirlarni tomosha qiling va sevimli streamerlaringizni qo'llab-quvvatlang</p>
+            <h1 className="text-4xl font-black mb-2">{t("streamers_title", "Streamerlar")}</h1>
+            <p className="text-secondary">{t("streamers_desc", "Jonli efirlarni tomosha qiling va sevimli streamerlaringizni qo'llab-quvvatlang")}</p>
           </div>
           <div className="flex items-center space-x-2 bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl">
             <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-            <span className="text-sm font-bold text-primary">{liveCount} ta jonli efir</span>
+            <span className="text-sm font-bold text-primary">{liveCount} {t("live_count_label", "ta jonli efir")}</span>
           </div>
         </div>
 
         {streamers.length === 0 ? (
           <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5">
              <Play size={48} className="text-secondary mx-auto mb-4 opacity-50" />
-             <p className="text-secondary text-lg">Hozircha streamerlar yo'q.</p>
+             <p className="text-secondary text-lg">{t("no_streamers", "Hozircha streamerlar yo'q.")}</p>
           </div>
         ) : (
           <>
@@ -177,13 +178,13 @@ const StreamersPage = () => {
                     </div>
                     {featuredStreamer.is_live && (
                       <div className="absolute top-6 left-6 z-10">
-                        <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20">EFIRDA</span>
+                        <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20">{t("live_badge", "EFIRDA")}</span>
                       </div>
                     )}
                     <div className="absolute bottom-6 left-6 z-10 flex items-center space-x-4">
                       <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold flex items-center">
                         <Users size={14} className="mr-2" />
-                        {featuredStreamer.viewers_count} tomoshabin
+                        {featuredStreamer.viewers_count} {t("viewers_count_label", "tomoshabin")}
                       </div>
                     </div>
                   </div>
@@ -204,7 +205,7 @@ const StreamersPage = () => {
                       </div>
                       <h2 className="text-2xl font-black mb-4 leading-tight">{featuredStreamer.title}</h2>
                       <div className="flex items-center space-x-4 text-sm text-secondary mb-8 font-bold">
-                        <span>{featuredStreamer.followers_count} kuzatuvchi</span>
+                        <span>{featuredStreamer.followers_count} {t("followers_count_label", "kuzatuvchi")}</span>
                         <span>•</span>
                         <span className="uppercase">{featuredStreamer.platform}</span>
                       </div>
@@ -215,7 +216,7 @@ const StreamersPage = () => {
                         className="btn-primary flex-1 py-4 flex items-center justify-center space-x-2"
                       >
                         <Play size={18} fill="white" />
-                        <span>Tomosha qilish</span>
+                        <span>{t("watch", "Tomosha qilish")}</span>
                       </button>
                       <button 
                         onClick={() => handleFollow(featuredStreamer.id, !!featuredStreamer.is_following)}
@@ -249,7 +250,7 @@ const StreamersPage = () => {
                     </div>
                     {s.is_live && (
                       <div className="absolute top-4 left-4 z-20">
-                        <span className="bg-primary px-3 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-lg shadow-primary/20">EFIRDA</span>
+                        <span className="bg-primary px-3 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-lg shadow-primary/20">{t("live_badge", "EFIRDA")}</span>
                       </div>
                     )}
                     <div className="absolute bottom-4 right-4 z-20">
@@ -271,7 +272,7 @@ const StreamersPage = () => {
                         </div>
                         <div className="flex flex-col">
                           <span className="font-bold text-sm leading-none mb-0.5">{s.profile?.username || 'Streamer'}</span>
-                          <span className="text-[9px] text-secondary font-bold">{s.followers_count} kuzatuvchi</span>
+                          <span className="text-[9px] text-secondary font-bold">{s.followers_count} {t("followers_count_label", "kuzatuvchi")}</span>
                         </div>
                       </div>
                       <span className="text-[10px] font-bold text-secondary uppercase tracking-widest">{s.game}</span>
@@ -288,7 +289,7 @@ const StreamersPage = () => {
                         }`}
                       >
                         <Heart size={14} className={s.is_following ? "fill-primary" : ""} />
-                        <span>{s.is_following ? 'Kuzatilmoqda' : 'Kuzatish'}</span>
+                        <span>{s.is_following ? t("following", "Kuzatilmoqda") : t("follow", "Kuzatish")}</span>
                       </button>
                       <button 
                         onClick={() => window.open(s.stream_url, '_blank')}

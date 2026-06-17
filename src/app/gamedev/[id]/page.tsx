@@ -7,6 +7,7 @@ import { Rocket, Users, MapPin, Calendar, Gift, RefreshCw, ShieldAlert, Award } 
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
+import { useTranslation } from "@/lib/store";
 
 interface DevelopedGame {
   id: string;
@@ -43,6 +44,7 @@ export default function StudioDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
+  const { t, locale } = useTranslation();
 
   const [studio, setStudio] = useState<StudioProfile | null>(null);
   const [games, setGames] = useState<DevelopedGame[]>([]);
@@ -111,7 +113,7 @@ export default function StudioDetailPage() {
       <main className="min-h-screen bg-background relative flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="animate-spin text-primary" size={32} />
-          <span className="text-secondary font-medium">Studiya ma'lumotlari yuklanmoqda...</span>
+          <span className="text-secondary font-medium">{t("loading_studio", "Studiya ma'lumotlari yuklanmoqda...")}</span>
         </div>
       </main>
     );
@@ -123,15 +125,15 @@ export default function StudioDetailPage() {
         <Navbar />
         <div className="text-center space-y-4 max-w-md px-6">
           <ShieldAlert size={48} className="text-primary mx-auto" />
-          <h2 className="text-2xl font-bold">Studiya topilmadi</h2>
+          <h2 className="text-2xl font-bold">{t("studio_not_found", "Studiya topilmadi")}</h2>
           <p className="text-secondary text-sm">
-            Qidirilayotgan o'yin yaratuvchisi yoki studiya profili mavjud emas yoki o'chirilgan.
+            {t("studio_not_found_desc", "Qidirilayotgan o'yin yaratuvchisi yoki studiya profili mavjud emas yoki o'chirilgan.")}
           </p>
           <button
             onClick={() => router.push("/gamedev")}
             className="py-3 px-6 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl text-sm transition-all"
           >
-            Gamedev sahifasiga qaytish
+            {t("back_to_gamedev", "Gamedev sahifasiga qaytish")}
           </button>
         </div>
       </main>
@@ -168,7 +170,7 @@ export default function StudioDetailPage() {
                 {studio.release_date && (
                   <span className="flex items-center gap-1.5">
                     <Calendar size={14} className="text-blue-400" />
-                    Loyihalar relizi: {studio.release_date}
+                    {t("project_release", "Loyihalar relizi")}: {studio.release_date}
                   </span>
                 )}
               </div>
@@ -182,7 +184,7 @@ export default function StudioDetailPage() {
                 className="w-full md:w-auto py-4 px-8 bg-gradient-to-r from-amber-400 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-black font-black rounded-2xl transition-all shadow-lg shadow-amber-500/10 hover:shadow-amber-500/25 flex items-center justify-center gap-2 hover:scale-[1.02] duration-300"
               >
                 <Gift size={18} />
-                <span>Donat Orqali Qo'llash</span>
+                <span>{t("donate_support", "Donat Orqali Qo'llash")}</span>
               </a>
             )}
           </div>
@@ -194,7 +196,7 @@ export default function StudioDetailPage() {
             {/* Demo Media Section */}
             {studio.demo_url && (
               <div className="glass-card p-6 border border-white/5 space-y-4">
-                <h3 className="text-xl font-bold">O'yin Loyihasi Demontratsiyasi</h3>
+                <h3 className="text-xl font-bold">{t("demo_display", "O'yin Loyihasi Demontratsiyasi")}</h3>
                 
                 <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black/60 border border-white/5 relative">
                   {studio.demo_type === "video" ? (
@@ -218,11 +220,11 @@ export default function StudioDetailPage() {
 
             {/* Studio Games List */}
             <div className="glass-card p-6 border border-white/5">
-              <h3 className="text-xl font-bold mb-6">Chiqargan / Ishlayotgan O'yinlari</h3>
+              <h3 className="text-xl font-bold mb-6">{t("studio_games", "Chiqargan / Ishlayotgan O'yinlari")}</h3>
 
               {games.length === 0 ? (
                 <div className="text-center py-10 bg-white/[0.01] rounded-2xl border border-dashed border-white/10 text-secondary text-sm">
-                  Ushbu studiya hozircha o'yin yuklamagan.
+                  {t("no_games_studio", "Ushbu studiya hozircha o'yin yuklamagan.")}
                 </div>
               ) : (
                 <div className="space-y-6">
@@ -242,9 +244,9 @@ export default function StudioDetailPage() {
                       </div>
 
                       <div className="text-right whitespace-nowrap min-w-[120px]">
-                        <span className="text-[10px] text-secondary uppercase font-semibold block">Narxi</span>
+                        <span className="text-[10px] text-secondary uppercase font-semibold block">{t("prize_label", "Narxi")}</span>
                         <span className="text-sm font-extrabold text-white block">
-                          {game.price === 0 ? "Bepul" : `${game.price.toLocaleString()} UZS`}
+                          {Number(game.price) === 0 ? t("free", "Bepul") : `${Number(game.price).toLocaleString()} UZS`}
                         </span>
                         <span className="text-xs font-bold text-amber-400 block mt-1">⭐ {game.rating || "5.0"}</span>
                       </div>
@@ -258,12 +260,12 @@ export default function StudioDetailPage() {
             <div className="glass-card p-6 border border-white/5">
               <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
                 <Award className="text-primary" size={22} />
-                <span>Avvalgi Loyihalar (GameDev Tajribasi)</span>
+                <span>{t("past_projects_title", "Avvalgi Loyihalar (GameDev Tajribasi)")}</span>
               </h3>
 
               {pastProjects.length === 0 ? (
                 <div className="text-center py-10 bg-white/[0.01] rounded-2xl border border-dashed border-white/10 text-secondary text-sm">
-                  Studiya tomonidan avvalgi loyihalar haqida ma'lumot kiritilmagan.
+                  {t("no_past_projects_studio", "Studiya tomonidan avvalgi loyihalar haqida ma'lumot kiritilmagan.")}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -284,7 +286,7 @@ export default function StudioDetailPage() {
                       </div>
 
                       <div className="pt-3 border-t border-white/5 text-[10px] text-secondary/70">
-                        Chiqarilgan sana: {project.release_date || "Noma'lum"}
+                        {locale === "ru" ? "Дата выпуска" : locale === "en" ? "Release date" : "Chiqarilgan sana"}: {project.release_date || "Noma'lum"}
                       </div>
                     </div>
                   ))}
@@ -297,7 +299,7 @@ export default function StudioDetailPage() {
           <div className="space-y-6">
             {/* Team details card */}
             <div className="glass-card p-6 border border-white/5 space-y-4">
-              <h3 className="text-base font-bold uppercase tracking-wider text-secondary">Jamoa A'zolari</h3>
+              <h3 className="text-base font-bold uppercase tracking-wider text-secondary">{t("team_members_label", "Jamoa A'zolari")}</h3>
               <div className="h-px bg-white/5" />
               
               {studio.team_members ? (
@@ -312,30 +314,30 @@ export default function StudioDetailPage() {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-secondary italic">A'zolar ro'yxati kiritilmagan.</p>
+                <p className="text-xs text-secondary italic">{t("no_members_studio", "A'zolar ro'yxati kiritilmagan.")}</p>
               )}
             </div>
 
             {/* Studio info details */}
             <div className="glass-card p-6 border border-white/5 space-y-4">
-              <h3 className="text-base font-bold uppercase tracking-wider text-secondary">Tafsilotlar</h3>
+              <h3 className="text-base font-bold uppercase tracking-wider text-secondary">{t("details_label", "Tafsilotlar")}</h3>
               <div className="h-px bg-white/5" />
               
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between">
-                  <span className="text-secondary font-medium">Joylashuv:</span>
+                  <span className="text-secondary font-medium">{t("location_label", "Joylashuv")}:</span>
                   <span className="text-white font-bold">{studio.location || "Noma'lum"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-secondary font-medium">Loyiha reliz sanasi:</span>
+                  <span className="text-secondary font-medium">{t("expected_release", "Kutilayotgan reliz")}:</span>
                   <span className="text-white font-bold">{studio.release_date || "Noma'lum"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-secondary font-medium">Loyihalar soni:</span>
+                  <span className="text-secondary font-medium">{t("games_count_label", "Loyihalar soni")}:</span>
                   <span className="text-white font-bold">{games.length} ta o'yin</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-secondary font-medium">Avvalgi loyihalar (tajriba):</span>
+                  <span className="text-secondary font-medium">{t("past_games_count_label", "Avvalgi loyihalar (tajriba)")}:</span>
                   <span className="text-white font-bold">{pastProjects.length} ta o'yin</span>
                 </div>
               </div>

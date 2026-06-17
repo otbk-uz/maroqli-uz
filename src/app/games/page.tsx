@@ -3,11 +3,11 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { Gamepad2, Users, Star, Search, Filter, Monitor, Smartphone, ShoppingCart } from "lucide-react";
+import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import api from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
+import { useTranslation } from "@/lib/store";
 
 interface StoreGame {
   id: number;
@@ -26,6 +26,7 @@ interface StoreGame {
 }
 
 const GamesPage = () => {
+  const { t } = useTranslation();
   const [games, setGames] = useState<StoreGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
@@ -61,14 +62,14 @@ const GamesPage = () => {
 
         if (data) {
           const mappedGames = data.map((g: any) => ({
-            id: g.id, // Supabase id is string/UUID, but we can treat as any
+            id: g.id,
             title: g.title,
             slug: g.slug,
             developer_details: {
               username: g.profiles?.username || 'developer',
               full_name: g.profiles?.full_name || 'Game Developer',
             },
-            cover: null, // Default
+            cover: null,
             price: g.price?.toString() || '0',
             platform: g.platform,
             rating: g.rating || 5.0,
@@ -108,14 +109,14 @@ const GamesPage = () => {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">O'yinlar do'koni</h1>
-            <p className="text-secondary text-sm mt-2">Mahalliy va xalqaro o'yinlarni sotib oling</p>
+            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">{t("games_title", "O'yinlar do'koni")}</h1>
+            <p className="text-secondary text-sm mt-2">{t("games_desc", "Mahalliy va xalqaro o'yinlarni sotib oling")}</p>
           </div>
 
           <div className="relative w-full md:w-80">
             <input
               type="text"
-              placeholder="O'yin nomini yozing..."
+              placeholder={t("search_game", "O'yin nomini yozing...")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors"
@@ -127,9 +128,9 @@ const GamesPage = () => {
         <div className="flex flex-wrap lg:items-center justify-between gap-6 bg-white/5 border border-white/5 p-4 rounded-3xl mb-12">
           <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar">
             {[
-              { value: "ALL", label: "Barcha platformalar" },
-              { value: "PC", label: "PC o'yinlar" },
-              { value: "MOBILE", label: "Mobil o'yinlar" },
+              { value: "ALL", label: t("all_platforms", "Barcha platformalar") },
+              { value: "PC", label: t("pc_games", "PC o'yinlar") },
+              { value: "MOBILE", label: t("mobile_games", "Mobil o'yinlar") },
             ].map((p) => (
               <button
                 key={p.value}
@@ -155,7 +156,7 @@ const GamesPage = () => {
         ) : games.length === 0 ? (
           <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/5">
             <Gamepad2 size={48} className="text-secondary mx-auto mb-4 opacity-50" />
-            <p className="text-secondary text-sm">Do'konda hech qanday o'yin topilmadi.</p>
+            <p className="text-secondary text-sm">{t("no_games_found", "Do'konda hech qanday o'yin topilmadi.")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -207,9 +208,9 @@ const GamesPage = () => {
 
                     <div className="border-t border-white/5 pt-6 flex items-center justify-between">
                       <div>
-                        <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-1">Narxi</p>
+                        <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-1">{t("prize_label", "Narxi")}</p>
                         <p className="text-lg font-black text-white">
-                          {Number(g.price) > 0 ? `${Number(g.price).toLocaleString()} UZS` : "BEPUL"}
+                          {Number(g.price) > 0 ? `${Number(g.price).toLocaleString()} UZS` : t("free", "BEPUL")}
                         </p>
                       </div>
 
@@ -218,7 +219,7 @@ const GamesPage = () => {
                         className="px-5 py-3 bg-white/5 hover:bg-primary text-white border border-white/10 hover:border-primary rounded-xl font-bold text-xs transition-colors flex items-center gap-2 active:scale-95"
                       >
                         <ShoppingCart size={14} />
-                        <span>Sotib olish</span>
+                        <span>{t("buy_game", "Sotib olish")}</span>
                       </Link>
                     </div>
                   </div>

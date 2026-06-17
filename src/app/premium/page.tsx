@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Check, X, Shield, Zap, Award, Star, Loader2, Sparkles } from "lucide-react";
+import { Check, X, Award, Star, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import api from "@/lib/api";
 
 interface SubscriptionDetails {
@@ -15,55 +15,56 @@ interface SubscriptionDetails {
   expires_at: string | null;
 }
 
-const PLANS = [
-  {
-    key: "monthly",
-    name: "1 Oylik Premium",
-    price: "29 000 UZS",
-    period: "oylik",
-    desc: "Gaming dunyosiga ilk qadam va platforma yordami.",
-    popular: false,
-    color: "from-blue-500 to-indigo-600",
-  },
-  {
-    key: "quarterly",
-    name: "3 Oylik Premium",
-    price: "79 000 UZS",
-    period: "3 oylik",
-    desc: "Eng ommabop va foydali variant. Cheklovsiz turnirlar va bonuslar.",
-    popular: true,
-    color: "from-primary to-pink-600",
-  },
-  {
-    key: "yearly",
-    name: "1 Yillik Premium",
-    price: "149 000 UZS",
-    oldPrice: "348 000 UZS",
-    period: "yillik",
-    desc: "Haqiqiy professional geymerlar va kollektorlar uchun yillik to'liq paket.",
-    popular: false,
-    color: "from-amber-400 to-orange-600",
-  },
-];
-
-const FEATURES = [
-  { name: "Asosiy turnirlarga kirish", free: true, premium: true },
-  { name: "Maxsus premium-only turnirlar", free: false, premium: true },
-  { name: "Profil uchun oltin 'PRO' nishoni", free: false, premium: true },
-  { name: "O'yinlar do'konidagi chegirmalar (CD-keys)", free: false, premium: true },
-  { name: "2x daraja (XP) va ELO ko'paytirgichi", free: false, premium: true },
-  { name: "E'lonlar (reklama)siz platforma interfeysi", free: false, premium: true },
-  { name: "Texnik ko'makda birinchi navbat", free: false, premium: true },
-];
-
 export default function PremiumPage() {
   const router = useRouter();
   const { isAuthenticated, user, setAuth } = useAuthStore();
+  const { t, locale } = useTranslation();
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+
+  const PLANS = [
+    {
+      key: "monthly",
+      name: t("monthly_plan", "1 Oylik Premium"),
+      price: "29 000 UZS",
+      period: locale === "ru" ? "месяц" : locale === "en" ? "month" : "oy",
+      desc: t("monthly_desc", "Gaming dunyosiga ilk qadam va platforma yordami."),
+      popular: false,
+      color: "from-blue-500 to-indigo-600",
+    },
+    {
+      key: "quarterly",
+      name: t("quarterly_plan", "3 Oylik Premium"),
+      price: "79 000 UZS",
+      period: locale === "ru" ? "3 месяца" : locale === "en" ? "3 months" : "3 oy",
+      desc: t("quarterly_desc", "Eng ommabop va foydali variant. Cheklovsiz turnirlar va bonuslar."),
+      popular: true,
+      color: "from-primary to-pink-600",
+    },
+    {
+      key: "yearly",
+      name: t("yearly_plan", "1 Yillik Premium"),
+      price: "149 000 UZS",
+      oldPrice: "348 000 UZS",
+      period: locale === "ru" ? "год" : locale === "en" ? "year" : "yil",
+      desc: t("yearly_desc", "Haqiqiy professional geymerlar va kollektorlar uchun yillik to'liq paket."),
+      popular: false,
+      color: "from-amber-400 to-orange-600",
+    },
+  ];
+
+  const FEATURES = [
+    { name: t("feat_1", "Asosiy turnirlarga kirish"), free: true, premium: true },
+    { name: t("feat_2", "Maxsus premium-only turnirlar"), free: false, premium: true },
+    { name: t("feat_3", "Profil uchun oltin 'PRO' nishoni"), free: false, premium: true },
+    { name: t("feat_4", "O'yinlar do'konidagi chegirmalar (CD-keys)"), free: false, premium: true },
+    { name: t("feat_5", "2x daraja (XP) va ELO ko'paytirgichi"), free: false, premium: true },
+    { name: t("feat_6", "E'lonlar (reklama)siz platforma interfeysi"), free: false, premium: true },
+    { name: t("feat_7", "Texnik ko'makda birinchi navbat"), free: false, premium: true },
+  ];
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -136,16 +137,34 @@ export default function PremiumPage() {
             transition={{ duration: 0.5 }}
           >
             <span className="bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1.5 mb-4">
-              <Sparkles size={12} className="animate-spin" /> PLAYNATIONUZ PREMIUM
+              <Sparkles size={12} className="animate-spin" /> {t("premium_subtitle", "PLAYNATIONUZ PREMIUM")}
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-              Cheksiz Imkoniyatlar va <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
-                Premium Gaming Tajriba
-              </span>
+              {locale === 'ru' ? (
+                <>
+                  Безграничные Возможности и <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
+                    Премиум Гейминг
+                  </span>
+                </>
+              ) : locale === 'en' ? (
+                <>
+                  Unlimited Opportunities & <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
+                    Premium Gaming Experience
+                  </span>
+                </>
+              ) : (
+                <>
+                  Cheksiz Imkoniyatlar va <br />
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
+                    Premium Gaming Tajriba
+                  </span>
+                </>
+              )}
             </h1>
             <p className="text-secondary max-w-2xl mx-auto text-base md:text-lg">
-              Hamjamiyat turnirlarida birinchilardan bo'ling, maxsus sovrinlarni yutib oling va platformani qo'llab-quvvatlab o'zgacha mavqega ega bo'ling.
+              {t("premium_desc", "Hamjamiyat turnirlarida birinchilardan bo'ling, maxsus sovrinlarni yutib oling va platformani qo'llab-quvvatlab o'zgacha mavqega ega bo'ling.")}
             </p>
           </motion.div>
         </div>
@@ -164,25 +183,28 @@ export default function PremiumPage() {
                     <Award size={32} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-emerald-400">Premium Obuna Faol!</h3>
+                    <h3 className="text-xl font-bold text-emerald-400">{t("sub_active", "Premium Obuna Faol!")}</h3>
                     <p className="text-sm text-secondary">
-                      Faol reja: <span className="font-semibold text-white">{subscription.plan_name}</span>
+                      {t("plan_active", "Faol reja")}: <span className="font-semibold text-white">{subscription.plan_name}</span>
                     </p>
                     {subscription.expires_at && (
                       <p className="text-xs text-secondary/70 mt-1">
-                        Tugash muddati: {new Date(subscription.expires_at).toLocaleDateString("uz-UZ", {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit"
-                        })}
+                        {t("expires_at", "Tugash muddati")}: {new Date(subscription.expires_at).toLocaleDateString(
+                          locale === "ru" ? "ru-RU" : locale === "en" ? "en-US" : "uz-UZ",
+                          {
+                            year: "numeric",
+                            month: "long",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit"
+                          }
+                        )}
                       </p>
                     )}
                   </div>
                 </div>
                 <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider">
-                  Faol Mavqei
+                  {t("active_status", "Faol Mavqei")}
                 </div>
               </motion.div>
             ) : (
@@ -196,11 +218,11 @@ export default function PremiumPage() {
                     <Star size={32} />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold">Sizda hozircha Free reja faol</h3>
-                    <p className="text-sm text-secondary">Premium imkoniyatlardan foydalanish uchun quyidagi rejalardan birini tanlang.</p>
+                    <h3 className="text-lg font-bold">{t("free_plan_active", "Sizda hozircha Free reja faol")}</h3>
+                    <p className="text-sm text-secondary">{t("select_plan_desc", "Premium imkoniyatlardan foydalanish uchun quyidagi rejalardan birini tanlang.")}</p>
                   </div>
                 </div>
-                <div className="text-xs text-secondary/60">Obuna yo'q</div>
+                <div className="text-xs text-secondary/60">{t("no_subscription", "Obuna yo'q")}</div>
               </motion.div>
             )}
           </div>
@@ -221,7 +243,7 @@ export default function PremiumPage() {
               >
                 {plan.popular && (
                   <div className="absolute top-0 right-0 left-0 bg-primary text-black text-center text-xs font-bold py-1.5 uppercase tracking-widest font-mono">
-                    Eng Ommabop
+                    {t("most_popular", "Eng Ommabop")}
                   </div>
                 )}
                 
@@ -247,7 +269,7 @@ export default function PremiumPage() {
                         : "bg-white/5 hover:bg-white/10 text-white"
                     }`}
                   >
-                    Obuna bo'lish
+                    {t("subscribe", "Obuna bo'lish")}
                   </button>
                 </div>
               </motion.div>
@@ -257,10 +279,10 @@ export default function PremiumPage() {
 
         {/* Features Table */}
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-10">Rejalar Solishtiruvi</h2>
+          <h2 className="text-2xl font-bold text-center mb-10">{t("features_compare", "Rejalar Solishtiruvi")}</h2>
           <div className="rounded-2xl border border-white/5 overflow-hidden bg-card backdrop-blur-md">
             <div className="grid grid-cols-12 bg-white/5 border-b border-white/5 p-4 font-bold text-sm tracking-wider uppercase text-secondary">
-              <div className="col-span-6 md:col-span-8">Imkoniyatlar</div>
+              <div className="col-span-6 md:col-span-8">{t("features_label", "Imkoniyatlar")}</div>
               <div className="col-span-3 md:col-span-2 text-center">Free</div>
               <div className="col-span-3 md:col-span-2 text-center text-primary">Premium</div>
             </div>
@@ -308,9 +330,9 @@ export default function PremiumPage() {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="relative w-full max-w-md bg-card border border-white/10 rounded-3xl p-8 overflow-hidden shadow-2xl"
             >
-              <h3 className="text-2xl font-bold mb-2">To'lov Tizimini Tanlang</h3>
+              <h3 className="text-2xl font-bold mb-2">{t("choose_provider", "To'lov Tizimini Tanlang")}</h3>
               <p className="text-sm text-secondary mb-6">
-                Obuna uchun to'lovni Payme yoki Click orqali amalga oshirishingiz mumkin (simulyatsiya sandbox rejimi).
+                {t("provider_desc", "Obuna uchun to'lovni Payme yoki Click orqali amalga oshirishingiz mumkin (simulyatsiya sandbox rejimi).")}
               </p>
 
               <div className="flex flex-col gap-4">
@@ -323,7 +345,7 @@ export default function PremiumPage() {
                     <div className="w-10 h-10 rounded-lg bg-[#00c9c9] flex items-center justify-center font-bold text-black text-sm tracking-tighter">
                       payme
                     </div>
-                    <span>Payme orqali to'lash</span>
+                    <span>Payme {t("pay_with", "orqali to'lash")}</span>
                   </div>
                   <span className="text-xs opacity-60">UZS</span>
                 </button>
@@ -337,7 +359,7 @@ export default function PremiumPage() {
                     <div className="w-10 h-10 rounded-lg bg-[#00a5ff] flex items-center justify-center font-black text-white text-sm">
                       CLICK
                     </div>
-                    <span>Click orqali to'lash</span>
+                    <span>Click {t("pay_with", "orqali to'lash")}</span>
                   </div>
                   <span className="text-xs opacity-60">UZS</span>
                 </button>
@@ -347,7 +369,7 @@ export default function PremiumPage() {
                 onClick={() => setShowModal(false)}
                 className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-secondary font-medium transition-all"
               >
-                Bekor qilish
+                {t("cancel", "Bekor qilish")}
               </button>
             </motion.div>
           </div>

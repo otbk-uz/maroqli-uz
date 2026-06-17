@@ -2,8 +2,10 @@
 
 import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
-import { Trophy, Medal, Target, Star, ChevronUp, ChevronDown } from "lucide-react";
+import { Trophy, ChevronUp, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
+import { BackButton } from "../../components/ui/BackButton";
+import { useTranslation } from "@/lib/store";
 
 const leaders = [
   { rank: 1, name: "AnaKiller", elo: 4820, winRate: "76%", matches: 154, trend: "up" },
@@ -15,10 +17,9 @@ const leaders = [
   { rank: 7, name: "Storm", elo: 3150, winRate: "51%", matches: 88, trend: "up" },
 ];
 
-import { BackButton } from "../../components/ui/BackButton";
-
 const LeaderboardPage = () => {
   const [game, setGame] = useState("CS2");
+  const { t, locale } = useTranslation();
 
   return (
     <main className="min-h-screen bg-background">
@@ -27,8 +28,8 @@ const LeaderboardPage = () => {
       <div className="container mx-auto px-4 md:px-6 pt-32 pb-20">
         <BackButton />
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h1 className="text-4xl md:text-5xl font-black mb-4">Top o'yinchilar</h1>
-          <p className="text-secondary text-lg">O'zbekistonning eng kuchli gamerlari va ularning reytingi</p>
+          <h1 className="text-4xl md:text-5xl font-black mb-4">{t("leaderboard_title", "Hamjamiyat Reytingi")}</h1>
+          <p className="text-secondary text-lg">{t("leaderboard_desc", "Eng yaxshi o'yinchilar, ELO ballari va natijalar")}</p>
         </div>
 
         {/* Top 3 Podium */}
@@ -101,26 +102,28 @@ const LeaderboardPage = () => {
                 </button>
               ))}
             </div>
-            <p className="text-xs text-secondary uppercase tracking-widest">So'nggi yangilanish: Bugun, 10:45</p>
+            <p className="text-xs text-secondary uppercase tracking-widest">
+              {locale === "ru" ? "Последнее обновление: Сегодня, 10:45" : locale === "en" ? "Last updated: Today, 10:45" : "So'nggi yangilanish: Bugun, 10:45"}
+            </p>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-white/2 px-6">
-                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">Rank</th>
-                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">O'yinchi</th>
+                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">{t("rank", "O'rin")}</th>
+                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">{t("player", "O'yinchi")}</th>
                   <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest text-center">Trend</th>
                   <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">Win Rate</th>
-                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">O'yinlar</th>
-                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest text-right">Reyting</th>
+                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest">{t("games", "O'yinlar")}</th>
+                  <th className="px-8 py-5 text-xs font-bold text-secondary uppercase tracking-widest text-right">{t("leaderboard_short", "Reyting")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {leaders.map((player) => (
                   <tr 
                     key={player.rank} 
-                    onClick={() => alert(`${player.name}ning batafsil statistikasi yuklanmoqda...`)}
+                    onClick={() => alert(`${player.name} stats`)}
                     className="hover:bg-white/5 transition-colors group cursor-pointer"
                   >
                     <td className="px-8 py-6">
