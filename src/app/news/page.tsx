@@ -106,19 +106,13 @@ export default function NewsPage() {
                     className="glass-card overflow-hidden group hover:border-primary/40 transition-all duration-500 flex flex-col h-full"
                   >
                     {/* Image */}
-                    {news.image_url ? (
-                      <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
-                        <img 
-                          src={news.image_url} 
-                          alt={news.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
-                      </div>
-                    ) : (
-                      <div className="aspect-[16/9] bg-white/5 flex items-center justify-center">
-                        <Newspaper size={48} className="text-white/10" />
-                      </div>
-                    )}
+                    <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
+                      <img 
+                        src={news.image_url || "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=1200"} 
+                        alt={news.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                    </div>
 
                     {/* Content */}
                     <div className="p-6 md:p-8 flex-1 flex flex-col">
