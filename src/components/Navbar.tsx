@@ -4,27 +4,28 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Menu, X, Bell, User, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import api from "@/lib/api";
-
-const navLinks = [
-  { name: "Bosh sahifa", href: "/" },
-  { name: "Turnirlar", href: "/tournaments" },
-  { name: "O'yinlar", href: "/games" },
-  { name: "Streamerlar", href: "/streamers" },
-  { name: "👑 Premium", href: "/premium" },
-  { name: "Reyting", href: "/leaderboard" },
-  { name: "GameDev", href: "/gamedev" },
-  { name: "Yangiliklar", href: "/news" },
-];
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { isAuthenticated, user, logout } = useAuthStore();
+  const { t, locale, setLocale } = useTranslation();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const navLinks = [
+    { name: t("home", "Bosh sahifa"), href: "/" },
+    { name: t("tournaments", "Turnirlar"), href: "/tournaments" },
+    { name: t("games", "O'yinlar"), href: "/games" },
+    { name: t("streamers", "Streamerlar"), href: "/streamers" },
+    { name: t("premium", "👑 Premium"), href: "/premium" },
+    { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
+    { name: t("gamedev", "GameDev"), href: "/gamedev" },
+    { name: t("news", "Yangiliklar"), href: "/news" },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -88,7 +89,7 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center space-x-8">
             {navLinks.map((link) => (
               <Link
-                key={link.name}
+                key={link.href}
                 href={link.href}
                 className="text-sm font-medium text-secondary hover:text-white transition-colors"
               >
@@ -99,6 +100,23 @@ const Navbar = () => {
 
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-4 relative">
+            {/* Language Switcher */}
+            <div className="flex bg-white/5 border border-white/10 rounded-xl p-0.5 text-[10px] font-bold mr-2">
+              {(["uz", "ru", "en"] as const).map((lang) => (
+                <button
+                  key={lang}
+                  onClick={() => setLocale(lang)}
+                  className={`px-2 py-1 rounded-lg uppercase transition-all duration-200 ${
+                    locale === lang
+                      ? "bg-primary text-black"
+                      : "text-secondary hover:text-white"
+                  }`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
+
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 text-secondary hover:text-white transition-colors relative"
@@ -121,10 +139,10 @@ const Navbar = () => {
                   className="absolute right-0 top-full mt-2 w-80 bg-card border border-white/10 rounded-2xl overflow-hidden shadow-2xl z-50 text-xs"
                 >
                   <div className="bg-white/5 px-4 py-3 border-b border-white/5 flex items-center justify-between font-bold text-secondary">
-                    <span>Bildirishnomalar</span>
+                    <span>{t("notifications", "Bildirishnomalar")}</span>
                     {unreadCount > 0 && (
                       <button onClick={handleMarkAllRead} className="text-[10px] text-primary hover:underline">
-                        Hammasini o'qildi qilish
+                        {t("mark_all_read", "Hammasini o'qildi qilish")}
                       </button>
                     )}
                   </div>
@@ -145,13 +163,13 @@ const Navbar = () => {
                               onClick={() => handleMarkAsRead(n.id)}
                               className="text-[10px] text-primary self-start hover:underline font-bold"
                             >
-                              O'qildi
+                              {t("mark_read", "O'qildi")}
                             </button>
                           )}
                         </div>
                       ))
                     ) : (
-                      <div className="p-6 text-center text-secondary">Hozircha xabarlar yo'q.</div>
+                      <div className="p-6 text-center text-secondary">{t("no_notifications", "Hozircha xabarlar yo'q.")}</div>
                     )}
                   </div>
                 </motion.div>
@@ -185,7 +203,7 @@ const Navbar = () => {
                 <button
                   onClick={() => logout()}
                   className="p-2 text-red-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
-                  title="Chiqish"
+                  title={t("logout", "Chiqish")}
                 >
                   <LogOut size={18} />
                 </button>
@@ -193,10 +211,10 @@ const Navbar = () => {
             ) : (
               <>
                 <Link href="/login" className="text-sm font-medium hover:text-primary transition-colors">
-                  Kirish
+                  {t("login", "Kirish")}
                 </Link>
                 <Link href="/register" className="btn-primary py-2 px-6 text-sm">
-                  Ro'yxatdan o'tish
+                  {t("register", "Ro'yxatdan o'tish")}
                 </Link>
               </>
             )}
@@ -222,9 +240,29 @@ const Navbar = () => {
             className="lg:hidden bg-card border-b border-white/5 overflow-hidden"
           >
             <div className="container mx-auto px-4 py-8 flex flex-col space-y-6">
+              {/* Mobile Language Switcher */}
+              <div className="flex justify-between items-center pb-4 border-b border-white/5">
+                <span className="text-xs text-secondary font-medium">Til / Язык / Language:</span>
+                <div className="flex bg-white/5 border border-white/10 rounded-xl p-0.5 text-[10px] font-bold">
+                  {(["uz", "ru", "en"] as const).map((lang) => (
+                    <button
+                      key={lang}
+                      onClick={() => setLocale(lang)}
+                      className={`px-2.5 py-1 rounded-lg uppercase transition-all duration-200 ${
+                        locale === lang
+                          ? "bg-primary text-black"
+                          : "text-secondary hover:text-white"
+                      }`}
+                    >
+                      {lang}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {navLinks.map((link) => (
                 <Link
-                  key={link.name}
+                  key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
                   className="text-lg font-medium text-secondary hover:text-white"
@@ -262,16 +300,16 @@ const Navbar = () => {
                       }}
                       className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-500 font-medium rounded-lg text-center transition-all flex items-center justify-center gap-2"
                     >
-                      <LogOut size={18} /> Chiqish
+                      <LogOut size={18} /> {t("logout", "Chiqish")}
                     </button>
                   </div>
                 ) : (
                   <>
                     <Link href="/login" onClick={() => setIsOpen(false)} className="text-center py-3 font-medium">
-                      Kirish
+                      {t("login", "Kirish")}
                     </Link>
                     <Link href="/register" onClick={() => setIsOpen(false)} className="btn-primary text-center">
-                      Ro'yxatdan o'tish
+                      {t("register", "Ro'yxatdan o'tish")}
                     </Link>
                   </>
                 )}

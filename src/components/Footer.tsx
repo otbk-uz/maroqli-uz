@@ -3,8 +3,11 @@
 import React from "react";
 import Link from "next/link";
 import { Shield, BookOpen, Send, Phone, Mail } from "lucide-react";
+import { useTranslation } from "@/lib/store";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
     <footer className="w-full bg-background border-t border-white/5 py-12 pb-24 lg:pb-12 mt-auto relative z-10 overflow-hidden">
       <div className="absolute bottom-0 left-[50%] translate-x-[-50%] w-[80%] h-[150px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
@@ -17,24 +20,26 @@ const Footer = () => {
               <img src="/logo.jpg.png" alt="PlayNationUz Logo" className="h-12 w-auto" />
             </Link>
             <p className="text-secondary text-sm leading-relaxed max-w-sm">
-              O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi, game developerlar va streamerlarni qo'llab-quvvatlovchi zamonaviy ekotizim platformasi.
+              {t("footer_desc", "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi, game developerlar va streamerlarni qo'llab-quvvatlovchi zamonaviy ekotizim platformasi.")}
             </p>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Hujjatlar va Qoidalar</h4>
+            <h4 className="text-white font-bold text-sm uppercase tracking-wider">
+              {t("documents_rules", "Hujjatlar va Qoidalar")}
+            </h4>
             <ul className="space-y-3 text-sm">
               <li>
                 <Link href="/terms" className="text-secondary hover:text-primary transition-colors flex items-center gap-2">
                   <BookOpen size={14} />
-                  <span>Foydalanish shartlari (Oferta)</span>
+                  <span>{t("terms_of_use", "Foydalanish shartlari (Oferta)")}</span>
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="text-secondary hover:text-primary transition-colors flex items-center gap-2">
                   <Shield size={14} />
-                  <span>Maxfiylik siyosati</span>
+                  <span>{t("privacy_policy", "Maxfiylik siyosati")}</span>
                 </Link>
               </li>
             </ul>
@@ -42,7 +47,9 @@ const Footer = () => {
 
           {/* Contact / Socials */}
           <div className="space-y-4">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider">Aloqa va Qo'llab-quvvatlash</h4>
+            <h4 className="text-white font-bold text-sm uppercase tracking-wider">
+              {t("contact_support", "Aloqa va Qo'llab-quvvatlash")}
+            </h4>
             <ul className="space-y-3 text-sm text-secondary">
               <li className="flex items-center gap-2">
                 <Phone size={14} className="text-primary" />
@@ -64,10 +71,10 @@ const Footer = () => {
 
         {/* Bottom copyright line */}
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-secondary">
-          <p>&copy; {new Date().getFullYear()} PlayNationUz. Barcha huquqlar himoyalangan.</p>
+          <p>&copy; {new Date().getFullYear()} PlayNationUz. {t("rights_reserved", "Barcha huquqlar himoyalangan.")}</p>
           <div className="flex space-x-6">
-            <Link href="/terms" className="hover:text-primary transition-colors">Oferta</Link>
-            <Link href="/privacy" className="hover:text-primary transition-colors">Maxfiylik</Link>
+            <Link href="/terms" className="hover:text-primary transition-colors">{t("terms_short", "Oferta")}</Link>
+            <Link href="/privacy" className="hover:text-primary transition-colors">{t("privacy_short", "Maxfiylik")}</Link>
           </div>
         </div>
       </div>

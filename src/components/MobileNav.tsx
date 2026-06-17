@@ -4,16 +4,18 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Trophy, Users, Star, User } from "lucide-react";
+import { useTranslation } from "@/lib/store";
 
 const MobileNav = () => {
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const navItems = [
-    { name: "Bosh", icon: Home, href: "/" },
-    { name: "Turnirlar", icon: Trophy, href: "/tournaments" },
-    { name: "Feed", icon: Users, href: "/feed" },
-    { name: "Reyting", icon: Star, href: "/leaderboard" },
-    { name: "Profil", icon: User, href: "/profile" },
+    { name: t("home_short", "Bosh"), icon: Home, href: "/" },
+    { name: t("tournaments", "Turnirlar"), icon: Trophy, href: "/tournaments" },
+    { name: t("feed", "Feed"), icon: Users, href: "/feed" },
+    { name: t("leaderboard", "Reyting"), icon: Star, href: "/leaderboard" },
+    { name: t("profile", "Profil"), icon: User, href: "/profile" },
   ];
 
   return (
@@ -23,7 +25,7 @@ const MobileNav = () => {
           const isActive = pathname === item.href;
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={item.href}
               className={`flex flex-col items-center space-y-1 transition-colors ${
                 isActive ? "text-primary" : "text-secondary"

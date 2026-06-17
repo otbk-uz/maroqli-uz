@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { translations, Language } from './translations';
 
 interface User {
   id: string | number;
@@ -35,3 +36,34 @@ export const useAuthStore = create<AuthState>()(
     }
   )
 );
+
+interface LanguageState {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+}
+
+export const useLanguageStore = create<LanguageState>()(
+  persist(
+    (set) => ({
+      language: 'uz',
+      setLanguage: (lang: Language) => set({ language: lang }),
+    }),
+    {
+      name: 'language-storage',
+    }
+  )
+);
+
+export const useTranslation = () => {
+  const { language, setLanguage } = useLanguageStore();
+  
+  const t = (key: keyof typeof translations['uz'] | string, fallback?: string): string => {
+    const langDict = translations[language] || translations['uz'];
+    const val = (langDict as any)[key];
+    if (val !== undefined) return val;
+    return fallback !== undefined ? fallback : String(key);
+  };
+  
+  return { t, locale: language, setLocale: setLanguage };
+};
+
