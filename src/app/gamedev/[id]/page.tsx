@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Rocket, Users, MapPin, Calendar, Gift, RefreshCw, ChevronLeft, ShieldAlert } from "lucide-react";
+import { Rocket, Users, MapPin, Calendar, Gift, RefreshCw, ShieldAlert, Award } from "lucide-react";
 import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
@@ -30,6 +30,15 @@ interface StudioProfile {
   donation_url: string;
 }
 
+interface PastProject {
+  id: string;
+  title: string;
+  description: string;
+  genre: string;
+  platform: string;
+  release_date: string;
+}
+
 export default function StudioDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -37,6 +46,7 @@ export default function StudioDetailPage() {
 
   const [studio, setStudio] = useState<StudioProfile | null>(null);
   const [games, setGames] = useState<DevelopedGame[]>([]);
+  const [pastProjects, setPastProjects] = useState<PastProject[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -69,6 +79,16 @@ export default function StudioDetailPage() {
 
         if (gamesError) throw gamesError;
         setGames(gamesData || []);
+
+        // 3. Fetch Past Projects by this studio (developer_id = studioData.user_id)
+        const { data: pastData, error: pastError } = await supabase
+          .from("gamedev_past_projects")
+          .select("*")
+          .eq("developer_id", studioData.user_id)
+          .order("created_at", { ascending: false });
+
+        if (pastError) throw pastError;
+        setPastProjects(pastData || []);
       }
     } catch (err) {
       console.error("Studio ma'lumotlarini yuklashda xatolik:", err);
@@ -233,6 +253,44 @@ export default function StudioDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Past Projects / GameDev Experience Section */}
+            <div className="glass-card p-6 border border-white/5">
+              <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                <Award className="text-primary" size={22} />
+                <span>Avvalgi Loyihalar (GameDev Tajribasi)</span>
+              </h3>
+
+              {pastProjects.length === 0 ? (
+                <div className="text-center py-10 bg-white/[0.01] rounded-2xl border border-dashed border-white/10 text-secondary text-sm">
+                  Studiya tomonidan avvalgi loyihalar haqida ma'lumot kiritilmagan.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {pastProjects.map((project) => (
+                    <div
+                      key={project.id}
+                      className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex flex-col justify-between hover:border-primary/20 transition-all duration-300"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-base text-white">{project.title}</h4>
+                          <span className="bg-white/5 border border-white/10 text-[9px] text-secondary font-bold px-2 py-0.5 rounded">
+                            {project.platform}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-primary font-bold mb-2 uppercase tracking-wider">{project.genre || "Janr ko'rsatilmagan"}</p>
+                        <p className="text-xs text-secondary/80 line-clamp-3 leading-relaxed mb-4">{project.description}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-white/5 text-[10px] text-secondary/70">
+                        Chiqarilgan sana: {project.release_date || "Noma'lum"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Sidebar Area (Right 1 Column) */}
@@ -275,6 +333,10 @@ export default function StudioDetailPage() {
                 <div className="flex justify-between">
                   <span className="text-secondary font-medium">Loyihalar soni:</span>
                   <span className="text-white font-bold">{games.length} ta o'yin</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-secondary font-medium">Avvalgi loyihalar (tajriba):</span>
+                  <span className="text-white font-bold">{pastProjects.length} ta o'yin</span>
                 </div>
               </div>
             </div>

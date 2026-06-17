@@ -53,3 +53,38 @@ CREATE POLICY "Public streamer donations are viewable by everyone."
 CREATE POLICY "Anyone can insert donations."
   ON streamer_donations FOR INSERT
   WITH CHECK ( true );
+
+-- GameDev avvalgi loyihalari uchun jadval
+CREATE TABLE IF NOT EXISTS gamedev_past_projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  developer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  genre TEXT,
+  platform TEXT DEFAULT 'PC', -- 'PC', 'Mobile', 'Har ikkisi'
+  release_date TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS (Row Level Security) qoidalari
+ALTER TABLE gamedev_past_projects ENABLE ROW LEVEL SECURITY;
+
+-- 1. Hamma avvalgi loyihalarni ko'ra oladi
+CREATE POLICY "Public past projects are viewable by everyone."
+  ON gamedev_past_projects FOR SELECT
+  USING ( true );
+
+-- 2. Faqat gamedev foydalanuvchilar o'z avvalgi loyihalarini yarata oladi
+CREATE POLICY "GameDevs can insert their own past projects."
+  ON gamedev_past_projects FOR INSERT
+  WITH CHECK ( auth.uid() = developer_id );
+
+-- 3. Faqat gamedev foydalanuvchilar o'z avvalgi loyihalarini tahrirlay oladi
+CREATE POLICY "GameDevs can update their own past projects."
+  ON gamedev_past_projects FOR UPDATE
+  USING ( auth.uid() = developer_id );
+
+-- 4. Faqat gamedev foydalanuvchilar o'z avvalgi loyihalarini o'chira oladi
+CREATE POLICY "GameDevs can delete their own past projects."
+  ON gamedev_past_projects FOR DELETE
+  USING ( auth.uid() = developer_id );

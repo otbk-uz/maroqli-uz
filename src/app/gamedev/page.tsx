@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Code2, Palette, Box, Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers, MapPin, Users, Calendar, Gift, ExternalLink } from "lucide-react";
+import { Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers, MapPin, Users, Calendar, Gift, FileText, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -45,7 +45,7 @@ export default function GamedevPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const [activeTab, setActiveTab] = useState<"community" | "dashboard">("community");
-  const [dashboardSubTab, setDashboardSubTab] = useState<"games" | "profile">("games");
+  const [dashboardSubTab, setDashboardSubTab] = useState<"games" | "profile" | "past_projects">("games");
   
   // Dashboard & Studio data
   const [dashboardData, setDashboardData] = useState<DevDashboardData | null>(null);
@@ -74,6 +74,16 @@ export default function GamedevPage() {
   const [sysRequirements, setSysRequirements] = useState("OS: Windows 10, RAM: 8GB, GPU: GTX 1050");
   const [showUploadForm, setShowUploadForm] = useState(false);
 
+  // Past Projects Form States
+  const [pastTitle, setPastTitle] = useState("");
+  const [pastDescription, setPastDescription] = useState("");
+  const [pastGenre, setPastGenre] = useState("");
+  const [pastPlatform, setPastPlatform] = useState("PC");
+  const [pastReleaseDate, setPastReleaseDate] = useState("");
+  const [pastProjects, setPastProjects] = useState<any[]>([]);
+  const [loadingPastProjects, setLoadingPastProjects] = useState(false);
+  const [savingPastProject, setSavingPastProject] = useState(false);
+
   useEffect(() => {
     fetchRegisteredStudios();
   }, []);
@@ -82,6 +92,7 @@ export default function GamedevPage() {
     if (isAuthenticated && user?.role === "GAMEDEV") {
       fetchDashboardData();
       fetchStudioProfile();
+      fetchPastProjects();
     }
   }, [isAuthenticated, user]);
 
@@ -159,6 +170,25 @@ export default function GamedevPage() {
       console.error("Dashboard yuklashda xatolik:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchPastProjects = async () => {
+    if (!user) return;
+    try {
+      setLoadingPastProjects(true);
+      const { data, error } = await supabase
+        .from("gamedev_past_projects")
+        .select("*")
+        .eq("developer_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setPastProjects(data || []);
+    } catch (err) {
+      console.error("Avvalgi loyihalarni yuklashda xatolik:", err);
+    } finally {
+      setLoadingPastProjects(false);
     }
   };
 
@@ -246,6 +276,61 @@ export default function GamedevPage() {
       alert(err.message || "O'yin yuklashda xatolik yuz berdi.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddPastProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pastTitle.trim() || !user) {
+      alert("Iltimos, loyiha nomini kiriting!");
+      return;
+    }
+
+    setSavingPastProject(true);
+    try {
+      const { error } = await supabase
+        .from("gamedev_past_projects")
+        .insert({
+          developer_id: user.id,
+          title: pastTitle,
+          description: pastDescription,
+          genre: pastGenre,
+          platform: pastPlatform,
+          release_date: pastReleaseDate,
+        });
+
+      if (error) throw error;
+
+      alert("Loyiha muvaffaqiyatli qo'shildi!");
+      setPastTitle("");
+      setPastDescription("");
+      setPastGenre("");
+      setPastPlatform("PC");
+      setPastReleaseDate("");
+      
+      fetchPastProjects();
+    } catch (err: any) {
+      alert(err.message || "Loyihani qo'shishda xatolik yuz berdi.");
+    } finally {
+      setSavingPastProject(false);
+    }
+  };
+
+  const handleDeletePastProject = async (projectId: string) => {
+    if (!confirm("Haqiqatan ham ushbu loyihani o'chirishni xohlaysizmi?")) return;
+
+    try {
+      const { error } = await supabase
+        .from("gamedev_past_projects")
+        .delete()
+        .eq("id", projectId);
+
+      if (error) throw error;
+      
+      alert("Loyiha o'chirildi!");
+      fetchPastProjects();
+    } catch (err: any) {
+      alert(err.message || "Loyihani o'chirishda xatolik yuz berdi.");
     }
   };
 
@@ -434,9 +519,17 @@ export default function GamedevPage() {
                 >
                   Studiya Profilini Tahrirlash
                 </button>
+                <button
+                  onClick={() => setDashboardSubTab("past_projects")}
+                  className={`py-3 px-6 font-bold text-sm border-b-2 transition-all ${
+                    dashboardSubTab === "past_projects" ? "border-primary text-white" : "border-transparent text-secondary hover:text-white"
+                  }`}
+                >
+                  Avvalgi Loyihalar (Tajriba)
+                </button>
               </div>
 
-              {dashboardSubTab === "games" ? (
+              {dashboardSubTab === "games" && (
                 <div className="space-y-12">
                   {/* Dev stats cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -648,8 +741,9 @@ export default function GamedevPage() {
                     </div>
                   )}
                 </div>
-              ) : (
-                // Studio Profile Editor
+              )}
+
+              {dashboardSubTab === "profile" && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -761,6 +855,146 @@ export default function GamedevPage() {
                   </form>
                 </motion.div>
               )}
+
+              {dashboardSubTab === "past_projects" && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="space-y-8"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Form on left */}
+                    <div className="lg:col-span-1">
+                      <form onSubmit={handleAddPastProject} className="glass-card p-6 border border-white/5 space-y-4">
+                        <h3 className="text-lg font-bold text-primary flex items-center gap-2">
+                          <Plus size={18} /> Yangi Loyiha Qo'shish
+                        </h3>
+                        <p className="text-xs text-secondary">
+                          Avvalgi jamoalarda yoki mustaqil yaratgan o'yinlaringizni qo'shib, tajribangizni ko'rsating.
+                        </p>
+                        
+                        <div>
+                          <label className="text-xs font-semibold text-secondary block mb-1">O'yin nomi (Majburiy)</label>
+                          <input
+                            type="text"
+                            value={pastTitle}
+                            onChange={(e) => setPastTitle(e.target.value)}
+                            required
+                            className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none focus:border-white/10 focus:ring-1 focus:ring-primary"
+                            placeholder="Masalan: Bo'g'irsoq Sarguzashti"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-secondary block mb-1">O'yin janri</label>
+                          <input
+                            type="text"
+                            value={pastGenre}
+                            onChange={(e) => setPastGenre(e.target.value)}
+                            className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
+                            placeholder="Masalan: RPG, Shooter, Strategiya"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-secondary block mb-1">Platforma</label>
+                          <select
+                            value={pastPlatform}
+                            onChange={(e) => setPastPlatform(e.target.value)}
+                            className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
+                          >
+                            <option value="PC">PC (Kompyuter)</option>
+                            <option value="Mobile">Mobile (Mobil)</option>
+                            <option value="Har ikkisi">PC & Mobile</option>
+                            <option value="Konsol">Konsol</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-secondary block mb-1">Chiqarilgan vaqti (Sana)</label>
+                          <input
+                            type="text"
+                            value={pastReleaseDate}
+                            onChange={(e) => setPastReleaseDate(e.target.value)}
+                            className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
+                            placeholder="Masalan: 2024-yil may yoki 2025"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-xs font-semibold text-secondary block mb-1">Qisqa izoh</label>
+                          <textarea
+                            rows={3}
+                            value={pastDescription}
+                            onChange={(e) => setPastDescription(e.target.value)}
+                            className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
+                            placeholder="O'yin haqida qisqacha tavsif bering..."
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={savingPastProject}
+                          className="w-full py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {savingPastProject ? (
+                            <>
+                              <RefreshCw className="animate-spin" size={14} />
+                              Saqlanmoqda...
+                            </>
+                          ) : (
+                            "Loyihani qo'shish"
+                          )}
+                        </button>
+                      </form>
+                    </div>
+
+                    {/* List on right */}
+                    <div className="lg:col-span-2 space-y-4">
+                      <h3 className="text-xl font-bold">Avvalgi Loyihalar Ro'yxati</h3>
+                      
+                      {loadingPastProjects ? (
+                        <div className="flex items-center gap-2 py-6 text-secondary text-sm">
+                          <RefreshCw className="animate-spin text-primary" size={16} />
+                          <span>Yuklanmoqda...</span>
+                        </div>
+                      ) : pastProjects.length === 0 ? (
+                        <div className="glass-card p-12 text-center border border-dashed border-white/10 text-secondary text-xs">
+                          Siz hali avvalgi loyihalaringiz haqida ma'lumot kiritmagansiz.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {pastProjects.map((project) => (
+                            <div key={project.id} className="glass-card p-5 border border-white/5 flex flex-col justify-between hover:border-primary/20 transition-all">
+                              <div>
+                                <div className="flex justify-between items-start mb-2">
+                                  <h4 className="font-bold text-base text-white">{project.title}</h4>
+                                  <span className="bg-white/5 border border-white/10 text-[9px] text-secondary font-bold px-2 py-0.5 rounded">
+                                    {project.platform}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-primary font-bold mb-2 uppercase tracking-wider">{project.genre || "Janrsiz"}</p>
+                                <p className="text-xs text-secondary/80 line-clamp-3 leading-relaxed mb-4">{project.description}</p>
+                              </div>
+
+                              <div className="flex justify-between items-center pt-3 border-t border-white/5 text-[10px]">
+                                <span className="text-secondary/70">Sana: {project.release_date || "Noma'lum"}</span>
+                                <button
+                                  onClick={() => handleDeletePastProject(project.id)}
+                                  className="text-red-400 hover:text-red-300 font-bold transition-colors flex items-center gap-1"
+                                >
+                                  <Trash2 size={12} />
+                                  <span>O'chirish</span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -768,4 +1002,3 @@ export default function GamedevPage() {
     </main>
   );
 }
-
