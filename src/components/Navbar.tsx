@@ -15,6 +15,7 @@ const Navbar = () => {
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
 
   const navLinks = [
     { name: t("home", "Bosh sahifa"), href: "/" },
@@ -100,21 +101,47 @@ const Navbar = () => {
 
           {/* Actions */}
           <div className="hidden md:flex items-center space-x-4 relative">
-            {/* Language Switcher */}
-            <div className="flex bg-white/5 border border-white/10 rounded-xl p-0.5 text-[10px] font-bold mr-2">
-              {(["uz", "ru", "en"] as const).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setLocale(lang)}
-                  className={`px-2 py-1 rounded-lg uppercase transition-all duration-200 ${
-                    locale === lang
-                      ? "bg-primary text-black"
-                      : "text-secondary hover:text-white"
-                  }`}
-                >
-                  {lang}
-                </button>
-              ))}
+            {/* Language Switcher Dropdown */}
+            <div className="relative z-50">
+              <button
+                onClick={() => setShowLangMenu(!showLangMenu)}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl text-xs font-bold text-white transition-all active:scale-95"
+              >
+                <span>🌐</span>
+                <span className="uppercase">{locale}</span>
+                <span className="text-[8px] opacity-60">▼</span>
+              </button>
+
+              <AnimatePresence>
+                {showLangMenu && (
+                  <>
+                    <div className="fixed inset-0" onClick={() => setShowLangMenu(false)} />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 top-full mt-2 w-28 bg-[#18181c] border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 text-[10px]"
+                    >
+                      <div className="divide-y divide-white/5">
+                        {(["uz", "ru", "en"] as const).map((lang) => (
+                          <button
+                            key={lang}
+                            onClick={() => {
+                              setLocale(lang);
+                              setShowLangMenu(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left font-bold uppercase hover:bg-white/5 transition-colors ${
+                              locale === lang ? 'text-primary' : 'text-secondary hover:text-white'
+                            }`}
+                          >
+                            {lang === "uz" ? "O'zbek" : lang === "ru" ? "Русский" : "English"}
+                          </button>
+                        ))}
+                      </div>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
             </div>
 
             <button 
