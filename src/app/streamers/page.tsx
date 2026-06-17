@@ -169,7 +169,7 @@ const StreamersPage = () => {
                 className="glass-card overflow-hidden mb-12"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3">
-                  <div className="lg:col-span-2 aspect-video bg-black relative group cursor-pointer" onClick={() => window.open(featuredStreamer.stream_url, '_blank')}>
+                  <div className="lg:col-span-2 aspect-video bg-black relative group cursor-pointer" onClick={() => router.push(`/streamers/${featuredStreamer.id}`)}>
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
                         <Play size={32} fill="white" />
@@ -177,7 +177,7 @@ const StreamersPage = () => {
                     </div>
                     {featuredStreamer.is_live && (
                       <div className="absolute top-6 left-6 z-10">
-                        <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20">LIVE</span>
+                        <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20">EFIRDA</span>
                       </div>
                     )}
                     <div className="absolute bottom-6 left-6 z-10 flex items-center space-x-4">
@@ -211,7 +211,7 @@ const StreamersPage = () => {
                     </div>
                     <div className="flex space-x-4">
                       <button 
-                        onClick={() => window.open(featuredStreamer.stream_url, '_blank')}
+                        onClick={() => router.push(`/streamers/${featuredStreamer.id}`)}
                         className="btn-primary flex-1 py-4 flex items-center justify-center space-x-2"
                       >
                         <Play size={18} fill="white" />
@@ -243,13 +243,13 @@ const StreamersPage = () => {
                   key={s.id}
                   className="glass-card overflow-hidden group hover:border-primary/50 transition-all duration-300"
                 >
-                  <div className="aspect-video bg-white/5 relative cursor-pointer" onClick={() => window.open(s.stream_url, '_blank')}>
+                  <div className="aspect-video bg-white/5 relative cursor-pointer" onClick={() => router.push(`/streamers/${s.id}`)}>
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-black/40">
                       <Play size={32} fill="white" className="text-white drop-shadow-2xl scale-75 group-hover:scale-100 transition-transform" />
                     </div>
                     {s.is_live && (
                       <div className="absolute top-4 left-4 z-20">
-                        <span className="bg-primary px-3 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-lg shadow-primary/20">LIVE</span>
+                        <span className="bg-primary px-3 py-0.5 rounded-full text-[10px] font-bold uppercase shadow-lg shadow-primary/20">EFIRDA</span>
                       </div>
                     )}
                     <div className="absolute bottom-4 right-4 z-20">

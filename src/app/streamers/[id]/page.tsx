@@ -3,58 +3,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Play, Users, Heart, Award, ArrowLeft, Send, Sparkles, Gift, Loader2 } from "lucide-react";
+import { Play, Users, Heart, Award, ArrowLeft, Send, Sparkles, Gift, Loader2, RefreshCw, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
-
-interface Streamer {
-  id: number;
-  name: string;
-  avatar: string;
-  game: string;
-  viewers: string;
-  title: string;
-  embedUrl: string;
-  platform: string;
-  bio: string;
-}
-
-const streamersList: Streamer[] = [
-  {
-    id: 1,
-    name: "ZafarGamer",
-    avatar: "ZG",
-    game: "Counter-Strike 2",
-    viewers: "1,245",
-    title: "Pro match vs NaVi Academy | Sub goal 50/100",
-    embedUrl: "https://www.youtube.com/embed/5Fv19KVV3s0?autoplay=1&mute=1",
-    platform: "YouTube",
-    bio: "CS2 professional kiber-sportchisi. O'zbekiston terma jamoasi a'zosi. Kundalik jonli efirlar va tahlillar.",
-  },
-  {
-    id: 2,
-    name: "NodirPro",
-    avatar: "NP",
-    game: "Dota 2",
-    viewers: "840",
-    title: "Ranked grind to Immortal | !giveaway",
-    embedUrl: "https://www.youtube.com/embed/S2pTHe_L5P0?autoplay=1&mute=1",
-    platform: "YouTube",
-    bio: "Dota 2 tahlilchisi va professional o'yinchisi. E'tiboringiz uchun rahmat. Savollaringiz bo'lsa chatda yozing!",
-  },
-  {
-    id: 3,
-    name: "AnaKiller",
-    avatar: "AK",
-    game: "Valorant",
-    viewers: "420",
-    title: "Chilling and playing with subs",
-    embedUrl: "https://www.youtube.com/embed/t83iB9B27kY?autoplay=1&mute=1",
-    platform: "YouTube",
-    bio: "Valorant kiber-o'yinchisi. Qizil sochi va tezkor reflekslari bilan mashhur. Jamoaga qo'shiling va birga yutaylik!",
-  },
-];
 
 interface ChatMessage {
   id: number;
@@ -66,24 +19,22 @@ interface ChatMessage {
   time: string;
 }
 
-const INITIAL_DONATIONS = [
-  { id: 1, user: "Jasur_Gamer", amount: "20 000 UZS", message: "Ajoyib o'yin, omad!", time: "5 daqiqa oldin" },
-  { id: 2, user: "KiberUz", amount: "50 000 UZS", message: "Turnirlarda kutamiz ukam!", time: "12 daqiqa oldin" },
-  { id: 3, user: "Sherzod", amount: "10 000 UZS", message: "Top o'yin", time: "25 daqiqa oldin" },
-];
-
 export default function StreamerDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const streamerId = parseInt(params.id as string);
+  const streamerId = params.id as string; // UUID from route params
   const { user, isAuthenticated } = useAuthStore();
   
-  const streamer = streamersList.find((s) => s.id === streamerId);
+  const [streamer, setStreamer] = useState<any | null>(null);
+  const [loadingStreamer, setLoadingStreamer] = useState(true);
   
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  
   const [isFollowing, setIsFollowing] = useState(false);
-  const [donations, setDonations] = useState(INITIAL_DONATIONS);
+  const [followLoading, setFollowLoading] = useState(false);
+  
+  const [donations, setDonations] = useState<any[]>([]);
   
   // Donation Modal States
   const [showDonateModal, setShowDonateModal] = useState(false);
@@ -94,22 +45,144 @@ export default function StreamerDetailPage() {
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Load Streamer details and donations
+  useEffect(() => {
+    if (streamerId) {
+      fetchStreamerDetails();
+      fetchDonations();
+    }
+  }, [streamerId]);
+
+  // Check follow status once streamer is loaded and user is auth
+  useEffect(() => {
+    if (isAuthenticated && user && streamer) {
+      checkFollowStatus();
+    }
+  }, [isAuthenticated, user, streamer]);
+
+  const fetchStreamerDetails = async () => {
+    try {
+      setLoadingStreamer(true);
+      const { data, error } = await supabase
+        .from("streamers")
+        .select(`
+          *,
+          profile:user_id(username, full_name, avatar_url)
+        `)
+        .eq("id", streamerId)
+        .single();
+
+      if (error) throw error;
+      setStreamer(data);
+    } catch (err) {
+      console.error("Streamer tafsilotlarini yuklashda xatolik:", err);
+    } finally {
+      setLoadingStreamer(false);
+    }
+  };
+
+  const fetchDonations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("streamer_donations")
+        .select("*")
+        .eq("streamer_id", streamerId)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setDonations(data || []);
+    } catch (err) {
+      console.error("Donatlarni yuklashda xatolik:", err);
+    }
+  };
+
+  const checkFollowStatus = async () => {
+    if (!user || !streamer) return;
+    try {
+      const { data, error } = await supabase
+        .from("streamer_followers")
+        .select("id")
+        .eq("streamer_id", streamer.id)
+        .eq("follower_id", user.id)
+        .maybeSingle();
+
+      if (data) {
+        setIsFollowing(true);
+      }
+    } catch (err) {
+      console.error("Follow status error:", err);
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      if (isFollowing) {
+        // Unfollow
+        const { error } = await supabase
+          .from("streamer_followers")
+          .delete()
+          .match({ streamer_id: streamer.id, follower_id: user.id });
+
+        if (error) throw error;
+        setIsFollowing(false);
+        setStreamer((prev: any) => prev ? { ...prev, followers_count: Math.max(0, prev.followers_count - 1) } : null);
+      } else {
+        // Follow
+        const { error } = await supabase
+          .from("streamer_followers")
+          .insert({ streamer_id: streamer.id, follower_id: user.id });
+
+        if (error) throw error;
+        setIsFollowing(true);
+        setStreamer((prev: any) => prev ? { ...prev, followers_count: prev.followers_count + 1 } : null);
+      }
+    } catch (err) {
+      console.error("Follow toggle xatosi:", err);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const getEmbedUrl = (url: string) => {
+    if (!url) return "";
+    
+    // YouTube video matches (e.g. watch?v=ID or youtu.be/ID or embed/ID)
+    const ytMatch = url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+      return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1`;
+    }
+
+    // Twitch channel matches (e.g. twitch.tv/channel_name)
+    const twitchMatch = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/i);
+    if (twitchMatch && twitchMatch[1]) {
+      const parentDomain = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      return `https://player.twitch.tv/?channel=${twitchMatch[1]}&parent=${parentDomain}&autoplay=true&muted=true`;
+    }
+
+    return url;
+  };
+
   // Generate bot messages periodically to simulate active chat
   useEffect(() => {
-    // Add initial messages
     setChatMessages([
       { id: 1, user: "Alibek", text: "Salom hammaga!", time: "18:40" },
-      { id: 2, user: "KiberRider", text: "Zafar aka zo'r o'yin bo'lyapti", time: "18:41" },
+      { id: 2, user: "KiberRider", text: "Strim zo'r bo'lyapti", time: "18:41" },
       { id: 3, user: "DotaMaster", text: "Qachon turnir boshlanadi?", time: "18:41", isPremium: true },
     ]);
 
     const botNames = ["Bekzod", "Sardor", "Nodira", "KiberUz", "CyberHero", "UzGamer", "Geymer_99", "SniperUz"];
     const botTexts = [
       "GG!",
-      "Ajoyib rount!",
-      "Qaysi sichqondan foydalanasiz?",
-      "Zo'r o'ynayapsiz lekin",
-      "Stream qotyaptimi menda?",
+      "Ajoyib raund!",
+      "Qaysi sichqoncha va klaviaturadan foydalanasiz?",
+      "Zo'r o'ynayapsiz lekin, o'yin klass!",
+      "Strim qotyaptimi menda?",
       "Keyingi o'yinda meni ham oling iltimos",
       "Kameralarni to'g'irlang sal",
       "Kiber-sport rivojlanmoqda!",
@@ -119,7 +192,7 @@ export default function StreamerDetailPage() {
 
     const interval = setInterval(() => {
       const randomName = botNames[Math.floor(Math.random() * botNames.length)];
-      const randomText = botTexts[HTMLRank(botTexts.length)];
+      const randomText = botTexts[Math.floor(Math.random() * botTexts.length)];
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
       
@@ -133,31 +206,15 @@ export default function StreamerDetailPage() {
           isPremium: Math.random() > 0.7
         }
       ]);
-    }, 4500);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
-
-  const HTMLRank = (max: number) => {
-    return Math.floor(Math.random() * max);
-  };
 
   // Scroll to bottom of chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
-
-  if (!streamer) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-white">
-        <Navbar />
-        <h2 className="text-xl font-bold mb-4">Streamer topilmadi.</h2>
-        <button onClick={() => router.push("/streamers")} className="btn-primary px-6 py-2">
-          Ortga qaytish
-        </button>
-      </div>
-    );
-  }
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,17 +237,31 @@ export default function StreamerDetailPage() {
     setNewMessage("");
   };
 
-  const handleDonateSubmit = (e: React.FormEvent) => {
+  const handleDonateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setDonating(true);
 
-    setTimeout(() => {
-      const amtStr = parseInt(donateAmount).toLocaleString() + " UZS";
+    try {
+      const amountNum = parseFloat(donateAmount);
       const donorName = isAuthenticated && user ? user.nickname : "Mehmon";
+
+      // Save donation to Supabase database
+      const { error } = await supabase
+        .from("streamer_donations")
+        .insert({
+          streamer_id: streamer.id,
+          donor_name: donorName,
+          amount: amountNum,
+          message: donateMessage
+        });
+
+      if (error) throw error;
+
+      const amtStr = amountNum.toLocaleString() + " UZS";
       const now = new Date();
       const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
 
-      // 1. Add donation message in chat
+      // 1. Add donation message in chat locally
       setChatMessages((prev: ChatMessage[]) => [
         ...prev,
         {
@@ -204,23 +275,45 @@ export default function StreamerDetailPage() {
         }
       ]);
 
-      // 2. Add to donation log
-      setDonations((prev: typeof INITIAL_DONATIONS) => [
-        {
-          id: Date.now(),
-          user: donorName,
-          amount: amtStr,
-          message: donateMessage,
-          time: "Hozirgina"
-        },
-        ...prev
-      ]);
+      // 2. Refresh donations feed from DB
+      fetchDonations();
 
-      setDonating(false);
       setShowDonateModal(false);
-      alert(`${streamer.name}ga ${amtStr} muvaffaqiyatli donat qilindi!`);
-    }, 1800);
+      alert(`${streamer.profile?.username || 'Streamer'}ga ${amtStr} muvaffaqiyatli donat qilindi!`);
+    } catch (err: any) {
+      console.error("Donat yuborishda xatolik:", err);
+      alert(err.message || "To'lov amalga oshirishda xatolik yuz berdi.");
+    } finally {
+      setDonating(false);
+    }
   };
+
+  if (loadingStreamer) {
+    return (
+      <main className="min-h-screen bg-background relative flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <RefreshCw className="animate-spin text-primary" size={32} />
+          <span className="text-secondary font-medium">Jonli efir sahifasi yuklanmoqda...</span>
+        </div>
+      </main>
+    );
+  }
+
+  if (!streamer) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background text-white p-6">
+        <Navbar />
+        <AlertTriangle size={48} className="text-primary mb-4 animate-bounce" />
+        <h2 className="text-2xl font-bold mb-2">Streamer topilmadi.</h2>
+        <p className="text-secondary text-sm mb-6 max-w-sm text-center">
+          Siz qidirayotgan strim xizmati mavjud emas yoki o'chirib tashlangan.
+        </p>
+        <button onClick={() => router.push("/streamers")} className="btn-primary px-8 py-3 rounded-xl font-bold">
+          Ortga, Streamerlar ro'yxatiga
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -238,8 +331,8 @@ export default function StreamerDetailPage() {
             {/* Stream Player */}
             <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/5 bg-black shadow-2xl relative">
               <iframe
-                src={streamer.embedUrl}
-                title={streamer.title}
+                src={getEmbedUrl(streamer.stream_url)}
+                title={streamer.title || "Live Stream"}
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                 allowFullScreen
@@ -249,29 +342,38 @@ export default function StreamerDetailPage() {
             {/* Stream Info & Actions */}
             <div className="glass-card p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center font-bold text-2xl border-2 border-white/10 shadow-lg shadow-primary/20">
-                  {streamer.avatar}
+                <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center font-bold text-2xl border-2 border-primary/50 overflow-hidden">
+                  {streamer.profile?.avatar_url ? (
+                    <img src={streamer.profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    streamer.profile?.username?.substring(0, 2).toUpperCase() || 'ST'
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-black">{streamer.name}</h1>
-                    <span className="bg-primary/20 text-primary border border-primary/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" /> LIVE
-                    </span>
+                    <h1 className="text-2xl font-black">{streamer.profile?.username || 'Streamer'}</h1>
+                    {streamer.is_live && (
+                      <span className="bg-primary/25 border border-primary/40 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-primary rounded-full animate-ping" /> EFIRDA
+                      </span>
+                    )}
                   </div>
-                  <p className="text-primary text-sm font-semibold mt-0.5">{streamer.game}</p>
+                  <p className="text-primary text-sm font-semibold mt-0.5">{streamer.game || "Kategoriya kiritilmagan"}</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 w-full md:w-auto">
                 <button
-                  onClick={() => setIsFollowing(!isFollowing)}
+                  onClick={handleFollowToggle}
+                  disabled={followLoading}
                   className={`flex-1 md:flex-initial py-3 px-6 font-bold rounded-xl transition-all text-sm flex items-center justify-center gap-2 ${
-                    isFollowing ? "bg-white/10 text-white" : "bg-white/5 hover:bg-white/10 text-white"
+                    isFollowing 
+                      ? "bg-primary border border-primary text-white" 
+                      : "bg-white/5 hover:bg-white/10 border border-white/10 text-white"
                   }`}
                 >
                   <Heart size={16} fill={isFollowing ? "white" : "transparent"} />
-                  {isFollowing ? "Obuna bo'lindi" : "Kuzatish"}
+                  {isFollowing ? "Kuzatilmoqda" : "Kuzatish"}
                 </button>
 
                 <button
@@ -287,20 +389,14 @@ export default function StreamerDetailPage() {
             {/* Title & Description */}
             <div className="glass-card p-8 space-y-6">
               <div>
-                <h3 className="text-xl font-bold mb-3">{streamer.title}</h3>
+                <h3 className="text-xl font-bold mb-3">{streamer.title || "Strim sarlavhasi yo'q"}</h3>
                 <div className="flex items-center gap-6 text-sm text-secondary">
                   <span className="flex items-center gap-1.5">
-                    <Users size={16} /> {streamer.viewers} tomoshabin
+                    <Users size={16} /> {streamer.viewers_count} tomoshabin
                   </span>
+                  <span>Kuzatuvchilar: {streamer.followers_count} ta</span>
                   <span>Platforma: {streamer.platform}</span>
                 </div>
-              </div>
-              
-              <div className="h-px bg-white/5" />
-
-              <div>
-                <h4 className="text-sm font-bold text-secondary uppercase tracking-widest mb-3">Streamer haqida</h4>
-                <p className="text-secondary text-sm leading-relaxed">{streamer.bio}</p>
               </div>
             </div>
 
@@ -309,21 +405,30 @@ export default function StreamerDetailPage() {
               <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                 👑 Oxirgi Qo'llab-quvvatlashlar
               </h3>
-              <div className="space-y-4">
-                {donations.map((d) => (
-                  <div
-                    key={d.id}
-                    className="flex items-start justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors"
-                  >
-                    <div>
-                      <span className="text-xs font-semibold text-secondary">{d.user}</span>
-                      <p className="text-sm font-bold text-amber-400 mt-0.5">{d.amount}</p>
-                      {d.message && <p className="text-xs text-secondary mt-1 italic">"{d.message}"</p>}
+              
+              {donations.length === 0 ? (
+                <div className="text-center py-6 bg-white/[0.01] rounded-2xl border border-dashed border-white/5 text-secondary text-xs">
+                  Hozircha qo'llab-quvvatlashlar yo'q. Birinchi donatni siz yuboring!
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {donations.map((d) => (
+                    <div
+                      key={d.id}
+                      className="flex items-start justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:border-white/10 transition-colors"
+                    >
+                      <div>
+                        <span className="text-xs font-semibold text-secondary">{d.donor_name}</span>
+                        <p className="text-sm font-bold text-amber-400 mt-0.5">{d.amount.toLocaleString()} UZS</p>
+                        {d.message && <p className="text-xs text-secondary mt-1 italic">"{d.message}"</p>}
+                      </div>
+                      <span className="text-[10px] text-secondary/60">
+                        {new Date(d.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-secondary/60">{d.time}</span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
