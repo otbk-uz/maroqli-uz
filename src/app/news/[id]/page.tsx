@@ -6,10 +6,10 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import { Calendar, User, ArrowLeft, Send, Link2, Check } from "lucide-react";
 import { motion } from "framer-motion";
-import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface NewsItem {
-  id: number;
+  id: string;
   title: string;
   content: string;
   image: string;
@@ -24,7 +24,7 @@ interface NewsItem {
 const NewsDetailPage = () => {
   const params = useParams();
   const router = useRouter();
-  const id = params.id;
+  const id = params.id as string;
 
   const [news, setNews] = useState<NewsItem | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,8 +35,28 @@ const NewsDetailPage = () => {
     
     const fetchNewsDetail = async () => {
       try {
-        const response = await api.get(`/community/news/${id}/`);
-        setNews(response.data);
+        const { data, error } = await supabase
+          .from("news")
+          .select("*, profiles:author_id(username, full_name)")
+          .eq("id", id)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setNews({
+            id: data.id,
+            title: data.title,
+            content: data.content,
+            image: data.image_url || "",
+            category_display: "Yangiliklar",
+            created_at: data.created_at,
+            author_details: {
+              full_name: data.profiles?.full_name || "Tizim Admini",
+              username: data.profiles?.username || "admin"
+            }
+          });
+        }
       } catch (err) {
         console.error("News detail fetch error:", err);
       } finally {

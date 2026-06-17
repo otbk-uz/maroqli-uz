@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import { supabase } from "@/lib/supabase";
 import { Calendar, User, Newspaper } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 
 interface NewsItem {
   id: string;
@@ -141,9 +142,12 @@ export default function NewsPage() {
                       </p>
 
                       <div className="mt-auto pt-6 border-t border-white/5">
-                        <button className="text-primary font-bold text-sm hover:underline flex items-center space-x-1">
+                        <Link 
+                          href={`/news/${news.id}`}
+                          className="text-primary font-bold text-sm hover:underline flex items-center space-x-1"
+                        >
                           <span>Batafsil o'qish</span>
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </motion.div>
