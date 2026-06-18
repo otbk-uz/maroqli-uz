@@ -88,3 +88,33 @@ CREATE POLICY "GameDevs can update their own past projects."
 CREATE POLICY "GameDevs can delete their own past projects."
   ON gamedev_past_projects FOR DELETE
   USING ( auth.uid() = developer_id );
+
+
+-- Adminga murojaat qilish uchun jadval (Support requests)
+CREATE TABLE IF NOT EXISTS support_requests (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  contact_info TEXT NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT DEFAULT 'PENDING', -- 'PENDING', 'RESOLVED'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- RLS (Row Level Security) qoidalarini faollashtirish
+ALTER TABLE support_requests ENABLE ROW LEVEL SECURITY;
+
+-- 1. Istalgan odam murojaat yoza oladi
+CREATE POLICY "Anyone can insert support requests."
+  ON support_requests FOR INSERT
+  WITH CHECK ( true );
+
+-- 2. Faqat adminlar barcha murojaatlarni ko'ra oladi
+CREATE POLICY "Only admins can view support requests."
+  ON support_requests FOR SELECT
+  USING (
+    EXISTS (
+      SELECT 1 FROM profiles 
+      WHERE profiles.id = auth.uid() AND profiles.role = 'ADMIN'
+    )
+  );

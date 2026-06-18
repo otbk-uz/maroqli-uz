@@ -11,6 +11,7 @@ export const translations = {
     leaderboard_short: "Reyting",
     gamedev: "GameDev",
     news: "Yangiliklar",
+    forum: "Forum",
     feed: "Feed",
     profile: "Profil",
     
@@ -191,8 +192,8 @@ export const translations = {
     premium: "👑 Премиум",
     leaderboard: "Рейтинг",
     leaderboard_short: "Рейтинг",
-    gamedev: "GameDev",
     news: "Новости",
+    forum: "Форум",
     feed: "Лента",
     profile: "Профиль",
     
@@ -373,8 +374,8 @@ export const translations = {
     premium: "👑 Premium",
     leaderboard: "Leaderboard",
     leaderboard_short: "Rating",
-    gamedev: "GameDev",
     news: "News",
+    forum: "Forum",
     feed: "Feed",
     profile: "Profile",
     

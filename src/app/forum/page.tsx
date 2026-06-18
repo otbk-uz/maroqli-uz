@@ -4,9 +4,9 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { MessageSquare, Pin, Lock, User, Calendar, MessageCircle, PlusCircle, Search, ThumbsUp } from "lucide-react";
+import { MessageSquare, Pin, Lock, User, Calendar, MessageCircle, PlusCircle, Search, ThumbsUp, X, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 
@@ -40,7 +40,9 @@ interface Topic {
 
 const ForumPage = () => {
   const router = useRouter();
+  const { t, locale } = useTranslation();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const user = useAuthStore((state) => state.user);
 
   const [sections, setSections] = useState<Section[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -48,6 +50,56 @@ const ForumPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
+
+  // Support Request form states
+  const [showSupportModal, setShowSupportModal] = useState(false);
+  const [supportForm, setSupportForm] = useState({
+    name: "",
+    contactInfo: "",
+    message: ""
+  });
+  const [submittingSupport, setSubmittingSupport] = useState(false);
+  const [supportSuccess, setSupportSuccess] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setSupportForm({
+        name: user.full_name || user.username || "",
+        contactInfo: user.email || `@${user.username}` || "",
+        message: ""
+      });
+    }
+  }, [user, showSupportModal]);
+
+  const handleSupportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supportForm.name.trim() || !supportForm.contactInfo.trim() || !supportForm.message.trim()) {
+      alert("Iltimos, barcha maydonlarni to'ldiring!");
+      return;
+    }
+
+    setSubmittingSupport(true);
+    try {
+      const { error } = await supabase
+        .from("support_requests")
+        .insert({
+          user_id: user?.id || null,
+          name: supportForm.name,
+          contact_info: supportForm.contactInfo,
+          message: supportForm.message
+        });
+
+      if (error) throw error;
+
+      setSupportSuccess(true);
+      setSupportForm((prev) => ({ ...prev, message: "" }));
+    } catch (err: any) {
+      console.error("Support request insert error:", err);
+      alert(err.message || "Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    } finally {
+      setSubmittingSupport(false);
+    }
+  };
 
   // Debounce search
   useEffect(() => {
@@ -149,15 +201,27 @@ const ForumPage = () => {
     <main className="min-h-screen bg-background relative overflow-hidden">
       <Navbar />
       <div className="container mx-auto px-4 md:px-6 pt-32 pb-20 relative z-10">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-wrap gap-4 items-center justify-between">
           <BackButton />
           
-          {isAuthenticated && (
-            <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider flex items-center space-x-2">
-              <PlusCircle size={16} />
-              <span>Yangi mavzu</span>
-            </Link>
-          )}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setShowSupportModal(true);
+                setSupportSuccess(false);
+              }}
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+            >
+              Adminga Murojaat
+            </button>
+
+            {isAuthenticated && (
+              <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider flex items-center space-x-2">
+                <PlusCircle size={16} />
+                <span>Yangi mavzu</span>
+              </Link>
+            )}
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -299,6 +363,129 @@ const ForumPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Adminga Murojaat Modal */}
+      <AnimatePresence>
+        {showSupportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setShowSupportModal(false)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="glass-card relative z-10 w-full max-w-md p-6 md:p-8 overflow-hidden border border-white/10 shadow-2xl bg-[#121214]/95 text-white rounded-3xl"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setShowSupportModal(false)}
+                className="absolute top-4 right-4 text-secondary hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="mb-6">
+                <h3 className="text-2xl font-black tracking-tight mb-2">Adminga Murojaat</h3>
+                <p className="text-secondary text-xs">Muammo yoki takliflaringizni to'g'ridan-to'g'ri adminstratsiyaga yuboring.</p>
+              </div>
+
+              {supportSuccess ? (
+                <div className="text-center py-8 space-y-4">
+                  <div className="w-16 h-16 bg-primary/20 border border-primary/40 rounded-full flex items-center justify-center mx-auto text-primary text-xl font-bold">
+                    ✓
+                  </div>
+                  <h4 className="text-lg font-bold">Xabaringiz yuborildi!</h4>
+                  <p className="text-secondary text-xs leading-relaxed">
+                    Murojaatingiz adminlarimiz tomonidan tez orada ko'rib chiqiladi va siz kiritgan aloqa ma'lumotlari orqali javob qaytariladi.
+                  </p>
+                  <button
+                    onClick={() => setShowSupportModal(false)}
+                    className="w-full mt-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all"
+                  >
+                    Tushunarli
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Telegram Direct Option */}
+                  <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <h4 className="font-bold text-xs text-white">Telegram orqali tezkor aloqa</h4>
+                      <p className="text-[10px] text-secondary">24/7 rejimida admin bilan bog'lanish</p>
+                    </div>
+                    <a
+                      href="https://t.me/playnationuz"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white font-bold text-xs rounded-xl transition-all whitespace-nowrap"
+                    >
+                      Telegram
+                    </a>
+                  </div>
+
+                  <div className="relative flex items-center py-2">
+                    <div className="flex-grow border-t border-white/5"></div>
+                    <span className="flex-shrink mx-4 text-[10px] text-secondary font-bold uppercase tracking-wider">yoki shaklni to'ldiring</span>
+                    <div className="flex-grow border-t border-white/5"></div>
+                  </div>
+
+                  {/* Online Request Form */}
+                  <form onSubmit={handleSupportSubmit} className="space-y-4">
+                    <div>
+                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">Sizning ismingiz</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ismingizni kiriting"
+                        value={supportForm.name}
+                        onChange={(e) => setSupportForm({ ...supportForm, name: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">Aloqa ma'lumoti (Email / Telegram)</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="@username yoki email"
+                        value={supportForm.contactInfo}
+                        onChange={(e) => setSupportForm({ ...supportForm, contactInfo: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">Xabar matni</label>
+                      <textarea
+                        required
+                        rows={4}
+                        placeholder="Muammo yoki taklifingizni batafsil yozing..."
+                        value={supportForm.message}
+                        onChange={(e) => setSupportForm({ ...supportForm, message: e.target.value })}
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 outline-none focus:border-primary/50 text-sm text-white resize-none"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={submittingSupport}
+                      className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                      {submittingSupport ? "Yuborilmoqda..." : <><Send size={16} /> Yuborish</>}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };
