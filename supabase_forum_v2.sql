@@ -2,7 +2,7 @@
 CREATE TABLE forum_replies (
   id SERIAL PRIMARY KEY,
   topic_id INTEGER REFERENCES forum_topics(id) ON DELETE CASCADE,
-  author_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -17,7 +17,7 @@ CREATE POLICY "Users can delete their own replies" ON forum_replies FOR DELETE U
 -- 2. Jonli Ochiq Chat jadvali (Global Chat)
 CREATE TABLE global_chat (
   id SERIAL PRIMARY KEY,
-  author_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   message TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

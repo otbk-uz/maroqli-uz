@@ -21,7 +21,7 @@ CREATE TABLE forum_topics (
   section_id INTEGER REFERENCES forum_sections(id) ON DELETE CASCADE,
   title TEXT NOT NULL,
   content TEXT NOT NULL,
-  author_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  author_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   is_pinned BOOLEAN DEFAULT FALSE,
   is_locked BOOLEAN DEFAULT FALSE,
   replies_count INTEGER DEFAULT 0,
