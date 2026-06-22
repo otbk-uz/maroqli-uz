@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
+import { GlobalChat } from "@/components/forum/GlobalChat";
 
 interface Section {
   id: number;
@@ -50,6 +51,7 @@ const ForumPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"topics" | "chat">("topics");
 
   // Support Request form states
   const [showSupportModal, setShowSupportModal] = useState(false);
@@ -205,17 +207,37 @@ const ForumPage = () => {
           <BackButton />
           
           <div className="flex items-center gap-3">
+            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 hidden md:flex">
+              <button
+                onClick={() => setActiveTab("topics")}
+                className={`py-2 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+                  activeTab === "topics" ? "bg-primary text-white" : "text-secondary hover:text-white"
+                }`}
+              >
+                Mavzular
+              </button>
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={`py-2 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                  activeTab === "chat" ? "bg-primary text-white" : "text-secondary hover:text-white"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                Ochiq Chat
+              </button>
+            </div>
+
             <button
               onClick={() => {
                 setShowSupportModal(true);
                 setSupportSuccess(false);
               }}
-              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all"
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all hidden md:block"
             >
               Adminga Murojaat
             </button>
 
-            {isAuthenticated && (
+            {isAuthenticated && activeTab === "topics" && (
               <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider flex items-center space-x-2">
                 <PlusCircle size={16} />
                 <span>Yangi mavzu</span>
@@ -231,18 +253,44 @@ const ForumPage = () => {
           </div>
 
           <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              placeholder="Mavzularni qidirish..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors"
-            />
-            <Search className="absolute left-3 top-3.5 text-secondary" size={16} />
+            {activeTab === "topics" && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Mavzularni qidirish..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors"
+                />
+                <Search className="absolute left-3 top-3.5 text-secondary" size={16} />
+              </>
+            )}
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Mobile Tabs */}
+        <div className="flex md:hidden bg-white/5 p-1 rounded-xl border border-white/10 mb-8 w-full">
+          <button
+            onClick={() => setActiveTab("topics")}
+            className={`flex-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
+              activeTab === "topics" ? "bg-primary text-white" : "text-secondary"
+            }`}
+          >
+            Mavzular
+          </button>
+          <button
+            onClick={() => setActiveTab("chat")}
+            className={`flex-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+              activeTab === "chat" ? "bg-primary text-white" : "text-secondary"
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Ochiq Chat
+          </button>
+        </div>
+
+        {activeTab === "topics" ? (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Sections Sidebar */}
           <div className="lg:col-span-3 space-y-4">
             <div className="text-xs font-bold text-secondary uppercase tracking-widest ml-1 mb-2">Bo'limlar</div>
@@ -362,6 +410,12 @@ const ForumPage = () => {
             )}
           </div>
         </div>
+        ) : (
+          /* Ochiq Chat Tab */
+          <div className="w-full max-w-5xl mx-auto">
+            <GlobalChat />
+          </div>
+        )}
       </div>
 
       {/* Adminga Murojaat Modal */}
