@@ -23,7 +23,6 @@ export default function PremiumPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const PLANS = [
     {
@@ -101,26 +100,6 @@ export default function PremiumPage() {
     }
     setSelectedPlan(planKey);
     setShowModal(true);
-  };
-
-  const handleProviderSelect = async (provider: "PAYME" | "CLICK") => {
-    if (!selectedPlan) return;
-    try {
-      setPaymentLoading(true);
-      const res = await api.post("/payments/create/", {
-        provider,
-        plan: selectedPlan,
-      });
-      // Redirect to simulation page
-      if (res.data.payment_url) {
-        router.push(res.data.payment_url);
-      }
-    } catch (err: any) {
-      alert(err.response?.data?.error || "Tranzaksiya yaratishda xatolik yuz berdi.");
-    } finally {
-      setPaymentLoading(false);
-      setShowModal(false);
-    }
   };
 
   return (
@@ -312,7 +291,7 @@ export default function PremiumPage() {
         </div>
       </div>
 
-      {/* Payme / Click Selection Modal */}
+      {/* Telegram Payment Modal */}
       <AnimatePresence>
         {showModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -328,48 +307,51 @@ export default function PremiumPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-white/10 rounded-3xl p-8 overflow-hidden shadow-2xl"
+              className="relative w-full max-w-md bg-card border border-white/10 rounded-3xl p-8 overflow-hidden shadow-2xl text-center"
             >
-              <h3 className="text-2xl font-bold mb-2">{t("choose_provider", "To'lov Tizimini Tanlang")}</h3>
-              <p className="text-sm text-secondary mb-6">
-                {t("provider_desc", "Obuna uchun to'lovni Payme yoki Click orqali amalga oshirishingiz mumkin (simulyatsiya sandbox rejimi).")}
+              <h3 className="text-2xl font-bold mb-4">{t("payment", "To'lov")}</h3>
+              <p className="text-sm text-secondary mb-6 leading-relaxed">
+                {t("telegram_payment_desc", "Premium obunani xarid qilish uchun to'lovni amalga oshiring va to'lov chekini bizning Telegram administratorimizga yuboring.")}
               </p>
 
               <div className="flex flex-col gap-4">
-                <button
-                  onClick={() => handleProviderSelect("PAYME")}
-                  disabled={paymentLoading}
-                  className="flex items-center justify-between p-4 rounded-xl border border-white/5 hover:border-[#00c9c9]/50 bg-[#00c9c9]/5 hover:bg-[#00c9c9]/10 transition-all font-semibold"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00c9c9] flex items-center justify-center font-bold text-black text-sm tracking-tighter">
-                      payme
-                    </div>
-                    <span>Payme {t("pay_with", "orqali to'lash")}</span>
-                  </div>
-                  <span className="text-xs opacity-60">UZS</span>
-                </button>
+                {(() => {
+                  const plan = PLANS.find(p => p.key === selectedPlan);
+                  const planName = plan ? plan.name : selectedPlan;
+                  const messageText = `Salom, men Premium obuna sotib olmoqchiman.
 
-                <button
-                  onClick={() => handleProviderSelect("CLICK")}
-                  disabled={paymentLoading}
-                  className="flex items-center justify-between p-4 rounded-xl border border-white/5 hover:border-[#00a5ff]/50 bg-[#00a5ff]/5 hover:bg-[#00a5ff]/10 transition-all font-semibold"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-[#00a5ff] flex items-center justify-center font-black text-white text-sm">
-                      CLICK
-                    </div>
-                    <span>Click {t("pay_with", "orqali to'lash")}</span>
-                  </div>
-                  <span className="text-xs opacity-60">UZS</span>
-                </button>
+Ma'lumotlarim:
+- Nickname: ${user?.nickname || user?.username || "Noma'lum"}
+- Email: ${user?.email || "Noma'lum"}
+- ID: ${user?.id || "Noma'lum"}
+
+Tanlangan reja: ${planName}
+
+To'lov chekini quyida yuboraman:`;
+                  
+                  const telegramUrl = `https://t.me/izi_uzb?text=${encodeURIComponent(messageText)}`;
+
+                  return (
+                    <a
+                      href={telegramUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 p-4 rounded-xl border border-[#0088cc]/50 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 transition-all font-semibold text-[#0088cc]"
+                    >
+                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.18-5.21 3.45-.49.34-.94.5-1.35.49-.45-.01-1.32-.26-1.96-.46-.79-.26-1.42-.4-1.36-.84.03-.23.35-.47.96-.73 3.78-1.64 6.3-2.73 7.55-3.25 3.59-1.49 4.33-1.75 4.81-1.76.11 0 .35.03.48.14.11.09.14.22.15.34-.01.07-.01.18-.03.26z"/>
+                      </svg>
+                      @izi_uzb ga o'tish
+                    </a>
+                  );
+                })()}
               </div>
 
               <button
                 onClick={() => setShowModal(false)}
                 className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-secondary font-medium transition-all"
               >
-                {t("cancel", "Bekor qilish")}
+                {t("close", "Yopish")}
               </button>
             </motion.div>
           </div>
