@@ -116,7 +116,7 @@ const LoginPage = () => {
           email: authData.user.email,
           role: profile?.role || "GAMER",
           avatar: profile?.avatar_url,
-          is_premium: false
+          is_premium: profile?.is_premium || false
         }, authData.session.access_token);
 
         router.push("/");

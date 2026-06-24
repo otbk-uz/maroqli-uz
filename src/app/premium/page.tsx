@@ -7,6 +7,7 @@ import { Check, X, Award, Star, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import api from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 interface SubscriptionDetails {
   has_active_subscription: boolean;
@@ -74,16 +75,30 @@ export default function PremiumPage() {
   }, [isAuthenticated]);
 
   const fetchSubscription = async () => {
+    if (!user) return;
     try {
       setLoading(true);
-      const res = await api.get("/payments/subscription/");
-      setSubscription(res.data);
+      // Fetch directly from Supabase to sync with Admin Panel overrides
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_premium, premium_expires_at')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      
+      setSubscription({
+        has_active_subscription: data.is_premium || false,
+        plan_name: data.is_premium ? "Premium (Faol)" : "Free Plan",
+        is_active: data.is_premium || false,
+        expires_at: data.premium_expires_at || null
+      });
       
       // Update local storage user premium status if changed
-      if (user && res.data.has_active_subscription !== user.is_premium) {
+      if (data.is_premium !== user.is_premium) {
         setAuth({
           ...user,
-          is_premium: res.data.has_active_subscription
+          is_premium: data.is_premium || false
         }, useAuthStore.getState().token || "");
       }
     } catch (err) {

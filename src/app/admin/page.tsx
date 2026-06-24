@@ -23,6 +23,7 @@ interface AdminUser {
   level: number;
   elo: number;
   is_premium?: boolean;
+  premium_expires_at?: string;
 }
 
 
@@ -53,6 +54,12 @@ export default function AdminPage() {
   const [newsForm, setNewsForm] = useState({ title: '', content: '' });
   const [newsFile, setNewsFile] = useState<File | null>(null);
   const [savingNews, setSavingNews] = useState(false);
+
+  // Premium modal state
+  const [premiumModalOpen, setPremiumModalOpen] = useState(false);
+  const [selectedUserForPremium, setSelectedUserForPremium] = useState<AdminUser | null>(null);
+  const [premiumDuration, setPremiumDuration] = useState<number>(30);
+  const [savingPremium, setSavingPremium] = useState(false);
 
   useEffect(() => {
     const savedAdmin = sessionStorage.getItem('customAdminLogin');
@@ -139,7 +146,9 @@ export default function AdminPage() {
           is_verified: true, // Mocked for now
           is_active: true, // Mocked for now
           level: p.level || 1,
-          elo: p.elo || 1000
+          elo: p.elo || 1000,
+          is_premium: p.is_premium || false,
+          premium_expires_at: p.premium_expires_at
         }));
         setUsersList(mappedUsers as any);
         
@@ -149,7 +158,7 @@ export default function AdminPage() {
           const gamesRes = await api.get("/tournaments/store/");
           setStats({
             totalUsers: profiles.length,
-            totalActiveSubs: mappedUsers.filter((u: any) => u.role === 'PREMIUM').length,
+            totalActiveSubs: mappedUsers.filter((u: any) => u.is_premium).length,
             totalGames: gamesRes.data.length,
             totalTournaments: tourneysRes.data.length,
           });
@@ -209,6 +218,42 @@ export default function AdminPage() {
       );
     } catch (err) {
       alert("Tasdiqlash holatini o'zgartirishda xatolik.");
+    }
+  };
+
+  const handleGrantPremium = async () => {
+    if (!selectedUserForPremium) return;
+    
+    setSavingPremium(true);
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + premiumDuration);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          is_premium: premiumDuration > 0,
+          premium_expires_at: premiumDuration > 0 ? expiresAt.toISOString() : null
+        })
+        .eq('id', selectedUserForPremium.id);
+        
+      if (error) throw error;
+      
+      setUsersList((prev) =>
+        prev.map((u) => 
+          u.id === selectedUserForPremium.id 
+            ? { ...u, is_premium: premiumDuration > 0, premium_expires_at: premiumDuration > 0 ? expiresAt.toISOString() : undefined } 
+            : u
+        )
+      );
+      
+      alert(`Foydalanuvchiga muvaffaqiyatli ${premiumDuration > 0 ? premiumDuration + ' kunlik premium berildi' : 'premium bekor qilindi'}!`);
+      setPremiumModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      alert("Premium berishda xatolik yuz berdi.");
+    } finally {
+      setSavingPremium(false);
     }
   };
 
@@ -450,6 +495,7 @@ export default function AdminPage() {
                 <th className="p-4">Email</th>
                 <th className="p-4">Hozirgi Rol</th>
                 <th className="p-4 text-center">Tasdiqlangan</th>
+                <th className="p-4 text-center">Premium Berish</th>
                 <th className="p-4 text-center">Rol O'zgartirish</th>
                 <th className="p-4 text-right">Amal</th>
               </tr>
@@ -487,6 +533,24 @@ export default function AdminPage() {
                       title="Tasdiqlash holatini o'zgartirish"
                     >
                       <UserCheck size={14} />
+                    </button>
+                  </td>
+
+                  {/* Premium Granting */}
+                  <td className="p-4 text-center">
+                    <button
+                      onClick={() => {
+                        setSelectedUserForPremium(u);
+                        setPremiumDuration(u.is_premium ? 0 : 30);
+                        setPremiumModalOpen(true);
+                      }}
+                      className={`py-1.5 px-3 rounded-lg border transition-all text-[10px] font-bold tracking-wide uppercase ${
+                        u.is_premium
+                          ? "bg-amber-500/20 border-amber-500/30 text-amber-400 hover:bg-amber-500/30"
+                          : "bg-white/5 border-white/10 text-secondary hover:text-white hover:bg-white/10"
+                      }`}
+                    >
+                      {u.is_premium ? "Faol (O'zgartirish)" : "Premium Berish"}
                     </button>
                   </td>
 
@@ -569,6 +633,98 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
+
+      {/* Premium Grant Modal */}
+      <AnimatePresence>
+        {premiumModalOpen && selectedUserForPremium && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setPremiumModalOpen(false)}
+              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-md bg-card border border-white/10 rounded-3xl p-8 shadow-2xl"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-1">Premium Berish</h3>
+                  <p className="text-sm text-secondary">
+                    Foydalanuvchi: <span className="text-primary font-bold">@{selectedUserForPremium.username}</span>
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setPremiumModalOpen(false)}
+                  className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors"
+                >
+                  <ShieldClose size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-4 mb-8">
+                <button
+                  onClick={() => setPremiumDuration(30)}
+                  className={`w-full p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
+                    premiumDuration === 30 ? "bg-amber-500/20 border-amber-500/50 text-amber-400" : "bg-white/5 border-white/10 text-secondary hover:bg-white/10"
+                  }`}
+                >
+                  <span className="font-bold">1 Oylik (30 kun)</span>
+                  {premiumDuration === 30 && <Check size={18} />}
+                </button>
+                <button
+                  onClick={() => setPremiumDuration(90)}
+                  className={`w-full p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
+                    premiumDuration === 90 ? "bg-amber-500/20 border-amber-500/50 text-amber-400" : "bg-white/5 border-white/10 text-secondary hover:bg-white/10"
+                  }`}
+                >
+                  <span className="font-bold">3 Oylik (90 kun)</span>
+                  {premiumDuration === 90 && <Check size={18} />}
+                </button>
+                <button
+                  onClick={() => setPremiumDuration(365)}
+                  className={`w-full p-4 rounded-xl border text-left flex justify-between items-center transition-all ${
+                    premiumDuration === 365 ? "bg-amber-500/20 border-amber-500/50 text-amber-400" : "bg-white/5 border-white/10 text-secondary hover:bg-white/10"
+                  }`}
+                >
+                  <span className="font-bold">1 Yillik (365 kun)</span>
+                  {premiumDuration === 365 && <Check size={18} />}
+                </button>
+                <button
+                  onClick={() => setPremiumDuration(0)}
+                  className={`w-full p-4 rounded-xl border text-left flex justify-between items-center transition-all mt-4 ${
+                    premiumDuration === 0 ? "bg-red-500/20 border-red-500/50 text-red-400" : "bg-white/5 border-white/10 text-secondary hover:bg-red-500/10 hover:text-red-400"
+                  }`}
+                >
+                  <span className="font-bold">Premiumni bekor qilish</span>
+                  {premiumDuration === 0 && <Check size={18} />}
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setPremiumModalOpen(false)}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl font-semibold transition-colors"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  onClick={handleGrantPremium}
+                  disabled={savingPremium}
+                  className="flex-1 py-3 bg-primary hover:bg-primary-hover text-black font-bold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {savingPremium ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
