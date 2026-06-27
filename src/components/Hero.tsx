@@ -10,7 +10,7 @@ const Hero = () => {
   const { t, locale } = useTranslation();
 
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden bg-[#050506]">
+    <section className="relative min-h-[90vh] flex items-center pt-28 pb-16 md:pt-48 md:pb-32 overflow-hidden bg-[#050506]">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_#ff2d5533,_transparent_70%)]" />
@@ -39,14 +39,14 @@ const Hero = () => {
       </div>
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-7">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="lg:col-span-7 xl:col-span-8">
 
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-6xl md:text-8xl lg:text-9xl font-black tracking-tighter leading-[0.9] mb-10 text-white"
+              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[1] mb-8 text-white max-w-full break-words"
             >
               {locale === 'ru' ? (
                 <>
@@ -82,14 +82,14 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="flex flex-wrap gap-5"
+              className="flex flex-col sm:flex-row gap-4 sm:gap-5"
             >
-              <Link href="/tournaments" className="btn-primary group relative overflow-hidden flex items-center space-x-3 !py-4 !px-10">
+              <Link href="/tournaments" className="btn-primary group relative overflow-hidden flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 w-full sm:w-auto">
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
                 <Trophy size={20} />
                 <span className="relative z-10">{t("join_tournament", "Turnirga qo'shil")}</span>
               </Link>
-              <Link href="/tournaments" className="btn-outline flex items-center space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20">
+              <Link href="/tournaments" className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20 w-full sm:w-auto">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                   <Play size={14} fill="currentColor" />
                 </div>
@@ -99,17 +99,17 @@ const Hero = () => {
           </div>
 
           {/* Stats Cards */}
-          <div className="lg:col-span-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="lg:col-span-5 xl:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4 md:gap-5">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.4 }}
-              className="glass-card p-8 border-primary/20 hover:border-primary/50 transition-colors group"
+              className="glass-card p-5 border-primary/20 hover:border-primary/50 transition-colors group"
             >
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
                 <Users size={24} />
               </div>
-              <p className="text-4xl font-black text-white mb-2 tracking-tight">5,000+</p>
+              <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">5,000+</p>
               <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("active_players", "Faol o'yinchilar")}</p>
             </motion.div>
 
@@ -117,12 +117,12 @@ const Hero = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
-              className="glass-card p-8 border-blue-500/20 hover:border-blue-500/50 transition-colors group"
+              className="glass-card p-5 border-blue-500/20 hover:border-blue-500/50 transition-colors group"
             >
               <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 text-blue-500 group-hover:scale-110 transition-transform">
                 <Shield size={24} />
               </div>
-              <p className="text-4xl font-black text-white mb-2 tracking-tight">42</p>
+              <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">42</p>
               <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("verified_tournaments", "Tasdiqlangan turnirlar")}</p>
             </motion.div>
 
@@ -130,14 +130,14 @@ const Hero = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 }}
-              className="glass-card p-8 border-yellow-500/20 hover:border-yellow-500/50 transition-colors group md:col-span-2"
+              className="glass-card p-5 border-yellow-500/20 hover:border-yellow-500/50 transition-colors group md:col-span-2 lg:col-span-1"
             >
               <div className="flex items-center justify-between">
                 <div>
                   <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-6 text-yellow-500 group-hover:scale-110 transition-transform">
                     <Trophy size={24} />
                   </div>
-                  <p className="text-4xl font-black text-white mb-2 tracking-tight">$8,500+</p>
+                  <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">$8,500+</p>
                   <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("total_prize_pool", "Jami sovrin jamg'armasi")}</p>
                 </div>
                 <div className="hidden sm:block w-32 h-32 opacity-10">

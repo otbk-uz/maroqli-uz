@@ -147,7 +147,7 @@ const Navbar = () => {
 
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
-              className="p-2 text-secondary hover:text-white transition-colors relative"
+              className="p-2 text-secondary hover:text-white transition-colors relative hidden md:block"
             >
               <Bell size={20} />
               {mounted && unreadCount > 0 && (
@@ -248,13 +248,31 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Toggle */}
-          <button
-            className="lg:hidden p-2 text-white"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          {/* Mobile Actions & Toggle */}
+          <div className="flex lg:hidden items-center gap-3">
+            {mounted && isAuthenticated && (
+              <div className="relative">
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  className="p-2 text-secondary hover:text-white transition-colors relative"
+                >
+                  <Bell size={24} />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-black font-extrabold text-[9px] rounded-full flex items-center justify-center animate-bounce">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+            
+            <button
+              className="p-2 text-white"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              {isOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -293,7 +311,7 @@ const Navbar = () => {
                   key={link.href}
                   href={link.href}
                   onClick={() => setIsOpen(false)}
-                  className="text-lg font-medium text-secondary hover:text-white"
+                  className="text-lg font-medium text-secondary hover:text-white py-2"
                 >
                   {link.name}
                 </Link>
