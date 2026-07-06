@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Radio, Copy, Check, Eye, EyeOff, Save, ExternalLink } from "lucide-react";
+import { Radio, Copy, Check, Eye, EyeOff, Save, ExternalLink, Monitor, Smartphone, Info } from "lucide-react";
 
 interface StreamSettings {
   id: string;
@@ -25,6 +25,7 @@ export default function StreamDashboardPage() {
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [guideTab, setGuideTab] = useState<"PC" | "MOBILE">("MOBILE");
 
   // Form states
   const [title, setTitle] = useState("");
@@ -47,36 +48,23 @@ export default function StreamDashboardPage() {
     if (!user) return;
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("live_streams")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
+      
+      // Call the MUX backend API to get or create stream keys
+      const res = await fetch("/api/streams/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to setup stream");
 
-      if (error && error.code !== "PGRST116") throw error;
-
-      if (data) {
-        setSettings(data);
-        setTitle(data.title || "");
-        setGame(data.game_name || "");
-        setDonationUrl(data.donation_url || "");
-        setIsLive(data.is_live || false);
-      } else {
-        // Create initial row if it doesn't exist
-        const newKey = "live_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const { data: newData, error: insertError } = await supabase
-          .from("live_streams")
-          .insert({
-            user_id: user.id,
-            stream_key: newKey,
-            title: "Maroqli.uz da yangi efir",
-          })
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        setSettings(newData);
-        setTitle(newData.title);
+      if (data.stream) {
+        setSettings(data.stream);
+        setTitle(data.stream.title || "");
+        setGame(data.stream.game_name || "");
+        setDonationUrl(data.stream.donation_url || "");
+        setIsLive(data.stream.is_live || false);
       }
     } catch (err) {
       console.error("Error fetching stream settings:", err);
@@ -157,7 +145,7 @@ export default function StreamDashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Main Form */}
+          {/* Main Form & Guides */}
           <div className="md:col-span-2 space-y-6">
             <form onSubmit={handleSave} className="glass-card p-6 md:p-8 rounded-3xl border border-white/5 space-y-6 shadow-xl">
               <div className="flex justify-between items-center mb-2">
@@ -234,6 +222,111 @@ export default function StreamDashboardPage() {
                 </button>
               </div>
             </form>
+
+            {/* How to stream guides */}
+            <div className="glass-card p-6 md:p-8 rounded-3xl border border-white/5 space-y-6 shadow-xl">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Info size={20} className="text-primary" /> Efirni qanday boshlayman?
+              </h2>
+
+              {/* Guide Tabs */}
+              <div className="flex bg-white/5 p-1 rounded-2xl border border-white/5 w-full">
+                <button
+                  onClick={() => setGuideTab("MOBILE")}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 ${
+                    guideTab === "MOBILE" ? "bg-primary text-white" : "text-secondary hover:text-white"
+                  }`}
+                >
+                  <Smartphone size={16} /> Telefon orqali
+                </button>
+                <button
+                  onClick={() => setGuideTab("PC")}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs md:text-sm transition-all flex items-center justify-center gap-2 ${
+                    guideTab === "PC" ? "bg-primary text-white" : "text-secondary hover:text-white"
+                  }`}
+                >
+                  <Monitor size={16} /> Kompyuter orqali
+                </button>
+              </div>
+
+              {guideTab === "MOBILE" ? (
+                <div className="space-y-4 text-sm text-secondary/90 leading-relaxed">
+                  <p>Siz telefoningizda (PUBG, Mobile Legends, Free Fire) o'ynayotgan o'yiningizni ushbu saytda namoyish qilish uchun maxsus ilovadan foydalanishingiz kerak.</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">1</div>
+                      <div>
+                        <strong className="text-white">Ilovani yuklab oling:</strong>
+                        <p>Play Market (Android) yoki App Store (iOS) ga kiring va <strong>PRISM Live Studio</strong> yoki <strong>Streamlabs</strong> ilovasini telefoningizga yuklab oling.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">2</div>
+                      <div>
+                        <strong className="text-white">Ulanishni sozlash:</strong>
+                        <p>Ilovaga kiring, ulanish turlari (Destinations) joyidan <strong>"Custom RTMP"</strong> (Boshqa turdagi) opsiyasini tanlang.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl border border-primary/20">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0">3</div>
+                      <div>
+                        <strong className="text-primary">Kalitlarni kiritish (Juda muhim):</strong>
+                        <p>Ilova sizdan <strong>Stream URL</strong> va <strong>Stream Key</strong> so'raydi. O'ng tomondagi (kompyuterda) yoki pastdagi "OBS Sozlamalari" oqnasidan manzil va kalitni nusxalab aynan o'sha joyga yozing.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">4</div>
+                      <div>
+                        <strong className="text-white">O'yinni boshlang:</strong>
+                        <p>Ilovada <strong>"Screen Cast"</strong> (Ekranni uzatish) tugmasini bosib Go Live qiling va o'yiningizga kiring. Tabriklaymiz, siz Maroqli.uz da jonli efirdasiz!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 text-sm text-secondary/90 leading-relaxed">
+                  <p>Kompyuterda o'yin (CS2, Dota 2, GTA 5) ekranini efirga uzatish uchun asosan <strong>OBS Studio</strong> ishlatiladi.</p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">1</div>
+                      <div>
+                        <strong className="text-white">Dasturni o'rnatish:</strong>
+                        <p>Kompyuteringizga obsproject.com saytidan <strong>OBS Studio</strong> dasturini yuklab o'rnating.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">2</div>
+                      <div>
+                        <strong className="text-white">Sozlamalarga kirish:</strong>
+                        <p>OBS ni ochib, pastki o'ng burchakdagi <strong>Settings</strong> (Sozlamalar) -> <strong>Stream</strong> bo'limiga kiring.</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl border border-primary/20">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold shrink-0">3</div>
+                      <div>
+                        <strong className="text-primary">Kalitlarni ulash:</strong>
+                        <p>Service (Xizmat) joyidan <strong>Custom...</strong> ni tanlang. O'ng tomondagi panelda ko'rsatilgan <strong>Server URL</strong> va <strong>Stream Key</strong> dan nusxa olib, OBS'ga xuddi shu nomli maydonlarga joylashtiring (Paste qiling).</p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-3 bg-white/5 p-4 rounded-xl">
+                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">4</div>
+                      <div>
+                        <strong className="text-white">Efirga chiqish:</strong>
+                        <p>OBS'da asosiya oynaga qaytib <strong>"Start Streaming"</strong> (Efirni boshlash) tugmasini bosing va Maroqli.uz dagi kanalingizga o'tib natijani ko'ring!</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* OBS Settings Sidebar */}
