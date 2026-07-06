@@ -327,7 +327,7 @@ export default function StreamDashboardPage() {
                       <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold shrink-0">2</div>
                       <div>
                         <strong className="text-white">Sozlamalarga kirish:</strong>
-                        <p>OBS ni ochib, pastki o'ng burchakdagi <strong>Settings</strong> (Sozlamalar) -> <strong>Stream</strong> bo'limiga kiring.</p>
+                        <p>OBS ni ochib, pastki o'ng burchakdagi <strong>Settings</strong> (Sozlamalar) -&gt; <strong>Stream</strong> bo'limiga kiring.</p>
                       </div>
                     </div>
 
