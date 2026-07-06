@@ -501,7 +501,7 @@ export default function GamedevPage() {
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : activeTab === "dashboard" ? (
             // Developer Dashboard Tab
             <motion.div
               key="dashboard"
