@@ -41,6 +41,22 @@ export async function POST(req: Request) {
           .from("live_streams")
           .update({ is_live: true })
           .eq("stream_url", playbackId);
+          
+        // Fetch stream details to create a notification
+        const { data: streamInfo } = await supabaseAdmin
+          .from("live_streams")
+          .select("title, game_name, user:user_id(username)")
+          .eq("stream_url", playbackId)
+          .single();
+
+        if (streamInfo && (streamInfo as any).user) {
+          const username = (streamInfo as any).user.username;
+          await supabaseAdmin.from("global_notifications").insert({
+            title: `${username} efirni boshladi! 🔴`,
+            message: `Hozir efirda: ${streamInfo.title} (${streamInfo.game_name || "Just Chatting"})`,
+            url: `/streamers/${username}` // we use streamers page or /streamers directly
+          });
+        }
       }
       console.log("Stream connected:", playbackId);
     } 

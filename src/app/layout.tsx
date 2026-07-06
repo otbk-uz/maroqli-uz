@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-
+import React from "react";
+import GlobalNotifications from "@/components/GlobalNotifications";
 import MobileNav from "@/components/MobileNav";
 import Footer from "@/components/Footer";
 
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="uz">
       <body className={inter.className}>
         <Providers>
+          <GlobalNotifications />
           <div className="min-h-screen flex flex-col bg-background text-foreground pb-20 lg:pb-0">
             {children}
             <Footer />

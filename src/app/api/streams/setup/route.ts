@@ -28,21 +28,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Foydalanuvchi ID si (userId) taqdim etilmadi" }, { status: 400 });
     }
 
-    // 0. CHECK ROLE / PERMISSION: Only tournament participants can stream
-    // Admins could be bypassed here if we had a role check, but for now we check tournament_participants
-    const { data: participantData, error: participantError } = await supabaseAdmin
-      .from("tournament_participants")
-      .select("id")
-      .eq("user_id", userId)
-      .limit(1);
+    // 0. CHECK ROLE / PERMISSION: Only tournament participants, GameDevs, and Admins can stream
+    let isAllowed = false;
 
-    if (participantError) {
-      console.error("Error checking participant status:", participantError);
+    // First check user role from profiles
+    const { data: profileData } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (profileData && (profileData.role === "GAMEDEV" || profileData.role === "ADMIN" || profileData.role === "STREAMER")) {
+      isAllowed = true;
+    } else {
+      // If not gamedev/admin, check if they are in a tournament
+      const { data: participantData } = await supabaseAdmin
+        .from("tournament_participants")
+        .select("id")
+        .eq("user_id", userId)
+        .limit(1);
+        
+      if (participantData && participantData.length > 0) {
+        isAllowed = true;
+      }
     }
 
-    if (!participantData || participantData.length === 0) {
+    if (!isAllowed) {
       return NextResponse.json(
-        { error: "Faqatgina biron bir turnirda ishtirok etayotgan geymerlargina jonli efir qila oladi." },
+        { error: "Faqatgina turnir ishtirokchilari yoki GameDev (dasturchilar) jonli efir qila oladi." },
         { status: 403 }
       );
     }

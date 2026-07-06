@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { BackButton } from "../../components/ui/BackButton";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useTranslation } from "@/lib/store";
+import Link from "next/link";
 
 interface Streamer {
   id: string;
@@ -27,12 +28,27 @@ interface Streamer {
   is_following?: boolean;
 }
 
+interface LiveStream {
+  id: string;
+  user_id: string;
+  title: string;
+  game_name: string;
+  is_live: boolean;
+  viewers_count: number;
+  thumbnail_url: string;
+  user: {
+    username: string;
+    avatar_url: string;
+  };
+}
+
 const StreamersPage = () => {
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
   const { t } = useTranslation();
   
   const [streamers, setStreamers] = useState<Streamer[]>([]);
+  const [liveStreams, setLiveStreams] = useState<LiveStream[]>([]);
   const [loading, setLoading] = useState(true);
   const [followLoading, setFollowLoading] = useState<string | null>(null);
 
@@ -54,6 +70,20 @@ const StreamersPage = () => {
         .order('viewers_count', { ascending: false });
 
       if (streamersError) throw streamersError;
+
+      // Fetch live streams from MUX
+      const { data: liveData } = await supabase
+        .from("live_streams")
+        .select(`
+          *,
+          user:user_id(username, avatar_url)
+        `)
+        .eq("is_live", true)
+        .order("viewers_count", { ascending: false });
+
+      if (liveData) {
+        setLiveStreams(liveData);
+      }
 
       let followersMap = new Set<string>();
       
@@ -155,13 +185,75 @@ const StreamersPage = () => {
           </div>
         </div>
 
-        {streamers.length === 0 ? (
+        {streamers.length === 0 && liveStreams.length === 0 ? (
           <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/5">
              <Play size={48} className="text-secondary mx-auto mb-4 opacity-50" />
              <p className="text-secondary text-lg">{t("no_streamers", "Hozircha streamerlar yo'q.")}</p>
           </div>
         ) : (
           <>
+            {/* Real Live Streams from MUX */}
+            {liveStreams.length > 0 && (
+              <div className="mb-16">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                  <span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" />
+                  Hozirgi Jonli Efirlar
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {liveStreams.map((stream) => (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      key={stream.id}
+                      className="group cursor-pointer"
+                    >
+                      <Link href={`/streams/${stream.user?.username || stream.id}`}>
+                        <div className="relative aspect-video rounded-2xl overflow-hidden mb-3 bg-black/40 border border-white/5 group-hover:border-primary/50 transition-colors">
+                          {stream.thumbnail_url ? (
+                            <img src={stream.thumbnail_url} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-purple-500/20 group-hover:scale-105 transition-transform duration-500">
+                              <Play size={48} className="text-white/50" />
+                            </div>
+                          )}
+                          
+                          <div className="absolute top-2 left-2 bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded uppercase flex items-center gap-1 shadow-lg shadow-red-500/20">
+                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-ping" /> LIVE
+                          </div>
+
+                          <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1.5">
+                            <Users size={12} /> {stream.viewers_count}
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 px-1">
+                          <div className="w-10 h-10 rounded-full overflow-hidden bg-white/10 shrink-0 border border-white/5">
+                            {stream.user?.avatar_url ? (
+                              <img src={stream.user.avatar_url} alt={stream.user.username} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-primary/20 text-primary font-bold uppercase">
+                                {stream.user?.username?.charAt(0) || "U"}
+                              </div>
+                            )}
+                          </div>
+                          <div className="overflow-hidden">
+                            <h3 className="font-bold text-sm text-white truncate group-hover:text-primary transition-colors" title={stream.title}>
+                              {stream.title}
+                            </h3>
+                            <p className="text-xs text-secondary truncate mt-0.5">{stream.user?.username || "Gamer"}</p>
+                            <div className="flex items-center gap-1 mt-1 text-[10px] font-semibold text-primary/80 uppercase">
+                              {stream.game_name || "Just Chatting"}
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <h2 className="text-2xl font-bold mb-6">Barcha Streamerlar</h2>
             {/* Featured Stream */}
             {featuredStreamer && (
               <motion.div 

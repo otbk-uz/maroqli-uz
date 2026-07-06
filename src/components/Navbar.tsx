@@ -21,7 +21,6 @@ const Navbar = () => {
     { name: t("home", "Bosh sahifa"), href: "/" },
     { name: t("tournaments", "Turnirlar"), href: "/tournaments" },
     { name: t("games", "O'yinlar"), href: "/games" },
-    { name: t("live_streams", "🔴 Jonli Efir"), href: "/streams" },
     { name: t("streamers", "Streamerlar"), href: "/streamers" },
     { name: t("premium", "👑 Premium"), href: "/premium" },
     { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
