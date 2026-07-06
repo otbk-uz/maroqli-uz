@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
-import { Radio, Copy, Check, Eye, EyeOff, Save, ExternalLink, Monitor, Smartphone, Info } from "lucide-react";
+import { Radio, Copy, Check, Eye, EyeOff, Save, ExternalLink, Monitor, Smartphone, Info, AlertCircle } from "lucide-react";
 
 interface StreamSettings {
   id: string;
