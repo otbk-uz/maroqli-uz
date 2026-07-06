@@ -13,7 +13,7 @@ const posts = [
       avatar: "AK",
       role: "Pro Player",
     },
-    content: "Bugungi turnirda g'alaba qozondik! Jamoadoshlarimga rahmat. #CS2 #PlayNationUz",
+    content: "Bugungi turnirda g'alaba qozondik! Jamoadoshlarimga rahmat. #CS2 #Maroqli.uz",
     image: null,
     likes: 124,
     comments: 18,

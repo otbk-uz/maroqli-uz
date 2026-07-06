@@ -131,7 +131,7 @@ export default function PremiumPage() {
             transition={{ duration: 0.5 }}
           >
             <span className="bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1.5 mb-4">
-              <Sparkles size={12} className="animate-spin" /> {t("premium_subtitle", "PLAYNATIONUZ PREMIUM")}
+              <Sparkles size={12} className="animate-spin" /> {t("premium_subtitle", "Maroqli.uz PREMIUM")}
             </span>
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
               {locale === 'ru' ? (

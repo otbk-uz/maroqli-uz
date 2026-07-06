@@ -84,7 +84,7 @@ const Navbar = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo.jpg.png" alt="PlayNationUz Logo" className="h-12 w-auto" />
+            <img src="/logo.jpg.png" alt="Maroqli.uz Logo" className="h-12 w-auto" />
           </Link>
 
           {/* Desktop Menu */}

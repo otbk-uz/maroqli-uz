@@ -73,7 +73,7 @@ export default function AdminPage() {
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginForm.username === 'admin' && loginForm.password === 'playnation2026') {
+    if (loginForm.username === 'admin' && loginForm.password === 'MAROQLI2026') {
       setIsCustomAdmin(true);
       sessionStorage.setItem('customAdminLogin', 'true');
       setLoginError('');
@@ -139,7 +139,7 @@ export default function AdminPage() {
         const mappedUsers = profiles.map((p: any) => ({
           id: p.id,
           username: p.username,
-          email: p.email || `${p.username}@playnation.uz`, // Profiles table might not have email
+          email: p.email || `${p.username}@MAROQLI.uz`, // Profiles table might not have email
           full_name: p.full_name || '',
           nickname: p.full_name || p.username,
           role: p.role || 'GAMER',

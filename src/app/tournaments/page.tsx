@@ -6,7 +6,7 @@ import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { useTranslation } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 
 interface Tournament {
   id: string;
@@ -27,6 +27,9 @@ const TournamentsPage = () => {
   const [filter, setFilter] = useState("ALL");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const { user } = useAuthStore();
+  const isOrganizer = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
   // Debounce search
   useEffect(() => {
@@ -163,6 +166,14 @@ const TournamentsPage = () => {
                   className="bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 outline-none focus:border-primary/50 transition-all w-full text-sm font-medium text-white"
                 />
               </div>
+              {isOrganizer && (
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
+                >
+                  + Turnir tashkil qilish
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -294,6 +305,75 @@ const TournamentsPage = () => {
           )}
         </div>
       </section>
+
+      {/* Create Tournament Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-card max-w-2xl w-full p-8 rounded-3xl border border-white/10 max-h-[90vh] overflow-y-auto"
+            >
+              <h2 className="text-2xl font-black mb-6 text-white">Yangi Turnir Tashkil Qilish</h2>
+              
+              <form className="space-y-6">
+                <div>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Turnir Nomi</label>
+                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin turi</label>
+                    <select className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors">
+                      <option value="CS2">Counter-Strike 2</option>
+                      <option value="DOTA2">Dota 2</option>
+                      <option value="PUBG">PUBG Mobile</option>
+                      <option value="VALORANT">Valorant</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Mukofot jamg'armasi ($)</label>
+                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="1000" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Jamoalar soni (Max)</label>
+                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="16" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Boshlanish sanasi</label>
+                    <input type="datetime-local" className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Qo'shimcha Ma'lumot / Qoidalar</label>
+                  <textarea rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Turnir qoidalari va batafsil ma'lumotlar..."></textarea>
+                </div>
+
+                <div className="flex gap-4 pt-4 border-t border-white/10">
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors">
+                    Bekor Qilish
+                  </button>
+                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
+                    E'lon Qilish
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 };

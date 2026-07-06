@@ -45,7 +45,7 @@ export default function GamedevPage() {
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<"community" | "dashboard">("community");
+  const [activeTab, setActiveTab] = useState<"community" | "dashboard" | "lessons">("community");
   const [dashboardSubTab, setDashboardSubTab] = useState<"games" | "profile" | "past_projects">("games");
   
   // Dashboard & Studio data
@@ -375,6 +375,14 @@ export default function GamedevPage() {
               >
                 <Layers size={16} /> Dashboard
               </button>
+              <button
+                onClick={() => setActiveTab("lessons")}
+                className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                  activeTab === "lessons" ? "bg-primary text-white" : "text-secondary hover:text-white"
+                }`}
+              >
+                <FileText size={16} /> Darslar
+              </button>
             </div>
           )}
         </div>
@@ -488,7 +496,7 @@ export default function GamedevPage() {
                 <div>
                   <h3 className="text-2xl font-bold mb-2">{t("gamedev_banner_title", "Siz ham o'yin yaratuvchimisiz?")}</h3>
                   <p className="text-sm text-secondary max-w-2xl">
-                    {t("gamedev_banner_desc", "O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang.")}
+                    {t("gamedev_banner_desc", "O'zingizning o'yinlaringizni Maroqli.uz do'koniga joylashtirib daromad olishni boshlang.")}
                   </p>
                 </div>
               </div>
@@ -997,7 +1005,52 @@ export default function GamedevPage() {
                 </motion.div>
               )}
             </motion.div>
-          )}
+          ) : activeTab === "lessons" ? (
+            <motion.div
+              key="lessons"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-8"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <div>
+                  <h2 className="text-3xl font-bold mb-2">GameDev Darslari</h2>
+                  <p className="text-secondary text-sm">O'yin yaratish bo'yicha bepul video darsliklar va o'quv qo'llanmalari.</p>
+                </div>
+                {isDeveloper && (
+                  <button className="py-2.5 px-5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all">
+                    <Plus size={16} /> Yangi dars qo'shish
+                  </button>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[
+                  { id: 1, title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" },
+                  { id: 2, title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070" },
+                  { id: 3, title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082" }
+                ].map(lesson => (
+                  <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer">
+                    <div className="aspect-video relative overflow-hidden">
+                      <img src={lesson.img} alt={lesson.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all" />
+                      <div className="absolute top-3 left-3 bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                        {lesson.level}
+                      </div>
+                    </div>
+                    <div className="p-5">
+                      <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">{lesson.title}</h3>
+                      <p className="text-xs text-secondary mb-4">Muallif: <span className="text-white">{lesson.author}</span></p>
+                      <button className="w-full py-2 bg-white/5 hover:bg-primary rounded-lg text-sm font-bold transition-all text-white border border-white/10 hover:border-primary">
+                        Darsni ko'rish
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          ) : null}
         </AnimatePresence>
       </div>
     </main>

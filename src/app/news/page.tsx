@@ -60,7 +60,7 @@ export default function NewsPage() {
               className="flex items-center space-x-2 text-primary font-bold text-xs uppercase tracking-widest mb-4"
             >
               <Newspaper size={14} />
-              <span>PlayNationUz OAV</span>
+              <span>Maroqli.uz OAV</span>
             </motion.div>
             <motion.h1 
               initial={{ opacity: 0, y: 20 }}

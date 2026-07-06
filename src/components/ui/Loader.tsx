@@ -20,7 +20,7 @@ export const FullPageLoader = () => (
   <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center">
     <div className="text-center">
       <Spinner size="lg" />
-      <p className="mt-4 text-secondary font-bold animate-pulse">PLAYNATION YUKLANMOQDA...</p>
+      <p className="mt-4 text-secondary font-bold animate-pulse">MAROQLI YUKLANMOQDA...</p>
     </div>
   </div>
 );

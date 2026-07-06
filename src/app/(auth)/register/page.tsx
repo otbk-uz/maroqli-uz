@@ -504,7 +504,7 @@ const RegisterPage = () => {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
-                        placeholder="gamer@playnation.uz"
+                        placeholder="gamer@MAROQLI.uz"
                         className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
                       />
                       {errors.email && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.email}</p>}

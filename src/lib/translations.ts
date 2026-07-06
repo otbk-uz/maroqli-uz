@@ -105,7 +105,7 @@ export const translations = {
     no_streamers: "Hozircha streamerlar yo'q.",
 
     // Premium page
-    premium_subtitle: "PLAYNATIONUZ PREMIUM",
+    premium_subtitle: "MAROQLI.UZ PREMIUM",
     premium_title: "Cheksiz Imkoniyatlar va Premium Gaming Tajriba",
     premium_desc: "Hamjamiyat turnirlarida birinchilardan bo'ling, maxsus sovrinlarni yutib oling va platformani qo'llab-quvvatlab o'zgacha mavqega ega bo'ling.",
     sub_active: "Premium Obuna Faol!",
@@ -158,7 +158,7 @@ export const translations = {
     details_page: "Batafsil Sahifa",
     donate: "Donat qilish",
     gamedev_banner_title: "Siz ham o'yin yaratuvchimisiz?",
-    gamedev_banner_desc: "O'zingizning o'yinlaringizni PlayNationUz do'koniga joylashtirib daromad olishni boshlang.",
+    gamedev_banner_desc: "O'zingizning o'yinlaringizni Maroqli.uz do'koniga joylashtirib daromad olishni boshlang.",
     loading_studio: "Studiya ma'lumotlari yuklanmoqda...",
     studio_not_found: "Studiya topilmadi",
     studio_not_found_desc: "Qidirilayotgan o'yin yaratuvchisi yoki studiya profili mavjud emas yoki o'chirilgan.",
@@ -287,7 +287,7 @@ export const translations = {
     no_streamers: "Стримеры пока отсутствуют.",
 
     // Premium page
-    premium_subtitle: "PLAYNATIONUZ PREMIUM",
+    premium_subtitle: "MAROQLI.UZ PREMIUM",
     premium_title: "Безграничные Возможности и Премиум Гейминг",
     premium_desc: "Будьте в числе первых в турнирах сообщества, выигрывайте специальные призы и поддержите платформу, получив особый статус.",
     sub_active: "Премиум Подписка Активна!",
@@ -340,7 +340,7 @@ export const translations = {
     details_page: "Подробнее",
     donate: "Донат",
     gamedev_banner_title: "Вы тоже разработчик игр?",
-    gamedev_banner_desc: "Начните зарабатывать, размещая свои игры в магазине PlayNationUz.",
+    gamedev_banner_desc: "Начните зарабатывать, размещая свои игры в магазине Maroqli.uz.",
     loading_studio: "Загрузка информации о студии...",
     studio_not_found: "Студия не найдена",
     studio_not_found_desc: "Искомый разработчик игр или профиль студии не существует либо был удален.",
@@ -469,7 +469,7 @@ export const translations = {
     no_streamers: "No streamers yet.",
 
     // Premium page
-    premium_subtitle: "PLAYNATIONUZ PREMIUM",
+    premium_subtitle: "MAROQLI.UZ PREMIUM",
     premium_title: "Unlimited Opportunities & Premium Gaming Experience",
     premium_desc: "Be among the first in community tournaments, win special prizes and support the platform to get a special status.",
     sub_active: "Premium Subscription Active!",
@@ -522,7 +522,7 @@ export const translations = {
     details_page: "Details",
     donate: "Donate",
     gamedev_banner_title: "Are you a game developer too?",
-    gamedev_banner_desc: "Start earning by placing your games in the PlayNationUz store.",
+    gamedev_banner_desc: "Start earning by placing your games in the Maroqli.uz store.",
     loading_studio: "Loading studio details...",
     studio_not_found: "Studio not found",
     studio_not_found_desc: "The requested game developer or studio profile does not exist or has been deleted.",

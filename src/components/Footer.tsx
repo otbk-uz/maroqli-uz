@@ -17,7 +17,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/logo.jpg.png" alt="PlayNationUz Logo" className="h-12 w-auto" />
+              <img src="/logo.jpg.png" alt="Maroqli.uz Logo" className="h-12 w-auto" />
             </Link>
             <p className="text-secondary text-sm leading-relaxed max-w-sm">
               {t("footer_desc", "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi, game developerlar va streamerlarni qo'llab-quvvatlovchi zamonaviy ekotizim platformasi.")}
@@ -57,12 +57,12 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2">
                 <Mail size={14} className="text-primary" />
-                <span>info@playnation.uz</span>
+                <span>info@maroqli.uz</span>
               </li>
               <li className="flex items-center gap-2">
                 <Send size={14} className="text-primary" />
-                <a href="https://t.me/playnationuz" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  Telegram: @playnationuz
+                <a href="https://t.me/maroqliuz" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
+                  Telegram: @maroqliuz
                 </a>
               </li>
             </ul>
@@ -71,7 +71,7 @@ const Footer = () => {
 
         {/* Bottom copyright line */}
         <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-secondary">
-          <p>&copy; {new Date().getFullYear()} PlayNationUz. {t("rights_reserved", "Barcha huquqlar himoyalangan.")}</p>
+          <p>&copy; {new Date().getFullYear()} Maroqli.uz. {t("rights_reserved", "Barcha huquqlar himoyalangan.")}</p>
           <div className="flex space-x-6">
             <Link href="/terms" className="hover:text-primary transition-colors">{t("terms_short", "Oferta")}</Link>
             <Link href="/privacy" className="hover:text-primary transition-colors">{t("privacy_short", "Maxfiylik")}</Link>

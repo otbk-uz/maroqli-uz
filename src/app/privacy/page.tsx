@@ -86,18 +86,18 @@ export default function PrivacyPage() {
             <div className="glass-card p-8 md:p-10 border-white/5 bg-card/30 backdrop-blur-md space-y-8">
               
               <p className="text-white font-medium text-lg leading-relaxed border-l-2 border-primary pl-4">
-                Ushbu Maxfiylik Siyosati PlayNationUz platformasi (playnation.uz) foydalanuvchilaridan to'planadigan ma'lumotlar, ulardan foydalanish tartibi va himoya choralari haqida to'liq ma'lumot beradi. Platforma xizmatlaridan foydalanishdan oldin ushbu siyosat bilan diqqat bilan tanishib chiqishingizni so'raymiz.
+                Ushbu Maxfiylik Siyosati Maroqli.uz platformasi (MAROQLI.uz) foydalanuvchilaridan to'planadigan ma'lumotlar, ulardan foydalanish tartibi va himoya choralari haqida to'liq ma'lumot beradi. Platforma xizmatlaridan foydalanishdan oldin ushbu siyosat bilan diqqat bilan tanishib chiqishingizni so'raymiz.
               </p>
 
               {/* Section 1 */}
               <div id="section-1" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">1. Operatorning Ma'lumotlari</h2>
                 <ul className="space-y-2 font-medium">
-                  <li>Platforma operatori: <span className="text-white">PlayNationUz</span></li>
-                  <li>Veb-sayt: <span className="text-white">playnation.uz</span></li>
-                  <li>Elektron pochta: <span className="text-white">info@playnation.uz</span></li>
+                  <li>Platforma operatori: <span className="text-white">Maroqli.uz</span></li>
+                  <li>Veb-sayt: <span className="text-white">MAROQLI.uz</span></li>
+                  <li>Elektron pochta: <span className="text-white">info@MAROQLI.uz</span></li>
                   <li>Telefon: <span className="text-white">+998 93-823-7773</span></li>
-                  <li>Telegram: <span className="text-white">@playnationuz</span></li>
+                  <li>Telegram: <span className="text-white">@Maroqli.uz</span></li>
                 </ul>
               </div>
 
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
                   </div>
                   <div>
                     <h3 className="text-white font-bold mb-2">2.3. To'planmaydigan ma'lumotlar</h3>
-                    <p>PlayNationUz quyidagilarni to'plamaydi va so'ramaydi:</p>
+                    <p>Maroqli.uz quyidagilarni to'plamaydi va so'ramaydi:</p>
                     <ul className="list-disc list-inside space-y-1 pl-4">
                       <li>Bank kartasining to'liq raqami (to'lovlar Payme, Click, Uzum orqali amalga oshiriladi)</li>
                       <li>Pasport yoki shaxsiy guvohnoma raqami (agar qonun talab qilmasa)</li>
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
               <div id="section-5" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">5. Uchinchi Shaxslar bilan Ulashish</h2>
                 <p>
-                  PlayNationUz foydalanuvchilarning shaxsiy ma'lumotlarini uchinchi shaxslarga sotmaydi yoki ijaraga bermaydi. Ma'lumotlar uchinchi shaxslarga faqat quyidagi holatlarda berilishi mumkin:
+                  Maroqli.uz foydalanuvchilarning shaxsiy ma'lumotlarini uchinchi shaxslarga sotmaydi yoki ijaraga bermaydi. Ma'lumotlar uchinchi shaxslarga faqat quyidagi holatlarda berilishi mumkin:
                 </p>
                 <ul className="list-disc list-inside space-y-1 pl-4">
                   <li>To'lov operatorlari (Payme, Click, Uzum) tranzaksiyani amalga oshirishlari uchun</li>
@@ -192,7 +192,7 @@ export default function PrivacyPage() {
               <div id="section-7" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">7. Siyosatga O'zgartirish Kiritish</h2>
                 <p>
-                  PlayNationUz ushbu Maxfiylik Siyosatini o'zgartirish huquqiga ega. Siyosat o'zgarganda yangi versiya saytga joylashtiriladi va so'nggi yangilanish sanasi yangilanadi. Yangiliklar va muhim o'zgarishlar haqida foydalanuvchilarga bildirishnomalar yuboriladi.
+                  Maroqli.uz ushbu Maxfiylik Siyosatini o'zgartirish huquqiga ega. Siyosat o'zgarganda yangi versiya saytga joylashtiriladi va so'nggi yangilanish sanasi yangilanadi. Yangiliklar va muhim o'zgarishlar haqida foydalanuvchilarga bildirishnomalar yuboriladi.
                 </p>
               </div>
 

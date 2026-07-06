@@ -91,7 +91,7 @@ export default function TermsPage() {
             <div className="glass-card p-8 md:p-10 border-white/5 bg-card/30 backdrop-blur-md space-y-8">
               
               <p className="text-white font-medium text-lg leading-relaxed border-l-2 border-primary pl-4">
-                Ushbu Foydalanish Shartlari (&quot;Shartnoma&quot;) PlayNationUz platformasi (playnation.uz) bilan foydalanuvchi o'rtasidagi huquqiy munosabatlarni tartibga soladi. Platforma xizmatlaridan ro'yxatdan o'tish va foydalanish ushbu shartlarni to'liq qabul qilishingizni anglatadi.
+                Ushbu Foydalanish Shartlari (&quot;Shartnoma&quot;) Maroqli.uz platformasi (MAROQLI.uz) bilan foydalanuvchi o'rtasidagi huquqiy munosabatlarni tartibga soladi. Platforma xizmatlaridan ro'yxatdan o'tish va foydalanish ushbu shartlarni to'liq qabul qilishingizni anglatadi.
                 <br />
                 <span className="text-primary font-bold">Agar siz ushbu shartlarga rozi bo'lmasangiz, platforma xizmatlaridan foydalanmang.</span>
               </p>
@@ -103,7 +103,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">1.1. Platforma haqida</h3>
                     <p>
-                      PlayNationUz — O'zbekistondagi gamerlar, e-sport ishtirokchilari, kontent yaratuvchilar va game developerlar uchun yaratilgan raqamli ekotizim. Platforma quyidagi xizmatlarni taqdim etadi:
+                      Maroqli.uz — O'zbekistondagi gamerlar, e-sport ishtirokchilari, kontent yaratuvchilar va game developerlar uchun yaratilgan raqamli ekotizim. Platforma quyidagi xizmatlarni taqdim etadi:
                     </p>
                     <ul className="list-disc list-inside space-y-1 mt-2 pl-4">
                       <li>O'yin do'koni (5% komissiya bilan mahalliy va xalqaro o'yinlar)</li>
@@ -140,7 +140,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">2.2. Hisob xavfsizligi</h3>
                     <p>
-                      Siz o'z hisobingiz xavfsizligi uchun to'liq javobgarsiz. Hisobingiz ruxsatsiz ishlatilganda darhol <span className="text-white font-semibold">info@playnation.uz</span> manziliga xabar bering. PlayNationUz hisobingizdan noto'g'ri foydalanish oqibatida yuzaga kelgan zararlar uchun javobgar emas.
+                      Siz o'z hisobingiz xavfsizligi uchun to'liq javobgarsiz. Hisobingiz ruxsatsiz ishlatilganda darhol <span className="text-white font-semibold">info@MAROQLI.uz</span> manziliga xabar bering. Maroqli.uz hisobingizdan noto'g'ri foydalanish oqibatida yuzaga kelgan zararlar uchun javobgar emas.
                     </p>
                   </div>
                   <div>
@@ -186,7 +186,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">3.3. Kontent qoidalari</h3>
                     <p>
-                      Foydalanuvchi tomonidan joylashtirilgan kontent uchun foydalanuvchining o'zi to'liq javobgar. PlayNationUz shartlarni buzuvchi kontentni ogohlantirmasdan o'chirish, cheklash yoki moderatsiya qilish huquqini saqlab qoladi.
+                      Foydalanuvchi tomonidan joylashtirilgan kontent uchun foydalanuvchining o'zi to'liq javobgar. Maroqli.uz shartlarni buzuvchi kontentni ogohlantirmasdan o'chirish, cheklash yoki moderatsiya qilish huquqini saqlab qoladi.
                     </p>
                   </div>
                 </div>
@@ -211,7 +211,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">4.2. O'yinlar do'koni va komissiya</h3>
                     <p>
-                      PlayNationUz game developerlardan 5% komissiya oladi — bu Steam (30%) va Epic Games (12%) bilan solishtirganda sezilarli darajada past. Developerlar o'z narxlarini o'zlari belgilaydi.
+                      Maroqli.uz game developerlardan 5% komissiya oladi — bu Steam (30%) va Epic Games (12%) bilan solishtirganda sezilarli darajada past. Developerlar o'z narxlarini o'zlari belgilaydi.
                     </p>
                   </div>
                   <div>
@@ -245,7 +245,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">5.3. Nizolar</h3>
                     <p>
-                      Turnir natijalariga e'tiroz bildirish uchun natija e'lon qilinganidan 48 soat ichida <span className="text-white font-semibold">info@playnation.uz</span> manziliga murojaat qiling. PlayNationUz qarorlari yakuniy hisoblanadi.
+                      Turnir natijalariga e'tiroz bildirish uchun natija e'lon qilinganidan 48 soat ichida <span className="text-white font-semibold">info@MAROQLI.uz</span> manziliga murojaat qiling. Maroqli.uz qarorlari yakuniy hisoblanadi.
                     </p>
                   </div>
                 </div>
@@ -255,7 +255,7 @@ export default function TermsPage() {
               <div id="section-6" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">6. Intellektual Mulk</h2>
                 <p>
-                  PlayNationUz platformasidagi barcha kontent (logotip, dizayn, dasturiy ta'minot, kontent katalogi) PlayNationUz yoki tegishli huquq egalarinikiga tegishli. Ruxsatsiz nusxa ko'chirish, tarqatish yoki tijoriy maqsadlarda ishlatish taqiqlanadi.
+                  Maroqli.uz platformasidagi barcha kontent (logotip, dizayn, dasturiy ta'minot, kontent katalogi) Maroqli.uz yoki tegishli huquq egalarinikiga tegishli. Ruxsatsiz nusxa ko'chirish, tarqatish yoki tijoriy maqsadlarda ishlatish taqiqlanadi.
                 </p>
                 <p>
                   Foydalanuvchi o'zi joylagan kontentning mualliflik huquqiga egaligini kafolatlaydi. Agar joylashtirilgan kontent uchinchi tomonning huquqlarini buzsa, foydalanuvchining o'zi to'liq javob beradi.
@@ -286,7 +286,7 @@ export default function TermsPage() {
               {/* Section 8 */}
               <div id="section-8" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">8. Javobgarlik Chegaralari</h2>
-                <p>PlayNationUz quyidagi hollar uchun javobgar emas:</p>
+                <p>Maroqli.uz quyidagi hollar uchun javobgar emas:</p>
                 <ul className="list-disc list-inside space-y-1 pl-4">
                   <li>Foydalanuvchining o'z harakatlari natijasida yuzaga kelgan zararlar</li>
                   <li>Uchinchi tomon xizmatlari (to'lov tizimlari, tarmoq aloqasi) ishlamay qolishi</li>
@@ -295,7 +295,7 @@ export default function TermsPage() {
                   <li>Platforma vaqtincha texnik xizmat ko'rsatish uchun to'xtatilgan davr</li>
                 </ul>
                 <p className="mt-2">
-                  Platforma xizmatlari &quot;borligidek&quot; (as-is) asosida taqdim etiladi. PlayNationUz xizmatlarning uzluksizligi yoki muayyan maqsadga to'liq muvofiqligi haqida kafolat bermaydi.
+                  Platforma xizmatlari &quot;borligidek&quot; (as-is) asosida taqdim etiladi. Maroqli.uz xizmatlarning uzluksizligi yoki muayyan maqsadga to'liq muvofiqligi haqida kafolat bermaydi.
                 </p>
               </div>
 
@@ -305,7 +305,7 @@ export default function TermsPage() {
                 <div className="space-y-4">
                   <div>
                     <h3 className="text-white font-bold mb-2">9.1. Bloklash asoslari</h3>
-                    <p>PlayNationUz quyidagi holatlarda hisobni vaqtincha yoki doimiy ravishda bloklab qo'yish huquqiga ega:</p>
+                    <p>Maroqli.uz quyidagi holatlarda hisobni vaqtincha yoki doimiy ravishda bloklab qo'yish huquqiga ega:</p>
                     <ul className="list-disc list-inside space-y-1 mt-2 pl-4">
                       <li>Ushbu Foydalanish Shartlarini buzish</li>
                       <li>O'zbekiston qonunchiligini buzish</li>
@@ -317,7 +317,7 @@ export default function TermsPage() {
                   <div>
                     <h3 className="text-white font-bold mb-2">9.2. Bloklashga e'tiroz</h3>
                     <p>
-                      Hisobingiz bloklanganiga e'tiroz bildirish uchun <span className="text-white font-semibold">info@playnation.uz</span> manziliga 10 kun ichida murojaat qiling. Har bir holat alohida ko'rib chiqiladi.
+                      Hisobingiz bloklanganiga e'tiroz bildirish uchun <span className="text-white font-semibold">info@MAROQLI.uz</span> manziliga 10 kun ichida murojaat qiling. Har bir holat alohida ko'rib chiqiladi.
                     </p>
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export default function TermsPage() {
               <div id="section-11" className="space-y-4 scroll-mt-28">
                 <h2 className="text-2xl font-bold text-white border-b border-white/10 pb-2">11. O'zgarishlar</h2>
                 <p>
-                  PlayNationUz ushbu Foydalanish Shartlarini xabardorlik bilan yoki xabardorliksiz o'zgartirish huquqiga ega. Muhim o'zgarishlar haqida foydalanuvchilar kamida 7 kun oldin xabardor qilinadi. Yangilangan shartlar bilan tanishib chiqish foydalanuvchining o'z mas'uliyatidir.
+                  Maroqli.uz ushbu Foydalanish Shartlarini xabardorlik bilan yoki xabardorliksiz o'zgartirish huquqiga ega. Muhim o'zgarishlar haqida foydalanuvchilar kamida 7 kun oldin xabardor qilinadi. Yangilangan shartlar bilan tanishib chiqish foydalanuvchining o'z mas'uliyatidir.
                 </p>
               </div>
 
@@ -351,15 +351,15 @@ export default function TermsPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <HelpCircle size={14} className="text-primary" />
-                    <span>Elektron pochta: info@playnation.uz</span>
+                    <span>Elektron pochta: info@MAROQLI.uz</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-primary font-bold">@</span>
-                    <span>Telegram: @playnationuz</span>
+                    <span>Telegram: @Maroqli.uz</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="text-primary font-bold">IG</span>
-                    <span>Instagram: @playnation.uz</span>
+                    <span>Instagram: @MAROQLI.uz</span>
                   </li>
                 </ul>
               </div>

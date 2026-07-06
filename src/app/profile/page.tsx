@@ -721,7 +721,7 @@ const ProfilePage = () => {
                     <Shield size={48} className="text-white/20 mx-auto mb-4" />
                     <h4 className="text-lg font-bold text-white mb-2">Tez orada!</h4>
                     <p className="text-secondary text-sm leading-relaxed">
-                      Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada PlayNationUz platformasida mavjud bo'ladi.
+                      Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada Maroqli.uz platformasida mavjud bo'ladi.
                     </p>
                   </div>
 

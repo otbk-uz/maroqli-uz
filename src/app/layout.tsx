@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PlayNationUz | O'zbekiston Gaming Hamjamiyati",
+  title: "Maroqli.uz | O'zbekiston Gaming Hamjamiyati",
   description: "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi ekotizim platformasi.",
 };
 

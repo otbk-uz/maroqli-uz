@@ -473,7 +473,7 @@ const ForumPage = () => {
                       <p className="text-[10px] text-secondary">24/7 rejimida admin bilan bog'lanish</p>
                     </div>
                     <a
-                      href="https://t.me/playnationuz"
+                      href="https://t.me/Maroqli.uz"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-[#229ED9] hover:bg-[#229ED9]/90 text-white font-bold text-xs rounded-xl transition-all whitespace-nowrap"

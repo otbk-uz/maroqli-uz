@@ -342,7 +342,7 @@ function PaySimulateContent() {
 
             <h2 className="text-2xl font-bold text-white mb-2">To'lov Muvaffaqiyatli!</h2>
             <p className="text-sm text-secondary mb-6 leading-relaxed">
-              Tranzaksiya bajarildi va sizning PlayNation Premium obunangiz faollashtirildi. Ekotizimimizni qo'llab-quvvatlaganingiz uchun tashakkur!
+              Tranzaksiya bajarildi va sizning MAROQLI Premium obunangiz faollashtirildi. Ekotizimimizni qo'llab-quvvatlaganingiz uchun tashakkur!
             </p>
 
             <div className="w-full p-4 bg-white/[0.02] border border-white/5 rounded-2xl mb-8 flex items-center justify-between text-left">
