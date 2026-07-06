@@ -38,7 +38,15 @@ export default function StreamsPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "live_streams" },
         (payload) => {
-          fetchStreams();
+          if (payload.eventType === "UPDATE") {
+            // Update the state locally without hitting the database again!
+            setStreams((prev) =>
+              prev.map((s) => (s.id === payload.new.id ? { ...s, ...payload.new } : s))
+            );
+          } else {
+            // Only fetch from DB if a stream is added or deleted
+            fetchStreams();
+          }
         }
       )
       .subscribe();

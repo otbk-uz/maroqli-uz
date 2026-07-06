@@ -45,6 +45,9 @@ export default function StreamViewPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Cache for user profiles to save Supabase API limits
+  const userProfileCache = useRef<Record<string, { username: string; avatar_url: string; role: string }>>({});
 
   useEffect(() => {
     fetchStreamData();
@@ -117,16 +120,25 @@ export default function StreamViewPage() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "stream_chat", filter: `stream_id=eq.${streamId}` },
         async (payload) => {
-          // Fetch user details for the new message
-          const { data: userData } = await supabase
-            .from("profiles")
-            .select("username, avatar_url, role")
-            .eq("id", payload.new.user_id)
-            .single();
+          let userData = userProfileCache.current[payload.new.user_id];
+          
+          if (!userData) {
+            // Fetch user details for the new message only if not in cache
+            const { data } = await supabase
+              .from("profiles")
+              .select("username, avatar_url, role")
+              .eq("id", payload.new.user_id)
+              .single();
+              
+            if (data) {
+              userData = data;
+              userProfileCache.current[payload.new.user_id] = data; // save to cache
+            }
+          }
             
           const completeMessage = {
             ...payload.new,
-            user: userData
+            user: userData || { username: "User", avatar_url: "", role: "USER" }
           } as ChatMessage;
           
           setMessages(prev => [...prev, completeMessage]);
