@@ -14,14 +14,14 @@ const mux = isMuxConfigured
     }) 
   : null;
 
-// Initialize Supabase Admin client to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: Request) {
   try {
+    // Initialize Supabase Admin client to bypass RLS
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+    );
+
     const { userId } = await req.json();
 
     if (!userId) {

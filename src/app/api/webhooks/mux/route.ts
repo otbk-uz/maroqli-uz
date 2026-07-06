@@ -2,18 +2,17 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-// Initialize Supabase Admin client to bypass RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
-const MUX_WEBHOOK_SECRET = process.env.MUX_WEBHOOK_SECRET;
-
 export async function POST(req: Request) {
   try {
+    // Initialize Supabase Admin client to bypass RLS
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+    );
+
     const body = await req.text();
     const signature = req.headers.get("mux-signature");
+    const MUX_WEBHOOK_SECRET = process.env.MUX_WEBHOOK_SECRET;
 
     // Optional: Verify Mux signature if secret is provided in .env
     if (MUX_WEBHOOK_SECRET && signature) {
