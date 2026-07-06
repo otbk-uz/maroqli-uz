@@ -28,6 +28,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Foydalanuvchi ID si (userId) taqdim etilmadi" }, { status: 400 });
     }
 
+    // 0. CHECK ROLE / PERMISSION: Only tournament participants can stream
+    // Admins could be bypassed here if we had a role check, but for now we check tournament_participants
+    const { data: participantData, error: participantError } = await supabaseAdmin
+      .from("tournament_participants")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    if (participantError) {
+      console.error("Error checking participant status:", participantError);
+    }
+
+    if (!participantData || participantData.length === 0) {
+      return NextResponse.json(
+        { error: "Faqatgina biron bir turnirda ishtirok etayotgan geymerlargina jonli efir qila oladi." },
+        { status: 403 }
+      );
+    }
+
     // 1. Check if user already has a stream in the DB
     const { data: existingStream, error: fetchError } = await supabaseAdmin
       .from("live_streams")

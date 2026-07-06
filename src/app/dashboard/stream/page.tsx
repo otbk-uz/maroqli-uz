@@ -22,6 +22,7 @@ export default function StreamDashboardPage() {
   
   const [settings, setSettings] = useState<StreamSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -66,8 +67,9 @@ export default function StreamDashboardPage() {
         setDonationUrl(data.stream.donation_url || "");
         setIsLive(data.stream.is_live || false);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error fetching stream settings:", err);
+      setErrorMsg(err.message);
     } finally {
       setLoading(false);
     }
@@ -126,6 +128,27 @@ export default function StreamDashboardPage() {
         <Navbar />
         <div className="container mx-auto px-4 pt-32 text-center text-secondary">
           Yuklanmoqda...
+        </div>
+      </main>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <main className="min-h-screen bg-background text-white flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center container mx-auto px-4 pt-32 pb-20">
+          <div className="glass-card p-8 rounded-3xl border border-red-500/30 bg-red-500/10 text-center max-w-lg shadow-xl shadow-red-500/5">
+            <AlertCircle size={48} className="text-red-400 mx-auto mb-4" />
+            <h2 className="text-2xl font-black mb-2 text-white">Ruxsat etilmagan</h2>
+            <p className="text-secondary mb-6">{errorMsg}</p>
+            <button
+              onClick={() => router.push("/tournaments")}
+              className="bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-xl font-bold transition-all"
+            >
+              Turnirlarni ko'rish
+            </button>
+          </div>
         </div>
       </main>
     );
