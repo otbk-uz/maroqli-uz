@@ -1,0 +1,304 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import Navbar from "@/components/Navbar";
+import { useAuthStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { Radio, Copy, Check, Eye, EyeOff, Save, ExternalLink } from "lucide-react";
+
+interface StreamSettings {
+  id: string;
+  title: string;
+  game_name: string;
+  stream_key: string;
+  donation_url: string;
+  is_live: boolean;
+}
+
+export default function StreamDashboardPage() {
+  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  
+  const [settings, setSettings] = useState<StreamSettings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showKey, setShowKey] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Form states
+  const [title, setTitle] = useState("");
+  const [game, setGame] = useState("");
+  const [donationUrl, setDonationUrl] = useState("");
+  const [isLive, setIsLive] = useState(false);
+
+  // Dummy Server URL for MUX / OBS
+  const SERVER_URL = "rtmps://global-live.mux.com:5222/app";
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+    fetchSettings();
+  }, [isAuthenticated, router]);
+
+  const fetchSettings = async () => {
+    if (!user) return;
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("live_streams")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error && error.code !== "PGRST116") throw error;
+
+      if (data) {
+        setSettings(data);
+        setTitle(data.title || "");
+        setGame(data.game_name || "");
+        setDonationUrl(data.donation_url || "");
+        setIsLive(data.is_live || false);
+      } else {
+        // Create initial row if it doesn't exist
+        const newKey = "live_" + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+        const { data: newData, error: insertError } = await supabase
+          .from("live_streams")
+          .insert({
+            user_id: user.id,
+            stream_key: newKey,
+            title: "Maroqli.uz da yangi efir",
+          })
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+        setSettings(newData);
+        setTitle(newData.title);
+      }
+    } catch (err) {
+      console.error("Error fetching stream settings:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !settings) return;
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from("live_streams")
+        .update({
+          title,
+          game_name: game,
+          donation_url: donationUrl,
+        })
+        .eq("id", settings.id);
+
+      if (error) throw error;
+      alert("Sozlamalar saqlandi!");
+    } catch (err) {
+      console.error("Error saving stream settings:", err);
+      alert("Xatolik yuz berdi");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleLiveStatus = async () => {
+    if (!user || !settings) return;
+    const newStatus = !isLive;
+    
+    try {
+      setIsLive(newStatus);
+      await supabase
+        .from("live_streams")
+        .update({ is_live: newStatus })
+        .eq("id", settings.id);
+    } catch (err) {
+      console.error("Error toggling live status", err);
+      setIsLive(!newStatus); // revert on error
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-background text-white">
+        <Navbar />
+        <div className="container mx-auto px-4 pt-32 text-center text-secondary">
+          Yuklanmoqda...
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background text-white">
+      <Navbar />
+
+      <div className="container mx-auto px-4 md:px-6 pt-32 pb-20 max-w-4xl">
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-black mb-2 flex items-center gap-3">
+            <Radio className="text-primary" size={32} />
+            Streamer Boshqaruvi
+          </h1>
+          <p className="text-secondary">Jonli efir ma'lumotlarini tahrirlang va OBS sozlamalarini oling.</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Main Form */}
+          <div className="md:col-span-2 space-y-6">
+            <form onSubmit={handleSave} className="glass-card p-6 md:p-8 rounded-3xl border border-white/5 space-y-6 shadow-xl">
+              <div className="flex justify-between items-center mb-2">
+                <h2 className="text-xl font-bold">Efir Ma'lumotlari</h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-secondary">Holat:</span>
+                  <button
+                    type="button"
+                    onClick={toggleLiveStatus}
+                    className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors ${
+                      isLive ? "bg-green-500" : "bg-white/10"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                        isLive ? "translate-x-8" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                  <span className={`text-sm font-black uppercase ${isLive ? "text-green-400 animate-pulse" : "text-white/30"}`}>
+                    {isLive ? "LIVE" : "OFFLINE"}
+                  </span>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Sarlavha</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full bg-[#18181c] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="Efir nomini kiriting"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin Nomi</label>
+                <input
+                  type="text"
+                  value={game}
+                  onChange={(e) => setGame(e.target.value)}
+                  className="w-full bg-[#18181c] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="Masalan: CS2, Dota 2, yoki Just Chatting"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Donat Linki (Ixtiyoriy)</label>
+                <input
+                  type="url"
+                  value={donationUrl}
+                  onChange={(e) => setDonationUrl(e.target.value)}
+                  className="w-full bg-[#18181c] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="https://donat.uz/..."
+                />
+              </div>
+
+              <div className="pt-4 border-t border-white/5 flex gap-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 bg-primary hover:bg-primary-hover text-white py-3 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 disabled:opacity-50"
+                >
+                  <Save size={18} /> {saving ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/streams/${user?.username}`)}
+                  className="flex-1 bg-white/5 hover:bg-white/10 text-white py-3 px-6 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+                >
+                  <ExternalLink size={18} /> Kanalni ko'rish
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* OBS Settings Sidebar */}
+          <div className="md:col-span-1 space-y-6">
+            <div className="glass-card p-6 rounded-3xl border border-white/5 shadow-xl bg-gradient-to-b from-white/[0.02] to-transparent">
+              <h2 className="text-lg font-bold mb-4">OBS Sozlamalari</h2>
+              <p className="text-xs text-secondary mb-6 leading-relaxed">
+                Ushbu ma'lumotlarni OBS Studio yoki Streamlabs dasturlarining <strong>Stream</strong> bo'limiga kiriting. Server turi qilib "Custom..." ni tanlang.
+              </p>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="text-[10px] font-black text-secondary uppercase tracking-wider mb-1 block">Server URL</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      readOnly
+                      value={SERVER_URL}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-xs font-mono text-white/90"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(SERVER_URL)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-white transition-colors"
+                      title="Nusxa olish"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-black text-secondary uppercase tracking-wider mb-1 block">Stream Key (Efir Kaliti)</label>
+                  <div className="relative">
+                    <input
+                      type={showKey ? "text" : "password"}
+                      readOnly
+                      value={settings?.stream_key || ""}
+                      className="w-full bg-black/40 border border-white/10 rounded-lg pl-3 pr-16 py-2 text-xs font-mono text-white/90 focus:outline-none"
+                    />
+                    <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowKey(!showKey)}
+                        className="p-1 text-secondary hover:text-white transition-colors"
+                      >
+                        {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(settings?.stream_key || "")}
+                        className="p-1 text-secondary hover:text-white transition-colors"
+                        title="Nusxa olish"
+                      >
+                        {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-red-400 mt-2 font-semibold">Hech qachon bu kalitni boshqalarga ko'rsatmang!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
