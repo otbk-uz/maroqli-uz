@@ -18,12 +18,19 @@ export default function FloatingConsoleHUD() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     if (isAuthenticated) {
       fetchNotifications();
     }
+
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isAuthenticated]);
 
   const fetchNotifications = async () => {
@@ -79,21 +86,29 @@ export default function FloatingConsoleHUD() {
   if (!mounted) return null;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-7xl h-16 bg-card/65 backdrop-blur-2xl border border-white/10 rounded-full z-50 hidden lg:flex items-center justify-between px-8 shadow-[0_12px_40px_rgba(0,0,0,0.6)] hover:border-primary/20 transition-all duration-300">
+    <div 
+      className={`fixed z-50 hidden lg:flex items-center justify-between px-8 bg-card/65 backdrop-blur-2xl transition-all duration-500 ease-in-out ${
+        scrolled 
+          ? "top-0 left-0 w-full max-w-full h-14 border-b border-white/5 shadow-[0_10px_35px_rgba(0,0,0,0.5)]" 
+          : "top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-7xl h-16 border border-white/10 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] hover:border-primary/20"
+      }`}
+    >
       
       {/* HUD Glow Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-full pointer-events-none" />
+      {!scrolled && <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-full pointer-events-none" />}
 
       {/* Brand logo */}
       <div className="flex items-center space-x-3 flex-shrink-0 z-10">
         <Link href="/" className="flex items-center space-x-2.5">
           <img src="/logo.jpg.png" alt="Logo" className="h-9 w-auto rounded-lg shadow-[0_0_15px_rgba(255,70,85,0.2)]" />
-          <span className="font-display font-black text-lg tracking-widest text-white">MAROQLI</span>
+          <span className={`font-display font-black tracking-widest text-white transition-all duration-300 ${scrolled ? "text-sm" : "text-lg"}`}>
+            MAROQLI
+          </span>
         </Link>
       </div>
 
       {/* Center navigation links */}
-      <nav className="flex items-center space-x-1 z-10 bg-white/5 border border-white/5 p-1 rounded-full">
+      <nav className={`flex items-center space-x-1 z-10 bg-white/5 border border-white/5 p-1 rounded-full transition-all duration-300 ${scrolled ? "scale-95" : ""}`}>
         {coreLinks.map((link) => {
           const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
           return (
