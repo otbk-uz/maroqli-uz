@@ -4,12 +4,13 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, User, LogOut, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore, useTranslation } from "@/lib/store";
+import { useAuthStore, useTranslation, useUIStore } from "@/lib/store";
 import api from "@/lib/api";
 
 export default function Topbar() {
   const { isAuthenticated, user, logout } = useAuthStore();
   const { locale, setLocale } = useTranslation();
+  const { sidebarCollapsed } = useUIStore();
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -55,8 +56,10 @@ export default function Topbar() {
 
   if (!mounted) return <div className="h-20 bg-background border-b border-white/5 w-full fixed top-0 z-30" />;
 
+  const leftPositionClass = sidebarCollapsed ? "lg:left-20" : "lg:left-64";
+
   return (
-    <header className="fixed top-0 right-0 left-0 lg:left-64 h-20 bg-background/80 backdrop-blur-xl border-b border-white/5 z-30 flex items-center px-6 transition-all duration-300">
+    <header className={`fixed top-0 right-0 left-0 ${leftPositionClass} h-20 bg-background/80 backdrop-blur-xl border-b border-white/5 z-30 flex items-center px-6 transition-all duration-300`}>
       <div className="flex-1 flex items-center justify-between">
         
         <div className="flex items-center lg:hidden">
