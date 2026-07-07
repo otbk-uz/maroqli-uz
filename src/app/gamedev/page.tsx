@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers, MapPin, Users, Calendar, Gift, FileText, Trash2 } from "lucide-react";
+import { Rocket, DollarSign, Download, UploadCloud, Plus, RefreshCw, Layers, MapPin, Users, Calendar, Gift, FileText, Trash2, Lock, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -1016,9 +1016,9 @@ export default function GamedevPage() {
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="text-3xl font-bold mb-2">GameDev Darslari</h2>
-                  <p className="text-secondary text-sm">O'yin yaratish bo'yicha bepul video darsliklar va o'quv qo'llanmalari.</p>
+                  <p className="text-secondary text-sm">O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Faqat Premium obunachilar uchun).</p>
                 </div>
-                {isDeveloper && (
+                {user?.role === "ADMIN" && (
                   <button className="py-2.5 px-5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all">
                     <Plus size={16} /> Yangi dars qo'shish
                   </button>
@@ -1030,24 +1030,51 @@ export default function GamedevPage() {
                   { id: 1, title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" },
                   { id: 2, title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070" },
                   { id: 3, title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082" }
-                ].map(lesson => (
-                  <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer">
-                    <div className="aspect-video relative overflow-hidden">
-                      <img src={lesson.img} alt={lesson.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all" />
-                      <div className="absolute top-3 left-3 bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase">
-                        {lesson.level}
+                ].map(lesson => {
+                  const hasAccess = user?.is_premium || user?.role === "ADMIN";
+                  return (
+                    <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer relative">
+                      <div className="aspect-video relative overflow-hidden">
+                        <img src={lesson.img} alt={lesson.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <div className="absolute inset-0 bg-black/50 group-hover:bg-black/30 transition-all flex items-center justify-center">
+                          {!hasAccess && (
+                            <div className="bg-black/60 backdrop-blur-md p-3.5 rounded-full border border-white/10 text-amber-400">
+                              <Lock size={20} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="absolute top-3 left-3 bg-primary/90 text-white text-[10px] font-bold px-2 py-1 rounded-md uppercase">
+                          {lesson.level}
+                        </div>
+                        {!hasAccess && (
+                          <div className="absolute top-3 right-3 bg-amber-500 text-black text-[9px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-1 shadow-lg">
+                            <Crown size={10} /> Premium
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-5">
+                        <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">{lesson.title}</h3>
+                        <p className="text-xs text-secondary mb-4">Muallif: <span className="text-white">{lesson.author}</span></p>
+                        {hasAccess ? (
+                          <button 
+                            onClick={() => router.push(`/gamedev/lessons/${lesson.id}`)}
+                            className="w-full py-2 bg-white/5 hover:bg-primary rounded-lg text-sm font-bold transition-all text-white border border-white/10 hover:border-primary"
+                          >
+                            Darsni ko'rish
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => router.push("/premium")}
+                            className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black rounded-lg text-sm transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20"
+                          >
+                            <Crown size={12} />
+                            <span>Premium bilan ochish</span>
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="p-5">
-                      <h3 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors">{lesson.title}</h3>
-                      <p className="text-xs text-secondary mb-4">Muallif: <span className="text-white">{lesson.author}</span></p>
-                      <button className="w-full py-2 bg-white/5 hover:bg-primary rounded-lg text-sm font-bold transition-all text-white border border-white/10 hover:border-primary">
-                        Darsni ko'rish
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </motion.div>
           ) : null}
