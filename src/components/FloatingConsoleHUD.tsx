@@ -79,8 +79,23 @@ export default function FloatingConsoleHUD() {
     { name: t("news", "Yangiliklar"), href: "/news", icon: <Newspaper size={16} /> },
   ];
 
+  const allLinks = [
+    { name: t("home", "Bosh"), href: "/", icon: <TrendingUp size={14} /> },
+    { name: t("tournaments", "Turnirlar"), href: "/tournaments", icon: <Trophy size={14} /> },
+    { name: t("games", "O'yinlar"), href: "/games", icon: <Gamepad2 size={14} /> },
+    { name: t("streamers", "Streamerlar"), href: "/streamers", icon: <Radio size={14} /> },
+    { name: t("premium", "Premium"), href: "/premium", icon: <Crown size={14} className="text-amber-400" /> },
+    { name: t("leaderboard", "Reyting"), href: "/leaderboard", icon: <TrendingUp size={14} /> },
+    { name: t("gamedev", "GameDev"), href: "/gamedev", icon: <Code size={14} /> },
+    { name: t("forum", "Forum"), href: "/forum", icon: <MessageSquare size={14} /> },
+    { name: t("news", "Yangiliklar"), href: "/news", icon: <Newspaper size={14} /> },
+  ];
+
   if (user && user.role === "ADMIN") {
-    moreLinks.push({ name: "Admin", href: "/admin", icon: <ShieldAlert size={16} className="text-red-500" /> });
+    const adminLink = { name: "Admin", href: "/admin", icon: <ShieldAlert size={16} className="text-red-500" /> };
+    const adminLinkSmall = { name: "Admin", href: "/admin", icon: <ShieldAlert size={14} className="text-red-500" /> };
+    moreLinks.push(adminLink);
+    allLinks.push(adminLinkSmall);
   }
 
   if (!mounted) return null;
@@ -108,56 +123,76 @@ export default function FloatingConsoleHUD() {
       </div>
 
       {/* Center navigation links */}
-      <nav className={`flex items-center space-x-1 z-10 bg-white/5 border border-white/5 p-1 rounded-full transition-all duration-300 ${scrolled ? "scale-95" : ""}`}>
-        {coreLinks.map((link) => {
-          const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center space-x-2 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all duration-300 ${
-                isActive 
-                  ? "bg-primary text-white shadow-[0_4px_15px_rgba(255,70,85,0.3)]" 
-                  : "text-secondary hover:text-white hover:bg-white/5"
-              }`}
-            >
-              {link.icon}
-              <span>{link.name}</span>
-            </Link>
-          );
-        })}
-
-        {/* More dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setShowMoreMenu(!showMoreMenu)}
-            className={`flex items-center space-x-1.5 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all ${
-              showMoreMenu ? "bg-white/10 text-white" : "text-secondary hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <span>Kengroq</span>
-            <ChevronDown size={14} className={`transition-transform duration-300 ${showMoreMenu ? "rotate-180" : ""}`} />
-          </button>
-
-          <AnimatePresence>
-            {showMoreMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                className="absolute left-1/2 -translate-x-1/2 mt-3 w-56 bg-card/95 backdrop-blur-2xl border border-white/10 p-2 rounded-2xl shadow-2xl space-y-1 z-50"
+      <nav className={`flex items-center space-x-0.5 z-10 bg-white/5 border border-white/5 p-1 rounded-full transition-all duration-300 ${scrolled ? "scale-95" : ""}`}>
+        {scrolled ? (
+          allLinks.map((link) => {
+            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-display font-black uppercase tracking-wider transition-all duration-300 ${
+                  isActive 
+                    ? "bg-primary text-white shadow-[0_4px_12px_rgba(255,70,85,0.3)]" 
+                    : "text-secondary hover:text-white hover:bg-white/5"
+                }`}
               >
-                {moreLinks.map((link) => {
-                  const isActive = pathname.startsWith(link.href);
-                  return (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setShowMoreMenu(false)}
-                      className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-colors ${
-                        isActive 
-                          ? "bg-primary/10 text-primary" 
-                          : "text-secondary hover:text-white hover:bg-white/5"
+                {link.icon}
+                <span>{link.name}</span>
+              </Link>
+            );
+          })
+        ) : (
+          <>
+            {coreLinks.map((link) => {
+              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center space-x-2 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all duration-300 ${
+                    isActive 
+                      ? "bg-primary text-white shadow-[0_4px_15px_rgba(255,70,85,0.3)]" 
+                      : "text-secondary hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.name}</span>
+                </Link>
+              );
+            })}
+
+            {/* More dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowMoreMenu(!showMoreMenu)}
+                className={`flex items-center space-x-1.5 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all ${
+                  showMoreMenu ? "bg-white/10 text-white" : "text-secondary hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <span>Kengroq</span>
+                <ChevronDown size={14} className={`transition-transform duration-300 ${showMoreMenu ? "rotate-180" : ""}`} />
+              </button>
+
+              <AnimatePresence>
+                {showMoreMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
+                    className="absolute left-1/2 -translate-x-1/2 mt-3 w-56 bg-card/95 backdrop-blur-2xl border border-white/10 p-2 rounded-2xl shadow-2xl space-y-1 z-50"
+                  >
+                    {moreLinks.map((link) => {
+                      const isActive = pathname.startsWith(link.href);
+                      return (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={() => setShowMoreMenu(false)}
+                          className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-colors ${
+                            isActive 
+                              ? "bg-primary/10 text-primary" 
+                              : "text-secondary hover:text-white hover:bg-white/5"
                       }`}
                     >
                       {link.icon}
