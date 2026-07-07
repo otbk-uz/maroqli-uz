@@ -46,25 +46,19 @@ const Hero = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-[0.9] mb-8 text-white max-w-full break-words uppercase"
+              className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[1.1] mb-8 text-white max-w-full uppercase"
             >
               {locale === 'ru' ? (
                 <>
-                  Будущее <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">гейминга</span> <br />
-                  в Узбекистане
+                  Будущее <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">гейминга</span> в Узбекистане
                 </>
               ) : locale === 'en' ? (
                 <>
-                  Future of <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> <br />
-                  in Uzbekistan
+                  Future of <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> in Uzbekistan
                 </>
               ) : (
                 <>
-                  O'zbekistonda <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> <br />
-                  kelajagi
+                  O'zbekistonda <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-primary to-orange-500">gaming</span> kelajagi
                 </>
               )}
             </motion.h1>
