@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Lock, Crown } from "lucide-react";
 
 interface PlayerProps {
   url: string;
+  userIdentifier?: string;
 }
 
-export function WhiteLabelPlayer({ url }: PlayerProps) {
+export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -22,6 +23,10 @@ export function WhiteLabelPlayer({ url }: PlayerProps) {
   const [ytPlayer, setYtPlayer] = useState<any>(null);
   const [ytReady, setYtReady] = useState(false);
 
+  // Security Protection States
+  const [isWindowBlurred, setIsWindowBlurred] = useState(false);
+  const [watermarkPos, setWatermarkPos] = useState({ top: "20%", left: "20%" });
+
   // Extract YouTube ID
   const getYoutubeId = (urlStr: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -30,6 +35,75 @@ export function WhiteLabelPlayer({ url }: PlayerProps) {
   };
 
   const ytId = getYoutubeId(url);
+
+  // Focus/Blur Protection (Triggered when Snipping Tool or screenshot software focuses away)
+  useEffect(() => {
+    const handleBlur = () => {
+      setIsWindowBlurred(true);
+      // Auto pause video for safety
+      if (isPlaying) {
+        if (isYoutube && ytPlayer && ytReady) {
+          ytPlayer.pauseVideo();
+        } else if (!isYoutube && videoRef.current) {
+          videoRef.current.pause();
+        }
+        setIsPlaying(false);
+      }
+    };
+    
+    const handleFocus = () => {
+      setIsWindowBlurred(false);
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [isPlaying, isYoutube, ytPlayer, ytReady]);
+
+  // Prevent PrintScreen / Screenshot shortcuts / Clipboard theft
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Print Screen
+      if (e.key === "PrintScreen") {
+        e.preventDefault();
+        alert("Skrinshot taqiqlangan! Mualliflik huquqi himoyalangan.");
+        navigator.clipboard.writeText("MAROQLI.uz - Ruxsatsiz nusxa ko'chirish taqiqlanadi!");
+      }
+      
+      // Ctrl + P (Print)
+      if ((e.ctrlKey || e.metaKey) && e.key === "p") {
+        e.preventDefault();
+        alert("Darslikni chop etish taqiqlangan!");
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "PrintScreen") {
+        navigator.clipboard.writeText("MAROQLI.uz - Ruxsatsiz nusxa ko'chirish taqiqlanadi!");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
+
+  // Float watermark dynamically to prevent screen recordings from cropping it
+  useEffect(() => {
+    if (!userIdentifier) return;
+    const interval = setInterval(() => {
+      const top = Math.floor(Math.random() * 75) + 10;
+      const left = Math.floor(Math.random() * 65) + 10;
+      setWatermarkPos({ top: `${top}%`, left: `${left}%` });
+    }, 7000);
+    return () => clearInterval(interval);
+  }, [userIdentifier]);
 
   useEffect(() => {
     if (ytId) {
@@ -181,7 +255,7 @@ export function WhiteLabelPlayer({ url }: PlayerProps) {
   return (
     <div 
       ref={containerRef}
-      className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl"
+      className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl select-none"
     >
       {isYoutube ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
@@ -202,11 +276,21 @@ export function WhiteLabelPlayer({ url }: PlayerProps) {
         <video
           ref={videoRef}
           src={url}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain font-display"
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
           playsInline
         />
+      )}
+
+      {/* Dynamic Security Watermark */}
+      {userIdentifier && (
+        <div 
+          style={{ top: watermarkPos.top, left: watermarkPos.left }}
+          className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.12] select-none transition-all duration-1000 whitespace-nowrap bg-black/15 px-2.5 py-1 rounded-lg border border-white/[0.03] shadow-md uppercase tracking-wider"
+        >
+          MAROQLI.uz • {userIdentifier} • DRM
+        </div>
       )}
 
       {/* Click-to-Play/Pause overlay */}
@@ -278,6 +362,22 @@ export function WhiteLabelPlayer({ url }: PlayerProps) {
           </div>
         </div>
       </div>
+
+      {/* Safety blur overlay when window loses focus (Snipping tool active / focus blur protection) */}
+      {isWindowBlurred && (
+        <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center text-center p-6 transition-all duration-300">
+          <div className="bg-primary/10 border border-primary/20 p-4 rounded-full text-primary mb-4 animate-bounce">
+            <Lock size={32} />
+          </div>
+          <h4 className="text-white font-black text-sm md:text-base uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <Crown size={16} className="text-amber-400" />
+            <span>Xavfsizlik Himoyasi Faol</span>
+          </h4>
+          <p className="text-secondary text-xs max-w-xs leading-relaxed">
+            Sizning xavfsizligingiz va mualliflik huquqini himoya qilish maqsadida, ekran yozib olinayotganda yoki skrinshot olinayotganda video vaqtincha berkitildi.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

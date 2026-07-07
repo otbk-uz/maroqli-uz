@@ -118,8 +118,11 @@ export default function LessonDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Player and Title Info (Takes 2 cols) */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Custom styled white label player */}
-            <WhiteLabelPlayer url={lesson.video_url} />
+            {/* Custom styled white label player with user watermark */}
+            <WhiteLabelPlayer 
+              url={lesson.video_url} 
+              userIdentifier={user?.email || user?.username} 
+            />
 
             <div className="glass-card p-6 md:p-8 border border-white/5 space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
