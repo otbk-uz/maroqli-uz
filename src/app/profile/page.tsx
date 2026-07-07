@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3 } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -416,7 +416,15 @@ const ProfilePage = () => {
                 </div>
               ) : (
                 <>
-                  <h2 className="text-2xl font-black mb-1 text-white">{profileData.full_name}</h2>
+                  <h2 className="text-2xl font-black mb-1 text-white flex items-center justify-center gap-2">
+                    <span>{profileData.full_name}</span>
+                    {profileData.is_premium && (
+                      <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full inline-flex items-center gap-0.5 shadow-[0_0_10px_rgba(245,158,11,0.3)]">
+                        <Crown size={8} className="fill-current" />
+                        PRO
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-primary font-bold text-sm mb-4">@{profileData.username}</p>
                   <p className="text-secondary text-xs mb-6">
                     A'zo bo'ldi: {new Date(profileData.created_at).toLocaleDateString('uz-UZ', { month: 'long', year: 'numeric' })}

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import TournamentBracket from "../../../components/TournamentBracket";
-import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User } from "lucide-react";
+import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -20,6 +20,7 @@ interface Tournament {
   prize_pool: string;
   max_teams: number;
   start_date: string;
+  is_premium?: boolean;
 }
 
 const TournamentDetail = () => {
@@ -89,6 +90,12 @@ const TournamentDetail = () => {
       return;
     }
     if (!tournament) return;
+
+    if (tournament.is_premium && !user?.is_premium && user?.role !== "ADMIN") {
+      alert("Ushbu turnir faqat PREMIUM a'zolar uchun! Iltimos, oldin obunani faollashtiring.");
+      router.push("/premium");
+      return;
+    }
 
     if (!userTeam) {
       alert("Sizda jamoa yo'q! Oldin profil sahifasidan jamoa yarating.");
@@ -181,6 +188,12 @@ const TournamentDetail = () => {
           <div className="flex-1">
             <div className="glass-card p-8 mb-8">
               <div className="flex flex-wrap items-center gap-4 mb-6">
+                {tournament.is_premium && (
+                  <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-4 py-1 rounded-full text-xs font-black uppercase flex items-center gap-1 shadow-lg shadow-amber-500/10">
+                    <Crown size={12} className="fill-current" />
+                    PREMIUM ONLY
+                  </span>
+                )}
                 <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase">{tournament.status}</span>
                 <span className="bg-white/10 px-4 py-1 rounded-full text-xs font-bold uppercase text-secondary">{tournament.game}</span>
               </div>

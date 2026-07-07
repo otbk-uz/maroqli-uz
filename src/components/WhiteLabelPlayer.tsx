@@ -25,6 +25,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
+  const [isTampered, setIsTampered] = useState(false);
   const [watermarkPos1, setWatermarkPos1] = useState({ top: "15%", left: "15%" });
   const [watermarkPos2, setWatermarkPos2] = useState({ top: "50%", left: "45%" });
   const [watermarkPos3, setWatermarkPos3] = useState({ top: "80%", left: "70%" });
@@ -93,9 +94,23 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
+    
+    // Also bind mouseleave from document to trigger blur (e.g. if they move cursor to take screenshot or lose focus on the tab)
+    const handleMouseLeave = () => {
+      // Small delay to prevent false positives when fast moving
+      setTimeout(() => {
+        if (document.activeElement?.tagName === "IFRAME") return; // Allow interaction with iframe
+        if (!document.hasFocus()) {
+          setIsWindowBlurred(true);
+        }
+      }, 100);
+    };
+    document.addEventListener("mouseleave", handleMouseLeave);
+
     return () => {
       window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("mouseleave", handleMouseLeave);
     };
   }, [isPlaying, isYoutube, ytPlayer, ytReady]);
 
@@ -107,12 +122,28 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         e.preventDefault();
         alert("Skrinshot taqiqlangan! Mualliflik huquqi himoyalangan.");
         navigator.clipboard.writeText("MAROQLI.uz - Ruxsatsiz nusxa ko'chirish taqiqlanadi!");
+        setIsWindowBlurred(true);
       }
       
       // Ctrl + P (Print)
       if ((e.ctrlKey || e.metaKey) && e.key === "p") {
         e.preventDefault();
         alert("Darslikni chop etish taqiqlangan!");
+      }
+
+      // Win + Shift + S or Cmd + Shift + 4 or Cmd + Shift + 3 (Screenshot hotkeys)
+      // Check if S is pressed with modifier keys (Meta/Cmd or Ctrl and Shift)
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && (e.key === "S" || e.key === "s" || e.key === "4" || e.key === "3")) {
+        // Trigger blur immediately to blackout the video before screenshot tool captures
+        setIsWindowBlurred(true);
+        if (isPlaying) {
+          if (isYoutube && ytPlayer && ytReady) {
+            ytPlayer.pauseVideo();
+          } else if (!isYoutube && videoRef.current) {
+            videoRef.current.pause();
+          }
+          setIsPlaying(false);
+        }
       }
     };
 
@@ -122,13 +153,13 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("keydown", handleKeyDown, true);
+    window.addEventListener("keyup", handleKeyUp, true);
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("keyup", handleKeyUp, true);
     };
-  }, []);
+  }, [isPlaying, isYoutube, ytPlayer, ytReady]);
 
   // Float watermark dynamically to prevent screen recordings from cropping it
   useEffect(() => {
@@ -138,19 +169,19 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       const top = Math.floor(Math.random() * 25) + 5; // Top quadrant
       const left = Math.floor(Math.random() * 65) + 5;
       setWatermarkPos1({ top: `${top}%`, left: `${left}%` });
-    }, 5000);
+    }, 3000);
 
     const interval2 = setInterval(() => {
       const top = Math.floor(Math.random() * 25) + 35; // Mid quadrant
       const left = Math.floor(Math.random() * 65) + 5;
       setWatermarkPos2({ top: `${top}%`, left: `${left}%` });
-    }, 7000);
+    }, 4000);
 
     const interval3 = setInterval(() => {
       const top = Math.floor(Math.random() * 20) + 65; // Bottom quadrant
       const left = Math.floor(Math.random() * 65) + 5;
       setWatermarkPos3({ top: `${top}%`, left: `${left}%` });
-    }, 9000);
+    }, 5500);
 
     return () => {
       clearInterval(interval1);
@@ -158,6 +189,78 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       clearInterval(interval3);
     };
   }, [userIdentifier]);
+
+  // MutationObserver to detect DOM tampering (e.g. user using DevTools to delete watermarks or overlays)
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const observer = new MutationObserver(() => {
+      if (!containerRef.current) return;
+      let tampered = false;
+
+      // 1. Check if watermarks are present and visible if userIdentifier is active
+      if (userIdentifier) {
+        const w1 = containerRef.current.querySelector("#watermark-1") as HTMLElement | null;
+        const w2 = containerRef.current.querySelector("#watermark-2") as HTMLElement | null;
+        const w3 = containerRef.current.querySelector("#watermark-3") as HTMLElement | null;
+
+        if (!w1 || !w2 || !w3) {
+          tampered = true;
+        } else {
+          const checkHidden = (el: HTMLElement) => {
+            const style = window.getComputedStyle(el);
+            return (
+              style.display === "none" ||
+              style.visibility === "hidden" ||
+              parseFloat(style.opacity || "1") < 0.02 ||
+              style.filter.includes("blur") ||
+              el.hidden
+            );
+          };
+
+          if (checkHidden(w1) || checkHidden(w2) || checkHidden(w3)) {
+            tampered = true;
+          }
+        }
+      }
+
+      // 2. Check if blur overlay is tampered with when it's active
+      if (isWindowBlurred) {
+        const blurOverlay = containerRef.current.querySelector("#blur-safety-overlay") as HTMLElement | null;
+        if (!blurOverlay) {
+          tampered = true;
+        } else {
+          const style = window.getComputedStyle(blurOverlay);
+          if (
+            style.display === "none" ||
+            style.visibility === "hidden" ||
+            parseFloat(style.opacity || "1") < 0.5
+          ) {
+            tampered = true;
+          }
+        }
+      }
+
+      if (tampered) {
+        setIsTampered(true);
+        setIsPlaying(false);
+        if (isYoutube && ytPlayer && ytReady) {
+          ytPlayer.pauseVideo();
+        } else if (!isYoutube && videoRef.current) {
+          videoRef.current.pause();
+        }
+      }
+    });
+
+    observer.observe(containerRef.current, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class", "hidden"]
+    });
+
+    return () => observer.disconnect();
+  }, [userIdentifier, isWindowBlurred, isYoutube, ytPlayer, ytReady]);
 
   useEffect(() => {
     if (ytId) {
@@ -309,6 +412,8 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   return (
     <div 
       ref={containerRef}
+      onContextMenu={(e) => e.preventDefault()}
+      onDragStart={(e) => e.preventDefault()}
       className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl select-none"
     >
       {isYoutube ? (
@@ -341,20 +446,23 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       {userIdentifier && (
         <>
           <div 
+            id="watermark-1"
             style={{ top: watermarkPos1.top, left: watermarkPos1.left }}
-            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.08] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             MAROQLI.uz • {userIdentifier} • STRICT PROTECTION
           </div>
           <div 
+            id="watermark-2"
             style={{ top: watermarkPos2.top, left: watermarkPos2.left }}
-            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.12] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.25] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             PROTECTED CONTENT • {userIdentifier}
           </div>
           <div 
+            id="watermark-3"
             style={{ top: watermarkPos3.top, left: watermarkPos3.left }}
-            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.08] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             MAROQLI • DO NOT SHARE • {userIdentifier}
           </div>
@@ -433,7 +541,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
       {/* Safety blur overlay when window loses focus (Snipping tool active / focus blur protection) */}
       {isWindowBlurred && (
-        <div className="absolute inset-0 bg-[#030305]/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center text-center p-6 transition-all duration-300">
+        <div 
+          id="blur-safety-overlay"
+          className="absolute inset-0 bg-[#030305]/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center text-center p-6 transition-all duration-300"
+        >
           <div className="bg-primary/10 border border-primary/20 p-4 rounded-full text-primary mb-4 animate-bounce">
             <Lock size={32} />
           </div>
@@ -444,6 +555,30 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           <p className="text-secondary text-xs max-w-xs leading-relaxed">
             Sizning xavfsizligingiz va mualliflik huquqini himoya qilish maqsadida, ekran yozib olinayotganda yoki skrinshot olinayotganda video vaqtincha berkitildi.
           </p>
+        </div>
+      )}
+
+      {/* Tampering detected lockout screen overlay */}
+      {isTampered && (
+        <div 
+          id="tamper-lockout-overlay"
+          className="absolute inset-0 bg-red-950/95 backdrop-blur-3xl z-50 flex flex-col items-center justify-center text-center p-6 transition-all duration-300"
+        >
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-full text-red-500 mb-4 animate-pulse">
+            <Lock size={32} />
+          </div>
+          <h4 className="text-white font-black text-sm md:text-base uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <span>Tizim Himoyasi Buzildi</span>
+          </h4>
+          <p className="text-secondary text-xs max-w-xs leading-relaxed mb-4">
+            Brauzer kodini o'zgartirish yoki xavfsizlik elementlarini o'chirish harakati aniqlandi. Videopleyer bloklandi.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
+          >
+            Sahifani yangilash
+          </button>
         </div>
       )}
     </div>

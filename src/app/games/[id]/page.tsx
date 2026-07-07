@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -390,9 +390,38 @@ const GameDetailPage = () => {
 
               <div className="space-y-2 border-b border-white/5 pb-6">
                 <p className="text-[10px] text-secondary font-bold uppercase tracking-wider">O'yin narxi</p>
-                <p className="text-3xl font-black text-white">
-                  {Number(game.price) > 0 ? `${Number(game.price).toLocaleString()} UZS` : "BEPUL"}
-                </p>
+                {Number(game.price) > 0 ? (
+                  user?.is_premium ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-3xl font-black text-amber-400">
+                          {Math.round(Number(game.price) * 0.8).toLocaleString()} UZS
+                        </p>
+                        <span className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
+                          <Crown size={10} className="fill-current" />
+                          -20% PRO
+                        </span>
+                      </div>
+                      <p className="text-xs text-secondary line-through font-semibold">
+                        {Number(game.price).toLocaleString()} UZS (Asl narxi)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="text-3xl font-black text-white font-display">
+                        {Number(game.price).toLocaleString()} UZS
+                      </p>
+                      <div className="bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/15 p-2.5 rounded-xl flex items-center gap-2">
+                        <Crown size={12} className="text-amber-400 fill-current animate-pulse shrink-0" />
+                        <p className="text-[10px] text-amber-400 font-bold leading-normal">
+                          Premium bilan: <span className="underline">{Math.round(Number(game.price) * 0.8).toLocaleString()} UZS</span>
+                        </p>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-3xl font-black text-emerald-400 font-display">BEPUL</p>
+                )}
               </div>
 
               {isPurchased ? (

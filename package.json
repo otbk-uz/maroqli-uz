@@ -2,11 +2,14 @@
   "name": "playnation-uz",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "desktop-dev": "electron .",
+    "desktop-pack": "npm run build && electron-builder --win -c electron-builder.config.js"
   },
   "dependencies": {
     "@mux/mux-node": "^14.1.1",
@@ -28,6 +31,8 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^8",
     "eslint-config-next": "14.2.3",
     "postcss": "^8",

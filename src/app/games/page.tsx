@@ -7,7 +7,7 @@ import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart } from "lucid
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
-import { useTranslation } from "@/lib/store";
+import { useTranslation, useAuthStore } from "@/lib/store";
 
 interface StoreGame {
   id: number;
@@ -27,6 +27,7 @@ interface StoreGame {
 
 const GamesPage = () => {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [games, setGames] = useState<StoreGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("ALL");
@@ -209,9 +210,36 @@ const GamesPage = () => {
                     <div className="border-t border-white/5 pt-6 flex items-center justify-between">
                       <div>
                         <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-1">{t("prize_label", "Narxi")}</p>
-                        <p className="text-lg font-black text-white">
-                          {Number(g.price) > 0 ? `${Number(g.price).toLocaleString()} UZS` : t("free", "BEPUL")}
-                        </p>
+                        {Number(g.price) > 0 ? (
+                          user?.is_premium ? (
+                            <div className="space-y-0.5">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-lg font-black text-amber-400">
+                                  {Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
+                                </p>
+                                <span className="bg-amber-500/15 text-amber-400 text-[8px] font-black px-1.5 py-0.5 rounded">
+                                  -20%
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-secondary line-through">
+                                {Number(g.price).toLocaleString()} UZS
+                              </p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-lg font-black text-white">
+                                {Number(g.price).toLocaleString()} UZS
+                              </p>
+                              <p className="text-[9px] text-amber-400/80 font-bold mt-0.5">
+                                Premium: {Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
+                              </p>
+                            </div>
+                          )
+                        ) : (
+                          <p className="text-lg font-black text-emerald-400">
+                            {t("free", "BEPUL")}
+                          </p>
+                        )}
                       </div>
 
                       <Link

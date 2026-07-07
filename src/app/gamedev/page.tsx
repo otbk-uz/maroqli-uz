@@ -90,9 +90,16 @@ export default function GamedevPage() {
   const [loadingLessons, setLoadingLessons] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "lessons" || tab === "community" || tab === "dashboard") {
+        setActiveTab(tab);
+      }
+    }
     fetchRegisteredStudios();
     fetchLessons();
-  }, []);
+  }, [typeof window !== "undefined" ? window.location.search : ""]);
 
   useEffect(() => {
     if (isAuthenticated && user?.role === "GAMEDEV") {

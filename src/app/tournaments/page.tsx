@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar } from "lucide-react";
+import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar, Crown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -18,6 +18,7 @@ interface Tournament {
   max_teams: number;
   participant_count?: number;
   start_date: string;
+  is_premium?: boolean;
 }
 
 const TournamentsPage = () => {
@@ -209,7 +210,13 @@ const TournamentsPage = () => {
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-[#050506] via-[#050506]/20 to-transparent" />
                         
-                        <div className="absolute top-4 left-4 flex gap-2">
+                        <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[85%]">
+                          {tItem.is_premium && (
+                            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-xl flex items-center gap-0.5">
+                              <Crown size={10} className="fill-current" />
+                              PREMIUM
+                            </span>
+                          )}
                           <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl ${
                             tItem.status === 'LIVE' || tItem.status === 'ONGOING' ? 'bg-primary' : tItem.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
                           }`}>

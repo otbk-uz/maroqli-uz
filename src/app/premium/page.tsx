@@ -59,8 +59,9 @@ export default function PremiumPage() {
   const FEATURES = [
     { name: t("feat_1", "Asosiy turnirlarga kirish"), free: true, premium: true },
     { name: t("feat_2", "Maxsus premium-only turnirlar"), free: false, premium: true },
+    { name: t("feat_8", "GameDev yopiq video darsliklari"), free: false, premium: true },
     { name: t("feat_3", "Profil uchun oltin 'PRO' nishoni"), free: false, premium: true },
-    { name: t("feat_4", "O'yinlar do'konidagi chegirmalar (CD-keys)"), free: false, premium: true },
+    { name: t("feat_4", "O'yinlar do'konidagi chegirmalar (CD-keys 20% chegirma)"), free: false, premium: true },
     { name: t("feat_5", "2x daraja (XP) va ELO ko'paytirgichi"), free: false, premium: true },
     { name: t("feat_6", "E'lonlar (reklama)siz platforma interfeysi"), free: false, premium: true },
     { name: t("feat_7", "Texnik ko'makda birinchi navbat"), free: false, premium: true },
