@@ -356,17 +356,17 @@ export default function GamedevPage() {
             </p>
           </div>
 
-          {/* Role Check & Tab Toggles */}
-          {isAuthenticated && isDeveloper && (
-            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 w-full md:w-auto">
-              <button
-                onClick={() => setActiveTab("community")}
-                className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all ${
-                  activeTab === "community" ? "bg-white/10 text-white" : "text-secondary hover:text-white"
-                }`}
-              >
-                {t("community_tab", "Hamjamiyat")}
-              </button>
+          {/* Tab Toggles for Everyone */}
+          <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 w-full md:w-auto">
+            <button
+              onClick={() => setActiveTab("community")}
+              className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all ${
+                activeTab === "community" ? "bg-white/10 text-white" : "text-secondary hover:text-white"
+              }`}
+            >
+              {t("community_tab", "Hamjamiyat")}
+            </button>
+            {isAuthenticated && isDeveloper && (
               <button
                 onClick={() => setActiveTab("dashboard")}
                 className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
@@ -375,16 +375,16 @@ export default function GamedevPage() {
               >
                 <Layers size={16} /> Dashboard
               </button>
-              <button
-                onClick={() => setActiveTab("lessons")}
-                className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
-                  activeTab === "lessons" ? "bg-primary text-white" : "text-secondary hover:text-white"
-                }`}
-              >
-                <FileText size={16} /> Darslar
-              </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => setActiveTab("lessons")}
+              className={`flex-1 md:flex-none py-2.5 px-6 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${
+                activeTab === "lessons" ? "bg-white/10 text-white" : "text-secondary hover:text-white"
+              }`}
+            >
+              <FileText size={16} /> Darslar
+            </button>
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
