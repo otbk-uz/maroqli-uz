@@ -8,27 +8,32 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'sans-serif'],
+        display: ['var(--font-outfit)', 'sans-serif'],
+      },
       colors: {
-        background: "#09090b",
+        background: "#030305",
         foreground: "#ffffff",
         card: {
-          DEFAULT: "#121214",
+          DEFAULT: "#0b0c10",
           foreground: "#ffffff",
         },
         primary: {
-          DEFAULT: "#ff2d55",
+          DEFAULT: "#FF4655", // Valorant-style aggressive red
           foreground: "#ffffff",
+          hover: "#E83342",
         },
         secondary: {
-          DEFAULT: "#a1a1aa",
+          DEFAULT: "#8B929E",
           foreground: "#ffffff",
         },
         muted: {
-          DEFAULT: "#1e1e20",
-          foreground: "#71717a",
+          DEFAULT: "#141519",
+          foreground: "#8B929E",
         },
         accent: {
-          DEFAULT: "#ff2d55",
+          DEFAULT: "#FF4655",
           foreground: "#ffffff",
         },
       },

@@ -10,7 +10,7 @@ const Hero = () => {
   const { t, locale } = useTranslation();
 
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-28 pb-16 md:pt-48 md:pb-32 overflow-hidden bg-[#050506]">
+    <section className="relative min-h-[95vh] flex items-center pt-28 pb-16 md:pt-48 md:pb-32 overflow-hidden bg-background">
       {/* Dynamic Background */}
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_#ff2d5533,_transparent_70%)]" />
@@ -46,7 +46,7 @@ const Hero = () => {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[1] mb-8 text-white max-w-full break-words"
+              className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-9xl font-black tracking-tighter leading-[0.9] mb-8 text-white max-w-full break-words uppercase"
             >
               {locale === 'ru' ? (
                 <>
@@ -84,12 +84,12 @@ const Hero = () => {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4 sm:gap-5"
             >
-              <Link href="/tournaments" className="btn-primary group relative overflow-hidden flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 w-full sm:w-auto">
+              <Link href="/tournaments" className="btn-primary group relative overflow-hidden flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 w-full sm:w-auto font-display tracking-widest uppercase text-sm">
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-500 skew-x-12" />
                 <Trophy size={20} />
                 <span className="relative z-10">{t("join_tournament", "Turnirga qo'shil")}</span>
               </Link>
-              <Link href="/tournaments" className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20 w-full sm:w-auto">
+              <Link href="/tournaments" className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20 w-full sm:w-auto font-display tracking-widest uppercase text-sm">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                   <Play size={14} fill="currentColor" />
                 </div>
@@ -109,7 +109,7 @@ const Hero = () => {
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
                 <Users size={24} />
               </div>
-              <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">5,000+</p>
+              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">5,000+</p>
               <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("active_players", "Faol o'yinchilar")}</p>
             </motion.div>
 
@@ -122,7 +122,7 @@ const Hero = () => {
               <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 text-blue-500 group-hover:scale-110 transition-transform">
                 <Shield size={24} />
               </div>
-              <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">42</p>
+              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">42</p>
               <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("verified_tournaments", "Tasdiqlangan turnirlar")}</p>
             </motion.div>
 
@@ -137,7 +137,7 @@ const Hero = () => {
                   <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-6 text-yellow-500 group-hover:scale-110 transition-transform">
                     <Trophy size={24} />
                   </div>
-                  <p className="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">$8,500+</p>
+                  <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">$8,500+</p>
                   <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("total_prize_pool", "Jami sovrin jamg'armasi")}</p>
                 </div>
                 <div className="hidden sm:block w-32 h-32 opacity-10">
