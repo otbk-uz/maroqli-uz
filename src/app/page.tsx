@@ -126,9 +126,15 @@ export default function Home() {
 
   return (
     <main className="bg-background min-h-screen relative overflow-hidden">
-      <Hero />
+      {/* Immersive Fixed Background Panorama */}
+      <div 
+        className="fixed inset-0 pointer-events-none z-0 opacity-[0.12] bg-[url('/hero_bg.png')] bg-cover bg-center bg-no-repeat bg-fixed" 
+      />
       
-      {/* Dynamic Esports Section */}
+      <div className="relative z-10">
+        <Hero />
+        
+        {/* Dynamic Esports Section */}
       <section className="py-20 lg:py-28 relative overflow-hidden px-4 md:px-6">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         
@@ -387,6 +393,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      </div>
     </main>
   );
 }
