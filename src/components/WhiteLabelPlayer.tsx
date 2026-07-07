@@ -25,7 +25,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
-  const [watermarkPos, setWatermarkPos] = useState({ top: "20%", left: "20%" });
+  const [watermarkPos1, setWatermarkPos1] = useState({ top: "15%", left: "15%" });
+  const [watermarkPos2, setWatermarkPos2] = useState({ top: "50%", left: "45%" });
+  const [watermarkPos3, setWatermarkPos3] = useState({ top: "80%", left: "70%" });
 
   // Extract YouTube ID
   const getYoutubeId = (urlStr: string) => {
@@ -35,6 +37,40 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   };
 
   const ytId = getYoutubeId(url);
+
+  // Print protection media queries block
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      @media print {
+        body {
+          display: none !important;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
+  // Tab switching visibility listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && isPlaying) {
+        if (isYoutube && ytPlayer && ytReady) {
+          ytPlayer.pauseVideo();
+        } else if (!isYoutube && videoRef.current) {
+          videoRef.current.pause();
+        }
+        setIsPlaying(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [isPlaying, isYoutube, ytPlayer, ytReady]);
 
   // Focus/Blur Protection (Triggered when Snipping Tool or screenshot software focuses away)
   useEffect(() => {
@@ -97,12 +133,30 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   // Float watermark dynamically to prevent screen recordings from cropping it
   useEffect(() => {
     if (!userIdentifier) return;
-    const interval = setInterval(() => {
-      const top = Math.floor(Math.random() * 75) + 10;
-      const left = Math.floor(Math.random() * 65) + 10;
-      setWatermarkPos({ top: `${top}%`, left: `${left}%` });
+    
+    const interval1 = setInterval(() => {
+      const top = Math.floor(Math.random() * 25) + 5; // Top quadrant
+      const left = Math.floor(Math.random() * 65) + 5;
+      setWatermarkPos1({ top: `${top}%`, left: `${left}%` });
+    }, 5000);
+
+    const interval2 = setInterval(() => {
+      const top = Math.floor(Math.random() * 25) + 35; // Mid quadrant
+      const left = Math.floor(Math.random() * 65) + 5;
+      setWatermarkPos2({ top: `${top}%`, left: `${left}%` });
     }, 7000);
-    return () => clearInterval(interval);
+
+    const interval3 = setInterval(() => {
+      const top = Math.floor(Math.random() * 20) + 65; // Bottom quadrant
+      const left = Math.floor(Math.random() * 65) + 5;
+      setWatermarkPos3({ top: `${top}%`, left: `${left}%` });
+    }, 9000);
+
+    return () => {
+      clearInterval(interval1);
+      clearInterval(interval2);
+      clearInterval(interval3);
+    };
   }, [userIdentifier]);
 
   useEffect(() => {
@@ -283,14 +337,28 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         />
       )}
 
-      {/* Dynamic Security Watermark */}
+      {/* Dynamic Security Multi-Watermarks (scattered to prevent cropping) */}
       {userIdentifier && (
-        <div 
-          style={{ top: watermarkPos.top, left: watermarkPos.left }}
-          className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.12] select-none transition-all duration-1000 whitespace-nowrap bg-black/15 px-2.5 py-1 rounded-lg border border-white/[0.03] shadow-md uppercase tracking-wider"
-        >
-          MAROQLI.uz • {userIdentifier} • DRM
-        </div>
+        <>
+          <div 
+            style={{ top: watermarkPos1.top, left: watermarkPos1.left }}
+            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.08] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+          >
+            MAROQLI.uz • {userIdentifier} • STRICT PROTECTION
+          </div>
+          <div 
+            style={{ top: watermarkPos2.top, left: watermarkPos2.left }}
+            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.12] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+          >
+            PROTECTED CONTENT • {userIdentifier}
+          </div>
+          <div 
+            style={{ top: watermarkPos3.top, left: watermarkPos3.left }}
+            className="absolute z-20 pointer-events-none text-[9px] md:text-xs font-mono font-bold text-white/[0.08] select-none transition-all duration-[1000ms] ease-in-out whitespace-nowrap bg-black/10 px-2 py-0.5 rounded uppercase tracking-wider"
+          >
+            MAROQLI • DO NOT SHARE • {userIdentifier}
+          </div>
+        </>
       )}
 
       {/* Click-to-Play/Pause overlay */}
