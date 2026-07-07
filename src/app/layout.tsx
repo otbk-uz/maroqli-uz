@@ -9,8 +9,11 @@ import Footer from "@/components/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Maroqli.uz | O'zbekiston Gaming Hamjamiyati",
+  title: "MAROQLI",
   description: "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi ekotizim platformasi.",
+  icons: {
+    icon: "/logo.jpg.png",
+  },
 };
 
 import Providers from "./providers";
