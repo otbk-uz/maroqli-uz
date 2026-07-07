@@ -85,8 +85,13 @@ export default function GamedevPage() {
   const [loadingPastProjects, setLoadingPastProjects] = useState(false);
   const [savingPastProject, setSavingPastProject] = useState(false);
 
+  // Gamedev Lessons database states
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [loadingLessons, setLoadingLessons] = useState(false);
+
   useEffect(() => {
     fetchRegisteredStudios();
+    fetchLessons();
   }, []);
 
   useEffect(() => {
@@ -332,6 +337,23 @@ export default function GamedevPage() {
       fetchPastProjects();
     } catch (err: any) {
       alert(err.message || "Loyihani o'chirishda xatolik yuz berdi.");
+    }
+  };
+
+  const fetchLessons = async () => {
+    try {
+      setLoadingLessons(true);
+      const { data, error } = await supabase
+        .from("gamedev_lessons")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setLessons(data || []);
+    } catch (err) {
+      console.error("Darslarni yuklashda xatolik:", err);
+    } finally {
+      setLoadingLessons(false);
     }
   };
 
@@ -1019,18 +1041,26 @@ export default function GamedevPage() {
                   <p className="text-secondary text-sm">O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Faqat Premium obunachilar uchun).</p>
                 </div>
                 {user?.role === "ADMIN" && (
-                  <button className="py-2.5 px-5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all">
+                  <button 
+                    onClick={() => router.push("/admin")}
+                    className="py-2.5 px-5 bg-primary hover:bg-primary-hover text-white font-bold rounded-xl text-sm flex items-center gap-2 transition-all"
+                  >
                     <Plus size={16} /> Yangi dars qo'shish
                   </button>
                 )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[
-                  { id: 1, title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" },
-                  { id: 2, title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070" },
-                  { id: 3, title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082" }
-                ].map(lesson => {
+                {loadingLessons ? (
+                  <div className="col-span-full flex items-center justify-center py-20 text-secondary text-sm">
+                    <RefreshCw className="animate-spin text-primary mr-2" size={20} />
+                    <span>Darsliklar yuklanmoqda...</span>
+                  </div>
+                ) : (lessons.length > 0 ? lessons : [
+                  { id: "1", title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" },
+                  { id: "2", title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070" },
+                  { id: "3", title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082" }
+                ]).map(lesson => {
                   const hasAccess = user?.is_premium || user?.role === "ADMIN";
                   return (
                     <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer relative">

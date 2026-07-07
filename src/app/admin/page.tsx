@@ -61,6 +61,16 @@ export default function AdminPage() {
   const [premiumDuration, setPremiumDuration] = useState<number>(30);
   const [savingPremium, setSavingPremium] = useState(false);
 
+  // Lesson form state
+  const [lessonForm, setLessonForm] = useState({
+    title: '',
+    author: '',
+    level: 'Boshlang\'ich',
+    videoUrl: '',
+    imageUrl: ''
+  });
+  const [savingLesson, setSavingLesson] = useState(false);
+
   useEffect(() => {
     const savedAdmin = sessionStorage.getItem('customAdminLogin');
     if (savedAdmin === 'true') {
@@ -317,6 +327,43 @@ export default function AdminPage() {
     }
   };
 
+  const handlePostLesson = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lessonForm.title || !lessonForm.videoUrl || !lessonForm.author) {
+      alert("Iltimos, darslik sarlavhasi, muallifi va video havolasini kiriting!");
+      return;
+    }
+    
+    setSavingLesson(true);
+    try {
+      const { error } = await supabase
+        .from('gamedev_lessons')
+        .insert({
+          title: lessonForm.title,
+          author: lessonForm.author,
+          level: lessonForm.level,
+          video_url: lessonForm.videoUrl,
+          img: lessonForm.imageUrl || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070",
+        });
+        
+      if (error) throw error;
+      
+      alert("Darslik muvaffaqiyatli qo'shildi!");
+      setLessonForm({
+        title: '',
+        author: '',
+        level: 'Boshlang\'ich',
+        videoUrl: '',
+        imageUrl: ''
+      });
+    } catch (err: any) {
+      console.error(err);
+      alert("Xatolik: " + (err.message || "Darslikni saqlashda muammo yuz berdi. (Siz ADMIN rolidamisiz?)"));
+    } finally {
+      setSavingLesson(false);
+    }
+  };
+
   if (!isCustomAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 via-background to-background text-white p-4">
@@ -478,6 +525,85 @@ export default function AdminPage() {
                 className="btn-primary px-8 py-3 w-full md:w-auto"
               >
                 {savingNews ? "Yuklanmoqda..." : "Yangilikni chop etish"}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* GameDev Lesson Management */}
+        <div className="mb-12">
+          <h2 className="text-xl font-bold mb-6">GameDev Darsligini Yuklash</h2>
+          <div className="glass-card p-6 md:p-8 border border-white/5 rounded-2xl">
+            <form onSubmit={handlePostLesson} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-secondary mb-2">Darslik sarlavhasi</label>
+                  <input 
+                    type="text" 
+                    value={lessonForm.title}
+                    onChange={(e) => setLessonForm({...lessonForm, title: e.target.value})}
+                    required
+                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                    placeholder="Masalan: Blender 3D Modellashtirish"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-secondary mb-2">Muallif (Kompaniya yoki shaxs)</label>
+                  <input 
+                    type="text" 
+                    value={lessonForm.author}
+                    onChange={(e) => setLessonForm({...lessonForm, author: e.target.value})}
+                    required
+                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                    placeholder="Masalan: PixelForge UZ"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-bold text-secondary mb-2">Qiyinchilik darajasi</label>
+                  <select 
+                    value={lessonForm.level}
+                    onChange={(e) => setLessonForm({...lessonForm, level: e.target.value})}
+                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                  >
+                    <option value="Boshlang'ich">Boshlang'ich (Beginner)</option>
+                    <option value="O'rta">O'rta (Intermediate)</option>
+                    <option value="Mukammal">Mukammal (Advanced)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-secondary mb-2">Muqova rasm havolasi (Image URL)</label>
+                  <input 
+                    type="url" 
+                    value={lessonForm.imageUrl}
+                    onChange={(e) => setLessonForm({...lessonForm, imageUrl: e.target.value})}
+                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                    placeholder="Havolani kiriting (ixtiyoriy, rasmsiz standart qo'yiladi)"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-secondary mb-2">Video havolasi (YouTube yoki Direct MP4 URL)</label>
+                <input 
+                  type="url" 
+                  value={lessonForm.videoUrl}
+                  onChange={(e) => setLessonForm({...lessonForm, videoUrl: e.target.value})}
+                  required
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                  placeholder="Masalan: https://www.youtube.com/watch?v=... yoki https://sayt.com/video.mp4"
+                />
+                <span className="text-[10px] text-secondary mt-1 block">Tizim YouTube yoki to'g'ridan-to'g'ri MP4 havolasini qabul qiladi va uni o'zimizning maxsus brendsiz video pleyerimizda ko'rsatadi.</span>
+              </div>
+
+              <button 
+                type="submit" 
+                disabled={savingLesson}
+                className="btn-primary px-8 py-3 w-full md:w-auto"
+              >
+                {savingLesson ? "Yuklanmoqda..." : "Darslikni qo'shish"}
               </button>
             </form>
           </div>
