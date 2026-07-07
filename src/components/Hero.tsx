@@ -15,7 +15,7 @@ const Hero = () => {
       <div className="absolute inset-0 z-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_#ff2d5533,_transparent_70%)]" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,_#3b82f61a,_transparent_50%)]" />
-        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay" />
+        <div className="absolute inset-0 opacity-25 bg-[url('/hero_bg.png')] bg-cover bg-center mix-blend-overlay" />
         
         {/* Animated Orbs */}
         <motion.div 

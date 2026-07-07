@@ -17,7 +17,6 @@ export default function FloatingConsoleHUD() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -27,7 +26,7 @@ export default function FloatingConsoleHUD() {
     }
 
     const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
+      setScrolled(window.scrollY > 30);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
@@ -64,146 +63,60 @@ export default function FloatingConsoleHUD() {
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
-  const coreLinks = [
-    { name: t("home", "Bosh"), href: "/", icon: <TrendingUp size={16} /> },
-    { name: t("tournaments", "Turnirlar"), href: "/tournaments", icon: <Trophy size={16} /> },
-    { name: t("games", "O'yinlar"), href: "/games", icon: <Gamepad2 size={16} /> },
-    { name: t("streamers", "Streamerlar"), href: "/streamers", icon: <Radio size={16} /> },
-  ];
-
-  const moreLinks = [
-    { name: t("premium", "Premium"), href: "/premium", icon: <Crown size={16} className="text-amber-400" /> },
-    { name: t("leaderboard", "Reyting"), href: "/leaderboard", icon: <TrendingUp size={16} /> },
-    { name: t("gamedev", "GameDev"), href: "/gamedev", icon: <Code size={16} /> },
-    { name: t("forum", "Forum"), href: "/forum", icon: <MessageSquare size={16} /> },
-    { name: t("news", "Yangiliklar"), href: "/news", icon: <Newspaper size={16} /> },
-  ];
-
-  const allLinks = [
-    { name: t("home", "Bosh"), href: "/", icon: <TrendingUp size={14} /> },
-    { name: t("tournaments", "Turnirlar"), href: "/tournaments", icon: <Trophy size={14} /> },
-    { name: t("games", "O'yinlar"), href: "/games", icon: <Gamepad2 size={14} /> },
-    { name: t("streamers", "Streamerlar"), href: "/streamers", icon: <Radio size={14} /> },
-    { name: t("premium", "Premium"), href: "/premium", icon: <Crown size={14} className="text-amber-400" /> },
-    { name: t("leaderboard", "Reyting"), href: "/leaderboard", icon: <TrendingUp size={14} /> },
-    { name: t("gamedev", "GameDev"), href: "/gamedev", icon: <Code size={14} /> },
-    { name: t("forum", "Forum"), href: "/forum", icon: <MessageSquare size={14} /> },
-    { name: t("news", "Yangiliklar"), href: "/news", icon: <Newspaper size={14} /> },
+  const navLinks = [
+    { name: t("home", "Bosh sahifa"), href: "/" },
+    { name: t("tournaments", "Turnirlar"), href: "/tournaments" },
+    { name: t("games", "O'yinlar"), href: "/games" },
+    { name: t("streamers", "Streamerlar"), href: "/streamers" },
+    { name: t("premium", "Premium"), href: "/premium" },
+    { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
+    { name: t("gamedev", "GameDev"), href: "/gamedev" },
+    { name: t("forum", "Forum"), href: "/forum" },
+    { name: t("news", "Yangiliklar"), href: "/news" },
   ];
 
   if (user && user.role === "ADMIN") {
-    const adminLink = { name: "Admin", href: "/admin", icon: <ShieldAlert size={16} className="text-red-500" /> };
-    const adminLinkSmall = { name: "Admin", href: "/admin", icon: <ShieldAlert size={14} className="text-red-500" /> };
-    moreLinks.push(adminLink);
-    allLinks.push(adminLinkSmall);
+    navLinks.push({ name: "Admin", href: "/admin" });
   }
 
   if (!mounted) return null;
 
   return (
-    <div 
-      className={`fixed z-50 hidden lg:flex items-center justify-between px-8 bg-card/65 backdrop-blur-2xl transition-all duration-500 ease-in-out ${
+    <header 
+      className={`fixed top-0 left-0 w-full z-50 hidden lg:flex items-center justify-between px-10 transition-all duration-300 ease-in-out border-b ${
         scrolled 
-          ? "top-0 left-0 w-full max-w-full h-14 border-b border-white/5 shadow-[0_10px_35px_rgba(0,0,0,0.5)]" 
-          : "top-6 left-1/2 -translate-x-1/2 w-[92%] max-w-7xl h-16 border border-white/10 rounded-full shadow-[0_12px_40px_rgba(0,0,0,0.6)] hover:border-primary/20"
+          ? "h-16 bg-background/80 backdrop-blur-xl border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
+          : "h-20 bg-transparent border-white/5"
       }`}
     >
-      
-      {/* HUD Glow Overlay */}
-      {!scrolled && <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 rounded-full pointer-events-none" />}
-
       {/* Brand logo */}
       <div className="flex items-center space-x-3 flex-shrink-0 z-10">
         <Link href="/" className="flex items-center space-x-2.5">
-          <img src="/logo.jpg.png" alt="Logo" className="h-9 w-auto rounded-lg shadow-[0_0_15px_rgba(255,70,85,0.2)]" />
-          <span className={`font-display font-black tracking-widest text-white transition-all duration-300 ${scrolled ? "text-sm" : "text-lg"}`}>
+          <img src="/logo.jpg.png" alt="Logo" className="h-10 w-auto rounded-lg shadow-[0_0_15px_rgba(255,70,85,0.15)]" />
+          <span className="font-display font-black text-xl tracking-widest text-white">
             MAROQLI
           </span>
         </Link>
       </div>
 
-      {/* Center navigation links */}
-      <nav className={`flex items-center space-x-0.5 z-10 bg-white/5 border border-white/5 p-1 rounded-full transition-all duration-300 ${scrolled ? "scale-95" : ""}`}>
-        {scrolled ? (
-          allLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full text-[10px] font-display font-black uppercase tracking-wider transition-all duration-300 ${
-                  isActive 
-                    ? "bg-primary text-white shadow-[0_4px_12px_rgba(255,70,85,0.3)]" 
-                    : "text-secondary hover:text-white hover:bg-white/5"
-                }`}
-              >
-                {link.icon}
-                <span>{link.name}</span>
-              </Link>
-            );
-          })
-        ) : (
-          <>
-            {coreLinks.map((link) => {
-              const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center space-x-2 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all duration-300 ${
-                    isActive 
-                      ? "bg-primary text-white shadow-[0_4px_15px_rgba(255,70,85,0.3)]" 
-                      : "text-secondary hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {link.icon}
-                  <span>{link.name}</span>
-                </Link>
-              );
-            })}
-
-            {/* More dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setShowMoreMenu(!showMoreMenu)}
-                className={`flex items-center space-x-1.5 px-5 py-2 rounded-full text-xs font-display font-black uppercase tracking-wider transition-all ${
-                  showMoreMenu ? "bg-white/10 text-white" : "text-secondary hover:text-white hover:bg-white/5"
-                }`}
-              >
-                <span>Kengroq</span>
-                <ChevronDown size={14} className={`transition-transform duration-300 ${showMoreMenu ? "rotate-180" : ""}`} />
-              </button>
-
-              <AnimatePresence>
-                {showMoreMenu && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 15, scale: 0.95 }}
-                    className="absolute left-1/2 -translate-x-1/2 mt-3 w-56 bg-card/95 backdrop-blur-2xl border border-white/10 p-2 rounded-2xl shadow-2xl space-y-1 z-50"
-                  >
-                    {moreLinks.map((link) => {
-                      const isActive = pathname.startsWith(link.href);
-                      return (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setShowMoreMenu(false)}
-                          className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-xs font-display font-black uppercase tracking-wider transition-colors ${
-                            isActive 
-                              ? "bg-primary/10 text-primary" 
-                              : "text-secondary hover:text-white hover:bg-white/5"
-                      }`}
-                    >
-                      {link.icon}
-                      <span>{link.name}</span>
-                    </Link>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* Center navigation links (Modest text links, no distracting icons, static layout) */}
+      <nav className="flex items-center space-x-1 z-10">
+        {navLinks.map((link) => {
+          const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`px-4 py-2 rounded-lg text-xs font-display font-black uppercase tracking-wider transition-all duration-200 ${
+                isActive 
+                  ? "text-primary bg-primary/5" 
+                  : "text-secondary hover:text-white hover:bg-white/5"
+              }`}
+            >
+              <span>{link.name}</span>
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Right actions */}
@@ -213,7 +126,7 @@ export default function FloatingConsoleHUD() {
         <div className="relative">
           <button
             onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center space-x-1 text-xs font-display font-black text-secondary hover:text-white bg-white/5 px-3 py-2 rounded-full transition-colors border border-white/5"
+            className="flex items-center space-x-1 text-xs font-display font-black text-secondary hover:text-white bg-white/5 px-3 py-2 rounded-lg transition-colors border border-white/5"
           >
             <span>{locale === 'uz' ? 'O\'Z' : locale === 'ru' ? 'РУ' : 'EN'}</span>
           </button>
@@ -322,7 +235,6 @@ export default function FloatingConsoleHUD() {
           </div>
         )}
       </div>
-
-    </div>
+    </header>
   );
 }
