@@ -97,6 +97,18 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     };
   }, []);
 
+  // Lock body scroll when pseudo-fullscreen is active (e.g. iOS fallback)
+  useEffect(() => {
+    if (isPseudoFullscreen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isPseudoFullscreen]);
+
   // Prevent PrintScreen / Screenshot shortcuts / Clipboard theft
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -439,12 +451,22 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       ref={containerRef}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
-      className={`relative w-full rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl select-none transition-all duration-300 ${
+      className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${
         isPseudoFullscreen 
           ? "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0" 
-          : "aspect-video"
+          : "relative w-full aspect-video rounded-3xl border border-white/10"
       }`}
     >
+      {/* Floating Close Button for iOS Pseudo Fullscreen */}
+      {isPseudoFullscreen && (
+        <button
+          onClick={() => setIsPseudoFullscreen(false)}
+          className="fixed top-4 right-4 z-[10000] p-3 bg-black/60 hover:bg-black/80 text-white rounded-full backdrop-blur-md border border-white/10 active:scale-95 transition-transform"
+          aria-label="Exit Fullscreen"
+        >
+          <Minimize size={20} />
+        </button>
+      )}
       {isYoutube ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
           {/* Black bars overlay to hide YouTube top title bar and bottom logo */}
