@@ -89,7 +89,7 @@ export default function FloatingConsoleHUD() {
         className={`fixed top-0 left-0 w-full z-50 hidden lg:flex flex-col justify-between px-4 xl:px-10 py-2 transition-all duration-300 ease-in-out border-b ${
           scrolled 
             ? "bg-background/95 backdrop-blur-xl border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
-            : "bg-transparent border-white/5"
+            : "bg-transparent border-transparent"
         }`}
       >
         {/* Row 1: Brand Logo + Actions */}
@@ -256,7 +256,11 @@ export default function FloatingConsoleHUD() {
       </header>
 
       {/* Mobile Header (Sleek, transparent, modest) */}
-      <header className="fixed top-0 left-0 w-full h-14 z-50 flex lg:hidden items-center justify-between px-4 bg-background/85 backdrop-blur-xl border-b border-white/5 shadow-md">
+      <header className={`fixed top-0 left-0 w-full h-14 z-50 flex lg:hidden items-center justify-between px-4 transition-all duration-300 border-b ${
+        scrolled 
+          ? "bg-background/95 backdrop-blur-xl border-white/10 shadow-md" 
+          : "bg-transparent border-transparent"
+      }`}>
         <Link href="/" className="flex items-center space-x-2">
           <img src="/logo.jpg.png" alt="Logo" className="h-8 w-auto rounded-lg shadow-[0_0_10px_rgba(255,70,85,0.15)]" />
           <span className="font-display font-black text-sm tracking-widest text-white">MAROQLI</span>
