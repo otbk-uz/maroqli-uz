@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, User, LogOut, ChevronDown, Trophy, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, ShieldAlert } from "lucide-react";
+import { Bell, User, LogOut, ChevronDown, Trophy, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, ShieldAlert, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import api from "@/lib/api";
@@ -18,6 +18,7 @@ export default function FloatingConsoleHUD() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -368,8 +369,71 @@ export default function FloatingConsoleHUD() {
               Kirish
             </Link>
           )}
+
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            className="p-2 text-secondary hover:text-white transition-colors relative bg-white/5 rounded-full border border-white/5 z-50"
+            aria-label="Toggle mobile menu"
+          >
+            {showMobileMenu ? <X size={14} /> : <Menu size={14} />}
+          </button>
         </div>
       </header>
+
+      {/* Mobile Slide-over Menu Overlay */}
+      <AnimatePresence>
+        {showMobileMenu && (
+          <motion.div
+            initial={{ opacity: 0, x: "100%" }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: "100%" }}
+            transition={{ type: "spring", bounce: 0.1, duration: 0.5 }}
+            className="fixed inset-0 z-40 lg:hidden bg-background/95 backdrop-blur-2xl flex flex-col pt-24 px-6 pb-8 overflow-y-auto"
+          >
+            {/* Ambient glows inside menu */}
+            <div className="absolute top-0 right-0 -z-10 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
+            <div className="absolute bottom-0 left-0 -z-10 w-72 h-72 bg-blue-500/5 rounded-full blur-[100px]" />
+
+            <div className="relative z-10 flex flex-col justify-between h-full">
+              <nav className="flex flex-col space-y-2">
+                {navLinks.map((link, idx) => {
+                  const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+                  return (
+                    <motion.div
+                      key={link.href}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                    >
+                      <Link
+                        href={link.href}
+                        onClick={() => setShowMobileMenu(false)}
+                        className={`flex items-center justify-between py-3.5 px-4 rounded-xl font-display font-black uppercase text-sm tracking-wider transition-all duration-200 border ${
+                          isActive 
+                            ? "text-primary bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(255,70,85,0.1)]" 
+                            : "text-secondary border-transparent hover:text-white hover:bg-white/5"
+                        }`}
+                      >
+                        <span>{link.name}</span>
+                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#FF4655]" />}
+                      </Link>
+                    </motion.div>
+                  );
+                })}
+              </nav>
+
+              {/* Mobile Menu Footer Info */}
+              <div className="pt-6 border-t border-white/5 flex flex-col space-y-4">
+                <div className="flex items-center justify-between text-[10px] text-secondary font-display font-bold uppercase tracking-widest px-2">
+                  <span>MAROQLI ESPORTS</span>
+                  <span>v0.1.0</span>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

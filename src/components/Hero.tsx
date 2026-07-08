@@ -233,52 +233,54 @@ const Hero = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-2xl p-4 md:p-10 overflow-y-auto"
+            className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-2xl overflow-y-auto p-4 md:p-10"
           >
-            <div className="w-full max-w-6xl relative my-auto py-8">
-              {/* Close button */}
-              <button 
-                onClick={() => setShowSections(false)}
-                className="absolute top-0 right-0 p-3 text-secondary hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full border border-white/10"
-              >
-                <X size={24} />
-              </button>
+            <div className="flex items-center justify-center min-h-full w-full">
+              <div className="w-full max-w-6xl relative py-8">
+                {/* Close button */}
+                <button 
+                  onClick={() => setShowSections(false)}
+                  className="absolute -top-4 right-0 p-3 text-secondary hover:text-white transition-colors bg-white/5 hover:bg-white/10 rounded-full border border-white/10 z-10"
+                >
+                  <X size={20} />
+                </button>
 
-              <div className="text-center mb-8 md:mb-12">
-                <h2 className="font-display text-3xl md:text-5xl font-black tracking-tight text-white uppercase mb-3">
-                  {t("platform_sections", "Platforma Bo'limlari")}
-                </h2>
-                <p className="text-secondary text-xs md:text-sm max-w-md mx-auto">
-                  {t("sections_desc", "Maroqli gaming platformasining barcha asosiy modullari va sahifalari")}
-                </p>
-              </div>
+                <div className="text-center mb-8 md:mb-12">
+                  <h2 className="font-display text-3xl md:text-5xl font-black tracking-tight text-white uppercase mb-3">
+                    {t("platform_sections", "Platforma Bo'limlari")}
+                  </h2>
+                  <p className="text-secondary text-xs md:text-sm max-w-md mx-auto">
+                    {t("sections_desc", "Maroqli gaming platformasining barcha asosiy modullari va sahifalari")}
+                  </p>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-                {sectionsList.map((sec, idx) => (
-                  <motion.div
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.04 }}
-                    key={sec.href}
-                  >
-                    <Link 
-                      href={sec.href}
-                      onClick={() => setShowSections(false)}
-                      className="group block glass-card p-5 border-white/5 hover:border-primary/50 transition-all duration-300 relative overflow-hidden bg-white/[0.01] hover:bg-white/[0.03]"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+                  {sectionsList.map((sec, idx) => (
+                    <motion.div
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: idx * 0.04 }}
+                      key={sec.href}
                     >
-                      <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${sec.gradient} opacity-5 group-hover:opacity-20 blur-xl transition-opacity duration-300`} />
-                      <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${sec.gradient} flex items-center justify-center text-white mb-5 group-hover:scale-110 transition-transform duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.3)]`}>
-                        {sec.icon}
-                      </div>
-                      <h3 className="font-display text-base font-bold text-white mb-1.5 uppercase tracking-wide group-hover:text-primary transition-colors">
-                        {sec.name}
-                      </h3>
-                      <p className="text-[11px] text-secondary leading-relaxed">
-                        {sec.desc}
-                      </p>
-                    </Link>
-                  </motion.div>
-                ))}
+                      <Link 
+                        href={sec.href}
+                        onClick={() => setShowSections(false)}
+                        className="group block glass-card p-5 border-white/5 hover:border-primary/50 transition-all duration-300 relative overflow-hidden bg-white/[0.01] hover:bg-white/[0.03]"
+                      >
+                        <div className={`absolute top-0 right-0 w-24 h-24 bg-gradient-to-br ${sec.gradient} opacity-5 group-hover:opacity-20 blur-xl transition-opacity duration-300`} />
+                        <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${sec.gradient} flex items-center justify-center text-white mb-5 group-hover:scale-110 transition-transform duration-300 shadow-[0_4px_15px_rgba(0,0,0,0.3)]`}>
+                          {sec.icon}
+                        </div>
+                        <h3 className="font-display text-base font-bold text-white mb-1.5 uppercase tracking-wide group-hover:text-primary transition-colors">
+                          {sec.name}
+                        </h3>
+                        <p className="text-[11px] text-secondary leading-relaxed">
+                          {sec.desc}
+                        </p>
+                      </Link>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>

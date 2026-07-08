@@ -16,7 +16,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
     <>
       <FloatingConsoleHUD />
       <div 
-        className="min-h-screen flex flex-col bg-background text-foreground pb-20 lg:pb-0 pt-10 lg:pt-28 transition-all duration-300 ease-in-out"
+        className="min-h-screen flex flex-col bg-background text-foreground pb-28 lg:pb-0 pt-16 lg:pt-28 transition-all duration-300 ease-in-out"
       >
         <main className="flex-1">
           {children}
