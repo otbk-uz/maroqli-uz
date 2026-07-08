@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Hero from "@/components/Hero";
-import { Trophy, ArrowRight, Play, Gamepad2, Calendar, Eye, Users, ChevronRight, Activity } from "lucide-react";
+import { Trophy, ArrowRight, Play, Gamepad2, Calendar, Eye, Users, ChevronRight, Activity, ShoppingCart } from "lucide-react";
 import { useTranslation } from "@/lib/store";
 
 interface Tournament {
@@ -372,7 +372,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                      <Gamepad2 size={20} />
+                      <ShoppingCart size={20} />
                     </div>
                     <div>
                       <p className="text-xs text-secondary uppercase font-bold tracking-wider">Mavjud O'yinlar</p>

@@ -71,7 +71,7 @@ export default function FloatingConsoleHUD() {
     { name: t("premium", "Premium"), href: "/premium" },
     { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
     { name: t("gamedev", "GameDev"), href: "/gamedev" },
-    { name: t("lessons", "Darslar"), href: "/gamedev?tab=lessons" },
+    { name: t("lessons", "Dev Darslar"), href: "/gamedev?tab=lessons" },
     { name: t("forum", "Forum"), href: "/forum" },
     { name: t("news", "Yangiliklar"), href: "/news" },
   ];
@@ -86,14 +86,14 @@ export default function FloatingConsoleHUD() {
     <>
       {/* Desktop Header */}
       <header 
-        className={`fixed top-0 left-0 w-full z-50 hidden lg:flex flex-col justify-between px-10 transition-all duration-300 ease-in-out border-b ${
+        className={`fixed top-0 left-0 w-full z-50 hidden lg:flex flex-col justify-between px-4 xl:px-10 py-2 transition-all duration-300 ease-in-out border-b ${
           scrolled 
-            ? "h-20 bg-background/95 backdrop-blur-xl border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
-            : "h-28 bg-transparent border-white/5"
+            ? "bg-background/95 backdrop-blur-xl border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
+            : "bg-transparent border-white/5"
         }`}
       >
         {/* Row 1: Brand Logo + Actions */}
-        <div className="flex items-center justify-between w-full h-[55%] pt-2">
+        <div className="flex items-center justify-between w-full pt-1 pb-2">
           {/* Brand logo */}
           <div className="flex items-center space-x-3 flex-shrink-0 z-10">
             <Link href="/" className="flex items-center space-x-2.5">
@@ -233,8 +233,8 @@ export default function FloatingConsoleHUD() {
         </div>
 
         {/* Row 2: Nav Links */}
-        <div className="flex items-center justify-center w-full h-[45%] border-t border-white/5 pb-1">
-          <nav className="flex items-center space-x-1 z-10 overflow-x-auto max-w-full no-scrollbar">
+        <div className="flex items-center justify-center w-full border-t border-white/5 pt-2 pb-1">
+          <nav className="flex flex-wrap items-center justify-center gap-2 z-10 w-full">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
               return (

@@ -24,36 +24,6 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleGoogleLoginSuccess = async (response: any) => {
-    // Google login with supabase (can be implemented later)
-    setErrorMsg("Google orqali kirish vaqtincha o'chirilgan.");
-  };
-
-  const initGoogleLogin = () => {
-    if (typeof window !== "undefined" && (window as any).google) {
-      (window as any).google.accounts.id.initialize({
-        client_id: "144019147996-mv63kns1oi2fsec4hsh7if7rp0pdk95g.apps.googleusercontent.com",
-        callback: handleGoogleLoginSuccess,
-      });
-
-      (window as any).google.accounts.id.renderButton(
-        document.getElementById("google-signin-btn"),
-        { 
-          theme: "outline", 
-          size: "large", 
-          width: 368,
-          text: "signin_with",
-          shape: "rectangular"
-        }
-      );
-    }
-  };
-
-  useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).google) {
-      initGoogleLogin();
-    }
-  }, []);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,7 +116,7 @@ const LoginPage = () => {
       >
         <div className="text-center mb-10">
           <Link href="/" className="text-3xl font-black tracking-tighter inline-block mb-6">
-            PLAY<span className="text-primary">NATION</span>
+            MAR<span className="text-primary">OQLI</span>
           </Link>
           <h1 className="text-2xl font-bold mb-2">Xush kelibsiz!</h1>
           <p className="text-secondary text-sm">Davom etish uchun hisobingizga kiring</p>
@@ -207,23 +177,7 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className="relative my-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-white/5"></div>
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-4 text-secondary">Yoki boshqa yo'l bilan</span>
-          </div>
-        </div>
 
-        <div className="space-y-4">
-          <div id="google-signin-btn" className="w-full flex justify-center"></div>
-          
-          <button className="w-full flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3.5 rounded-xl transition-colors text-white active:scale-95">
-            <Send size={18} className="text-[#229ED9]" />
-            <span className="text-sm font-medium">Telegram bilan kirish</span>
-          </button>
-        </div>
 
         <p className="text-center mt-10 text-sm text-secondary">
           Hisobingiz yo'qmi?{" "}
@@ -232,11 +186,7 @@ const LoginPage = () => {
           </Link>
         </p>
       </motion.div>
-      <Script 
-        src="https://accounts.google.com/gsi/client" 
-        onLoad={initGoogleLogin}
-        strategy="afterInteractive"
-      />
+
     </div>
   );
 };

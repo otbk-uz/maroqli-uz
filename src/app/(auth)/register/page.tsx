@@ -302,7 +302,7 @@ const RegisterPage = () => {
           >
             <div className="text-center mb-8">
               <Link href="/" className="text-3xl font-black tracking-tighter inline-block mb-4">
-                PLAY<span className="text-primary">NATION</span>
+                MAR<span className="text-primary">OQLI</span>
               </Link>
               <h1 className="text-2xl font-bold mb-1">Hisob ochish</h1>
               <p className="text-secondary text-sm">Gaming hamjamiyatiga qo'shiling</p>
@@ -564,31 +564,7 @@ const RegisterPage = () => {
               )}
             </form>
 
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/5"></div>
-              </div>
-              <div className="relative flex justify-center text-[10px] uppercase tracking-widest">
-                <span className="bg-background px-4 text-secondary">Tezkor ro'yxatdan o'tish</span>
-              </div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white"
-              >
-                <Chrome size={18} />
-                <span className="text-xs font-medium">Google</span>
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center space-x-2 bg-white/5 border border-white/10 hover:bg-white/10 py-3 rounded-xl transition-colors text-white"
-              >
-                <Send size={18} className="text-[#229ED9]" />
-                <span className="text-xs font-medium">Telegram</span>
-              </button>
-            </div>
 
             <p className="text-center mt-8 text-sm text-secondary">
               Hisobingiz bormi?{" "}

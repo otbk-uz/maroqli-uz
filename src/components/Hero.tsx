@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Trophy, Users, Shield, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, X } from "lucide-react";
+import { Play, Trophy, Users, Shield, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, X, ShoppingCart } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/store";
 
@@ -22,7 +22,7 @@ const Hero = () => {
       name: t("games", "O'yinlar do'koni"), 
       desc: t("games_desc", "Mahalliy va xalqaro o'yinlarni hamyonbop narxlarda xarid qiling."), 
       href: "/games", 
-      icon: <Gamepad2 size={24} />, 
+      icon: <ShoppingCart size={24} />, 
       gradient: "from-blue-500 to-indigo-600" 
     },
     { 
