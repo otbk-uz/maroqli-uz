@@ -22,6 +22,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [isYoutube, setIsYoutube] = useState(false);
   const [ytPlayer, setYtPlayer] = useState<any>(null);
   const [ytReady, setYtReady] = useState(false);
+  const [isGoogleDrive, setIsGoogleDrive] = useState(false);
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -38,6 +39,12 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   };
 
   const ytId = getYoutubeId(url);
+
+  const getDriveId = (urlStr: string) => {
+    const match = urlStr.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+  };
+  const gDriveId = getDriveId(url);
 
   // Print protection media queries block
   useEffect(() => {
@@ -262,9 +269,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     return () => observer.disconnect();
   }, [userIdentifier, isWindowBlurred, isYoutube, ytPlayer, ytReady]);
 
-  useEffect(() => {
     if (ytId) {
       setIsYoutube(true);
+      setIsGoogleDrive(false);
       // Load YouTube Iframe API
       if (!(window as any).YT) {
         const tag = document.createElement("script");
@@ -279,10 +286,14 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       } else {
         initYtPlayer();
       }
+    } else if (gDriveId) {
+      setIsGoogleDrive(true);
+      setIsYoutube(false);
     } else {
       setIsYoutube(false);
+      setIsGoogleDrive(false);
     }
-  }, [url, ytId]);
+  }, [url, ytId, gDriveId]);
 
   const initYtPlayer = () => {
     if (!ytId) return;
@@ -431,6 +442,15 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             frameBorder="0"
           />
         </div>
+      ) : isGoogleDrive ? (
+        <div className="absolute inset-0 w-full h-full">
+          <iframe
+            src={`https://drive.google.com/file/d/${gDriveId}/preview`}
+            className="w-full h-full border-0"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+          />
+        </div>
       ) : (
         <video
           ref={videoRef}
@@ -469,20 +489,23 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         </>
       )}
 
-      {/* Click-to-Play/Pause overlay */}
-      <div 
-        className="absolute inset-0 cursor-pointer z-20 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
-        onClick={togglePlay}
-      >
-        {/* Play/Pause giant center indicator (fade out on play) */}
-        {!isPlaying && (
-          <div className="bg-primary/95 text-white p-5 rounded-full shadow-[0_0_30px_rgba(255,70,85,0.4)] hover:scale-110 transition-transform duration-300">
-            <Play size={28} className="fill-current ml-1" />
-          </div>
-        )}
-      </div>
+      {/* Click-to-Play/Pause overlay (Not needed for Google Drive) */}
+      {!isGoogleDrive && (
+        <div 
+          className="absolute inset-0 cursor-pointer z-20 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
+          onClick={togglePlay}
+        >
+          {/* Play/Pause giant center indicator (fade out on play) */}
+          {!isPlaying && (
+            <div className="bg-primary/95 text-white p-5 rounded-full shadow-[0_0_30px_rgba(255,70,85,0.4)] hover:scale-110 transition-transform duration-300">
+              <Play size={28} className="fill-current ml-1" />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Custom styled control dock (fades in on hover) */}
+      {!isGoogleDrive && (
       <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black via-black/80 to-transparent p-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
         
         {/* Progress slider bar */}
@@ -538,6 +561,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Safety blur overlay when window loses focus (Snipping tool active / focus blur protection) */}
       {isWindowBlurred && (

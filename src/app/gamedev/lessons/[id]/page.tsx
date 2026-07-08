@@ -35,7 +35,7 @@ export default function LessonDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const defaultLessons: Lesson[] = [
-    { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070", video_url: "/videos/oyindizayn.mp4" }
+    { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070", video_url: "https://drive.google.com/file/d/1W-4f8yQgIkTDTbHat3VrWEGV81uNB6hQ/view?usp=drive_link" }
   ];
 
   const lessonId = params.id as string;
