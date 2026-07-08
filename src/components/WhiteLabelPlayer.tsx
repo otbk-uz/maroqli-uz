@@ -456,7 +456,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           <div className="absolute top-0 left-0 w-full h-[50px] bg-black/80 backdrop-blur-md z-30 flex items-center justify-between px-6 pointer-events-auto border-b border-white/5">
             <div className="flex items-center space-x-2">
               <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] font-black tracking-widest text-white/50 uppercase font-display">MAROQLI SECURE PLAYER</span>
+              <span className="text-[10px] font-black tracking-widest text-white/50 uppercase font-display">MAROQLI</span>
             </div>
             <button 
               onClick={toggleFullscreen}
