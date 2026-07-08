@@ -20,6 +20,7 @@ module.exports = {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
     createDesktopShortcut: true,
-    createStartMenuShortcut: true
+    createStartMenuShortcut: true,
+    artifactName: "${productName}.Setup.${version}.${ext}"
   }
 };

@@ -1,4 +1,4 @@
-# PlayNationUz — Gaming Ekotizim Platformasi
+# MAROQLI.uz — Gaming Ekotizim Platformasi
 
 O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi ekotizim platformasi.
 

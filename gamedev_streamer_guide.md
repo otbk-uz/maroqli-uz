@@ -1,6 +1,6 @@
-# PlayNationUz — GameDev & Strimerlar Tizimi Qo'llanmasi
+# MAROQLI.uz — GameDev & Strimerlar Tizimi Qo'llanmasi
 
-Ushbu hujjat PlayNationUz gaming platformasining **GameDev (O'yin yaratuvchilar va studiyalar)** hamda **Strimerlar (Jonli efirlar va donat)** bo'limlarini modernizatsiya qilish bo'yicha joriy etilgan yangi imkoniyatlar va funksional mexanizmlar haqida boshqaruv uchun tayyorlangan hisobot va foydalanish qo'llanmasidir.
+Ushbu hujjat MAROQLI.uz gaming platformasining **GameDev (O'yin yaratuvchilar va studiyalar)** hamda **Strimerlar (Jonli efirlar va donat)** bo'limlarini modernizatsiya qilish bo'yicha joriy etilgan yangi imkoniyatlar va funksional mexanizmlar haqida boshqaruv uchun tayyorlangan hisobot va foydalanish qo'llanmasidir.
 
 ---
 
@@ -47,7 +47,7 @@ Platformaning Strimerlar bo'limi zamonaviy video oqim (streaming) platformalari 
 
 ## 3. Tizimning Biznes va Ekotizim Qiymati
 
-Ushbu modernizatsiya loyihasi PlayNationUz platformasini raqobatchilardan ajratib turuvchi bir qator biznes afzalliklarini taqdim etadi:
+Ushbu modernizatsiya loyihasi MAROQLI.uz platformasini raqobatchilardan ajratib turuvchi bir qator biznes afzalliklarini taqdim etadi:
 1. **Auditoriyani Birlashtirish:** O'yin yaratuvchilar hamda o'yinchilarning yagona tarmoqqa birlashishi foydalanuvchilarning saytda o'tkazadigan vaqtini (retention rate) keskin oshiradi.
 2. **Kibersport va Striming Rivoji:** Mahalliy strimerlarga donat olish imkonini yaratish orqali platformada kontent yaratuvchilar faolligini rag'batlantiramiz.
 3. **Reklama va Homiylik:** Professional studiyalar portfelining mavjudligi xalqaro va mahalliy homiylarni (sponsors), shuningdek, investorlarni platformaga jalb qilish uchun asosiy vosita bo'ladi.
