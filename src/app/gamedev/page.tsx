@@ -1045,7 +1045,7 @@ export default function GamedevPage() {
               <div className="flex justify-between items-center mb-8">
                 <div>
                   <h2 className="text-3xl font-bold mb-2">GameDev Darslari</h2>
-                  <p className="text-secondary text-sm">O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Faqat Premium obunachilar uchun).</p>
+                  <p className="text-secondary text-sm">O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Barcha uchun bepul).</p>
                 </div>
                 {user?.role === "ADMIN" && (
                   <button 
@@ -1064,11 +1064,9 @@ export default function GamedevPage() {
                     <span>Darsliklar yuklanmoqda...</span>
                   </div>
                 ) : (lessons.length > 0 ? lessons : [
-                  { id: "1", title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" },
-                  { id: "2", title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070" },
-                  { id: "3", title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082" }
+                  { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" }
                 ]).map(lesson => {
-                  const hasAccess = user?.is_premium || user?.role === "ADMIN";
+                  const hasAccess = true; // Barcha uchun bepul
                   return (
                     <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer relative">
                       <div className="aspect-video relative overflow-hidden">

@@ -35,9 +35,7 @@ export default function LessonDetailsPage() {
   const [loading, setLoading] = useState(true);
 
   const defaultLessons: Lesson[] = [
-    { id: "1", title: "Unreal Engine 5 - Boshlang'ich Darslar", author: "PixelForge UZ", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070", video_url: "https://www.youtube.com/watch?v=gQmiqmxJMtA" },
-    { id: "2", title: "Unity C# orqali 2D platformer yaratish", author: "Indie Dev UZ", level: "O'rta", img: "https://images.unsplash.com/photo-1552820728-8b83bb6b773f?q=80&w=2070", video_url: "https://www.youtube.com/watch?v=R8K6XlhgC9c" },
-    { id: "3", title: "O'yinlar uchun 3D modellashtirish (Blender)", author: "Uz3D Art", level: "Boshlang'ich", img: "https://images.unsplash.com/photo-1618365908648-e71bc5714811?q=80&w=2082", video_url: "https://www.youtube.com/watch?v=gPv73QZ7OPE" }
+    { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070", video_url: "/videos/oyindizayn.mp4" }
   ];
 
   const lessonId = params.id as string;
@@ -45,12 +43,7 @@ export default function LessonDetailsPage() {
   useEffect(() => {
     if (!mounted) return;
 
-    // Fast-path auth check: If user not logged in or doesn't have premium/admin, redirect to premium
-    const hasAccess = user?.is_premium || user?.role === "ADMIN";
-    if (!isAuthenticated || !hasAccess) {
-      router.replace("/premium");
-      return;
-    }
+    // Barcha uchun bepul (Premium check olib tashlandi)
 
     const fetchLessonData = async () => {
       setLoading(true);
@@ -188,10 +181,10 @@ export default function LessonDetailsPage() {
               </div>
             </div>
 
-            <div className="glass-card p-6 border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-transparent text-center space-y-4">
-              <Award className="text-amber-400 mx-auto" size={32} />
-              <h4 className="font-bold text-sm text-white">Sizda Premium A'zolik Faol!</h4>
-              <p className="text-[11px] text-secondary leading-relaxed">MAROQLI.uz geymerlar ekotizimidagi barcha yopiq darsliklar va turnirlarga eksklyuziv kirish huquqiga egasiz.</p>
+            <div className="glass-card p-6 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent text-center space-y-4">
+              <Award className="text-emerald-400 mx-auto" size={32} />
+              <h4 className="font-bold text-sm text-white">Barcha uchun bepul!</h4>
+              <p className="text-[11px] text-secondary leading-relaxed">Ushbu darslik Maroqli.uz jamoasi tomonidan barcha foydalanuvchilarga bepul taqdim etilmoqda.</p>
             </div>
           </div>
         </div>
