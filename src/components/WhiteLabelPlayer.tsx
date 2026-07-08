@@ -417,17 +417,8 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         </div>
       ) : isGoogleDrive ? (
         <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
-          {/* Custom Header overlay to completely hide Google Drive title and pop-out icon */}
-          <div className="absolute top-0 left-0 w-full h-[60px] bg-[#050508] z-30 pointer-events-auto flex items-center justify-between px-6 border-b border-white/5 shadow-2xl">
-             <div className="flex items-center gap-3">
-               <div className="w-2.5 h-2.5 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(255,70,85,0.6)]" />
-               <span className="text-white text-[11px] font-display font-black tracking-widest uppercase">Maroqli Secure Player</span>
-             </div>
-             <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-lg border border-white/10">
-               <Lock size={12} className="text-amber-400" />
-               <span className="text-secondary text-[9px] font-bold uppercase tracking-wider">Himoyalangan Server</span>
-             </div>
-          </div>
+          {/* Stealth overlay to completely hide Google Drive title and pop-out icon without looking suspicious */}
+          <div className="absolute top-0 left-0 w-full h-[60px] bg-[#000000] z-30 pointer-events-auto cursor-default" />
           
           <iframe
             src={`https://drive.google.com/file/d/${gDriveId}/preview`}
