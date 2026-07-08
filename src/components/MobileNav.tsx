@@ -19,7 +19,7 @@ const MobileNav = () => {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-6 left-4 right-4 z-50">
+    <div className="lg:hidden fixed left-4 right-4 z-50 bottom-4 pb-[env(safe-area-inset-bottom,0px)]">
       <nav className="mx-auto max-w-md bg-card/75 backdrop-blur-2xl border border-white/10 px-4 py-3 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center justify-around relative">
         
         {/* Glow behind the bar */}

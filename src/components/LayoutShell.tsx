@@ -17,11 +17,7 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
   return (
     <>
       <FloatingConsoleHUD />
-      <div 
-        className={`min-h-screen flex flex-col bg-background text-foreground pb-28 lg:pb-0 transition-all duration-300 ease-in-out ${
-          pathname === "/" ? "" : "pt-16 lg:pt-28"
-        }`}
-      >
+      <div className="min-h-screen flex flex-col bg-background text-foreground pb-28 lg:pb-0 transition-all duration-300 ease-in-out">
         <main className="flex-1">
           {children}
         </main>
