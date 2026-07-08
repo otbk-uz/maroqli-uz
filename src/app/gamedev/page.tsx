@@ -47,6 +47,7 @@ export default function GamedevPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<"community" | "dashboard" | "lessons">("community");
   const [dashboardSubTab, setDashboardSubTab] = useState<"games" | "profile" | "past_projects">("games");
+  const [activePlaylist, setActivePlaylist] = useState<string>("Barchasi");
   
   // Dashboard & Studio data
   const [dashboardData, setDashboardData] = useState<DevDashboardData | null>(null);
@@ -1057,15 +1058,41 @@ export default function GamedevPage() {
                 )}
               </div>
 
+              {/* Playlist Filter Buttons */}
+              {!loadingLessons && (
+                <div className="flex flex-wrap items-center gap-3 mb-8">
+                  {(() => {
+                    const allLessons = lessons.length > 0 ? lessons : [
+                      { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" }
+                    ];
+                    const playlists = ["Barchasi", ...Array.from(new Set(allLessons.map(l => l.level)))];
+                    return playlists.map(playlist => (
+                      <button
+                        key={playlist}
+                        onClick={() => setActivePlaylist(playlist)}
+                        className={`px-5 py-2 rounded-full text-sm font-bold transition-all ${activePlaylist === playlist ? "bg-primary text-white border-primary" : "bg-white/5 text-secondary hover:text-white border-white/10 hover:border-white/20"} border`}
+                      >
+                        {playlist}
+                      </button>
+                    ));
+                  })()}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loadingLessons ? (
                   <div className="col-span-full flex items-center justify-center py-20 text-secondary text-sm">
                     <RefreshCw className="animate-spin text-primary mr-2" size={20} />
                     <span>Darsliklar yuklanmoqda...</span>
                   </div>
-                ) : (lessons.length > 0 ? lessons : [
-                  { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" }
-                ]).map(lesson => {
+                ) : (
+                  (() => {
+                    const allLessons = lessons.length > 0 ? lessons : [
+                      { id: "1", title: "O'yin dizaynining asosiy tamoyillari", author: "Maroqli.uz", level: "O'yin dizayni (boshlang'ich)", img: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070" }
+                    ];
+                    return activePlaylist === "Barchasi" ? allLessons : allLessons.filter(l => l.level === activePlaylist);
+                  })()
+                ).map(lesson => {
                   const hasAccess = true; // Barcha uchun bepul
                   return (
                     <div key={lesson.id} className="glass-card overflow-hidden group border border-white/5 hover:border-primary/50 transition-all cursor-pointer relative">
