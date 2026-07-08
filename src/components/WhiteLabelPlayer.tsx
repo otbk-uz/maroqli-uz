@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { Play, Pause, Volume2, VolumeX, Maximize, Lock, Crown } from "lucide-react";
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, Lock, Crown } from "lucide-react";
 
 interface PlayerProps {
   url: string;
@@ -23,6 +23,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [ytPlayer, setYtPlayer] = useState<any>(null);
   const [ytReady, setYtReady] = useState(false);
   const [isGoogleDrive, setIsGoogleDrive] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -379,10 +380,40 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().then(() => setIsFullscreen(true));
+    
+    const doc = document as any;
+    const container = containerRef.current as any;
+    
+    const requestFS = container.requestFullscreen || 
+                      container.webkitRequestFullscreen || 
+                      container.mozRequestFullScreen || 
+                      container.msRequestFullscreen;
+
+    const isFullscreenSupported = doc.fullscreenEnabled || 
+                                  doc.webkitFullscreenEnabled || 
+                                  doc.mozFullScreenEnabled || 
+                                  doc.msFullscreenEnabled;
+
+    if (isFullscreenSupported && requestFS) {
+      const isFS = doc.fullscreenElement || 
+                   doc.webkitFullscreenElement || 
+                   doc.mozFullScreenElement || 
+                   doc.msFullscreenElement;
+
+      if (!isFS) {
+        requestFS.call(container).then(() => setIsFullscreen(true)).catch(() => {
+          setIsPseudoFullscreen(true);
+        });
+      } else {
+        const exitFS = doc.exitFullscreen || 
+                       doc.webkitExitFullscreen || 
+                       doc.mozCancelFullScreen || 
+                       doc.msExitFullscreen;
+        if (exitFS) exitFS.call(doc);
+        setIsFullscreen(false);
+      }
     } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false));
+      setIsPseudoFullscreen(!isPseudoFullscreen);
     }
   };
 
@@ -398,7 +429,11 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       ref={containerRef}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
-      className="relative w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl select-none"
+      className={`relative w-full rounded-3xl overflow-hidden bg-black border border-white/10 group shadow-2xl select-none transition-all duration-300 ${
+        isPseudoFullscreen 
+          ? "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0" 
+          : "aspect-video"
+      }`}
     >
       {isYoutube ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
@@ -417,13 +452,25 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         </div>
       ) : isGoogleDrive ? (
         <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
-          {/* Stealth overlay to completely hide Google Drive title and pop-out icon without looking suspicious */}
-          <div className="absolute top-0 left-0 w-full h-[60px] bg-[#000000] z-30 pointer-events-auto cursor-default" />
+          {/* Custom Branded Top Bar that also serves to hide Google Drive header controls and provides a custom Maximize/Minimize button */}
+          <div className="absolute top-0 left-0 w-full h-[50px] bg-black/80 backdrop-blur-md z-30 flex items-center justify-between px-6 pointer-events-auto border-b border-white/5">
+            <div className="flex items-center space-x-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-[10px] font-black tracking-widest text-white/50 uppercase font-display">MAROQLI SECURE PLAYER</span>
+            </div>
+            <button 
+              onClick={toggleFullscreen}
+              className="p-1.5 hover:bg-white/10 rounded-lg text-white/80 hover:text-white transition-colors"
+              aria-label="Toggle Fullscreen"
+            >
+              {isFullscreen || isPseudoFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+            </button>
+          </div>
           
           <iframe
             src={`https://drive.google.com/file/d/${gDriveId}/preview`}
             className="w-full h-full border-0 relative z-10"
-            allow="autoplay; encrypted-media"
+            allow="autoplay; encrypted-media; fullscreen"
             allowFullScreen
           />
         </div>
