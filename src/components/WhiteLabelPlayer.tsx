@@ -269,6 +269,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     return () => observer.disconnect();
   }, [userIdentifier, isWindowBlurred, isYoutube, ytPlayer, ytReady]);
 
+  useEffect(() => {
     if (ytId) {
       setIsYoutube(true);
       setIsGoogleDrive(false);
