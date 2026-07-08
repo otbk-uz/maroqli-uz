@@ -24,6 +24,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [ytReady, setYtReady] = useState(false);
   const [isGoogleDrive, setIsGoogleDrive] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [useIframeFallback, setUseIframeFallback] = useState(false);
+
+  const isUsingIframe = isYoutube || (isGoogleDrive && useIframeFallback);
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -319,6 +322,13 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     }
   };
 
+  const handleVideoError = (e: any) => {
+    console.warn("Video failed to play natively, falling back to iframe:", e);
+    if (isGoogleDrive) {
+      setUseIframeFallback(true);
+    }
+  };
+
   // Controls Actions
   const togglePlay = () => {
     if (isYoutube && ytPlayer && ytReady) {
@@ -450,7 +460,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             frameBorder="0"
           />
         </div>
-      ) : isGoogleDrive ? (
+      ) : (isGoogleDrive && useIframeFallback) ? (
         <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
           {/* Custom Branded Top Bar that also serves to hide Google Drive header controls and provides a custom Maximize/Minimize button */}
           <div className="absolute top-0 left-0 w-full h-[50px] bg-black/80 backdrop-blur-md z-30 flex items-center justify-between px-6 pointer-events-auto border-b border-white/5">
@@ -477,10 +487,11 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       ) : (
         <video
           ref={videoRef}
-          src={url}
+          src={isGoogleDrive ? `https://docs.google.com/uc?export=download&id=${gDriveId}` : url}
           className="w-full h-full object-contain font-display"
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
+          onError={handleVideoError}
           playsInline
         />
       )}
@@ -512,8 +523,8 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         </>
       )}
 
-      {/* Click-to-Play/Pause overlay (Not needed for Google Drive) */}
-      {!isGoogleDrive && (
+      {/* Click-to-Play/Pause overlay (Not needed for iframes) */}
+      {!isUsingIframe && (
         <div 
           className="absolute inset-0 cursor-pointer z-20 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
           onClick={togglePlay}
@@ -528,7 +539,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       )}
 
       {/* Custom styled control dock (fades in on hover) */}
-      {!isGoogleDrive && (
+      {!isUsingIframe && (
       <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black via-black/80 to-transparent p-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
         
         {/* Progress slider bar */}
