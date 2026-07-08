@@ -154,8 +154,9 @@ const Hero = () => {
                 <span className="relative z-10">{t("open_sections", "Bo'limlarni ochish")}</span>
               </button>
               <a 
-                href="/maroqli-setup.exe" 
-                download
+                href="https://drive.google.com/file/d/1EL8ILXR0OEiEm9KpoRwA6uD8-c78wLeb/view?usp=drive_link" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 w-full sm:w-auto font-display tracking-widest uppercase text-sm text-amber-400 hover:text-amber-300 transition-all duration-200"
               >
                 <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-black transition-all">
