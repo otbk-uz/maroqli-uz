@@ -25,6 +25,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [isGoogleDrive, setIsGoogleDrive] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [useIframeFallback, setUseIframeFallback] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(true);
 
   const isUsingIframe = isYoutube || (isGoogleDrive && useIframeFallback);
 
@@ -108,6 +109,20 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       document.body.style.overflow = "";
     };
   }, [isPseudoFullscreen]);
+
+  // Track orientation / resize to handle landscape rotate fallback on mobile
+  useEffect(() => {
+    const handleResize = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
+  }, []);
 
   // Prevent PrintScreen / Screenshot shortcuts / Clipboard theft
   useEffect(() => {
@@ -453,7 +468,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       onDragStart={(e) => e.preventDefault()}
       className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${
         isPseudoFullscreen 
-          ? "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0" 
+          ? isPortrait
+            ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100dvh] h-[100dvw] rotate-90 z-[9999] rounded-none border-0"
+            : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
           : "relative w-full aspect-video rounded-3xl border border-white/10"
       }`}
     >
