@@ -80,46 +80,18 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     };
   }, [isPlaying, isYoutube, ytPlayer, ytReady]);
 
-  // Focus/Blur Protection (Triggered when Snipping Tool or screenshot software focuses away)
+  // Focus/Blur Protection (Triggered explicitly by shortcuts, not aggressive blur)
   useEffect(() => {
-    const handleBlur = () => {
-      setIsWindowBlurred(true);
-      // Auto pause video for safety
-      if (isPlaying) {
-        if (isYoutube && ytPlayer && ytReady) {
-          ytPlayer.pauseVideo();
-        } else if (!isYoutube && videoRef.current) {
-          videoRef.current.pause();
-        }
-        setIsPlaying(false);
-      }
-    };
-    
+    // Only bind focus to remove the blur overlay when returning
     const handleFocus = () => {
       setIsWindowBlurred(false);
     };
-
-    window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
     
-    // Also bind mouseleave from document to trigger blur (e.g. if they move cursor to take screenshot or lose focus on the tab)
-    const handleMouseLeave = () => {
-      // Small delay to prevent false positives when fast moving
-      setTimeout(() => {
-        if (document.activeElement?.tagName === "IFRAME") return; // Allow interaction with iframe
-        if (!document.hasFocus()) {
-          setIsWindowBlurred(true);
-        }
-      }, 100);
-    };
-    document.addEventListener("mouseleave", handleMouseLeave);
-
     return () => {
-      window.removeEventListener("blur", handleBlur);
       window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("mouseleave", handleMouseLeave);
     };
-  }, [isPlaying, isYoutube, ytPlayer, ytReady]);
+  }, []);
 
   // Prevent PrintScreen / Screenshot shortcuts / Clipboard theft
   useEffect(() => {
