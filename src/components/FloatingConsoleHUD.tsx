@@ -71,7 +71,6 @@ export default function FloatingConsoleHUD() {
     { name: t("premium", "Premium"), href: "/premium" },
     { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
     { name: t("gamedev", "GameDev"), href: "/gamedev" },
-    { name: t("lessons", "Dev Darslar"), href: "/gamedev?tab=lessons" },
     { name: t("forum", "Forum"), href: "/forum" },
     { name: t("news", "Yangiliklar"), href: "/news" },
   ];
