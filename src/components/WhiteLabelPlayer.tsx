@@ -486,9 +486,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
           {/* Custom Branded Top Bar that also serves to hide Google Drive header controls and provides a custom Maximize/Minimize button */}
           <div className="absolute top-0 left-0 w-full h-[60px] bg-background z-30 flex items-center justify-between px-6 pointer-events-auto border-b border-white/5">
-            <div className="flex items-center space-x-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-[10px] font-black tracking-widest text-white/50 uppercase font-display">MAROQLI</span>
+            <div className="flex items-center space-x-2.5">
+              <img src="/logo.jpg.png" alt="Logo" className="h-6 w-auto rounded shadow-sm" />
+              <span className="text-[10px] font-black tracking-widest text-white/70 uppercase font-display">MAROQLI</span>
             </div>
             <button 
               onClick={toggleFullscreen}
