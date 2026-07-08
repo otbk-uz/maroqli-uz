@@ -154,8 +154,8 @@ const Hero = () => {
                 <span className="relative z-10">{t("open_sections", "Bo'limlarni ochish")}</span>
               </button>
               <a 
-                href="https://drive.google.com/uc?export=download&id=1Cg7_NIdK7HBKYo1_yLK3xP719xlFFDy2" 
-                target="_blank"
+                href="https://github.com/otbk-uz/PlayNationUz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe" 
+                download
                 rel="noopener noreferrer"
                 className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 w-full sm:w-auto font-display tracking-widest uppercase text-sm text-amber-400 hover:text-amber-300 transition-all duration-200"
               >
