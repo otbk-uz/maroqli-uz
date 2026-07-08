@@ -469,7 +469,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${
         isPseudoFullscreen 
           ? isPortrait
-            ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100dvh] h-[100dvw] rotate-90 z-[9999] rounded-none border-0"
+            ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vw] rotate-90 z-[9999] rounded-none border-0"
             : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
           : "relative w-full aspect-video rounded-3xl border border-white/10"
       }`}
@@ -495,6 +495,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             ref={iframeRef}
             src={`https://www.youtube.com/embed/${ytId}?enablejsapi=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&disablekb=1&fs=0`}
             className="w-full h-[calc(100%+120px)] -translate-y-[60px] object-cover scale-[1.03]"
+            style={{ width: "1px", minWidth: "100%" }}
             allow="autoplay; encrypted-media"
             frameBorder="0"
           />
@@ -519,6 +520,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           <iframe
             src={`https://drive.google.com/file/d/${gDriveId}/preview`}
             className="w-full h-full border-0 relative z-10"
+            style={{ width: "1px", minWidth: "100%", height: "100%", minHeight: "100%" }}
             allow="autoplay; encrypted-media"
           />
         </div>
