@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Trophy, Gamepad2, Star, User, MessageSquare, Code } from "lucide-react";
+import { Home, Trophy, Gamepad2, User, MonitorPlay } from "lucide-react";
 import { useTranslation } from "@/lib/store";
 
 const MobileNav = () => {
@@ -13,7 +13,7 @@ const MobileNav = () => {
   const navItems = [
     { name: t("home_short", "Bosh"), icon: Home, href: "/" },
     { name: t("tournaments", "Turnirlar"), icon: Trophy, href: "/tournaments" },
-    { name: t("darslar", "Darslar"), icon: Code, href: "/darslar" },
+    { name: t("darslar", "Darslar"), icon: MonitorPlay, href: "/darslar" },
     { name: t("games", "O'yinlar"), icon: Gamepad2, href: "/games" },
     { name: t("profile", "Profil"), icon: User, href: "/profile" },
   ];
