@@ -545,7 +545,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
           <iframe
             ref={iframeRef}
-            src={`https://iframe.mediadelivery.net/embed/${process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID}/${bId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`}
+            src={`https://iframe.mediadelivery.net/embed/701099/${bId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`}
             className="w-full h-full border-0 object-contain"
             allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
             allowFullScreen={true}
