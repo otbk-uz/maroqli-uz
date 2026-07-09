@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import api from "@/lib/api";
 import { BackButton } from "../../components/ui/BackButton";
 
 const ProfilePage = () => {
@@ -44,6 +46,27 @@ const ProfilePage = () => {
   const [teamForm, setTeamForm] = useState({ name: "", in_game_id: "" });
   const [addMemberForm, setAddMemberForm] = useState({ username: "", in_game_id: "" });
   const [savingTeam, setSavingTeam] = useState(false);
+
+  // Library state
+  const [libraryGames, setLibraryGames] = useState<any[]>([]);
+  const [loadingLibrary, setLoadingLibrary] = useState(false);
+
+  useEffect(() => {
+    if (activeSetting === "Mening Kutubxonam" && libraryGames.length === 0) {
+      const fetchLibrary = async () => {
+        setLoadingLibrary(true);
+        try {
+          const res = await api.get("/tournaments/library/");
+          setLibraryGames(res.data);
+        } catch (err) {
+          console.error("Kutubxonani yuklashda xatolik:", err);
+        } finally {
+          setLoadingLibrary(false);
+        }
+      };
+      fetchLibrary();
+    }
+  }, [activeSetting, libraryGames.length]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -499,7 +522,7 @@ const ProfilePage = () => {
                  </h3>
                </div>
                <div className="divide-y divide-white/5">
-                 {["Mening Jamoam", "Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
+                 {["Mening Jamoam", "Mening Kutubxonam", "Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
                    <button 
                      key={item} 
                      onClick={() => setActiveSetting(item)}
@@ -544,7 +567,78 @@ const ProfilePage = () => {
                 <h3 className="text-xl font-bold">{activeSetting}</h3>
               </div>
 
-              {activeSetting === "Striming sozlamalari" ? (
+              {activeSetting === "Mening Kutubxonam" ? (
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <p className="text-secondary text-xs">Siz sotib olgan va faollashtirgan o'yinlar ro'yxati.</p>
+                  
+                  {loadingLibrary ? (
+                    <div className="py-12 flex items-center justify-center">
+                      <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : libraryGames.length === 0 ? (
+                    <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
+                      <Gamepad2 size={40} className="text-white/20 mx-auto mb-4" />
+                      <p className="text-secondary text-sm">Sizda hali sotib olingan o'yinlar mavjud emas.</p>
+                      <Link 
+                        href="/games" 
+                        onClick={() => setActiveSetting(null)}
+                        className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
+                      >
+                        Do'konga o'tish
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {libraryGames.map((item) => {
+                        const gameDetails = item.game_details || {};
+                        const placeholderCover = gameDetails.slug?.includes("tashkent")
+                          ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=300"
+                          : gameDetails.slug?.includes("bukhara")
+                          ? "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=300"
+                          : "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=300";
+                          
+                        return (
+                          <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col md:flex-row gap-4 p-4 relative group hover:border-primary/30 transition-all duration-300">
+                            {/* Game Cover */}
+                            <div className="w-full md:w-24 aspect-video md:aspect-[4/3] rounded-xl overflow-hidden bg-white/5 shrink-0">
+                              <img 
+                                src={gameDetails.cover || placeholderCover} 
+                                alt={gameDetails.title} 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                              />
+                            </div>
+                            
+                            {/* Game Info */}
+                            <div className="flex-1 min-w-0 flex flex-col justify-between">
+                              <div>
+                                <h4 className="font-bold text-base text-white truncate mb-1">{gameDetails.title}</h4>
+                                <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">{gameDetails.platform} platformasi</p>
+                              </div>
+                              
+                              {/* CD-Key Display */}
+                              <div className="space-y-1">
+                                <p className="text-[8px] text-secondary font-bold uppercase tracking-widest">Sizning CD-KEY</p>
+                                <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 gap-2">
+                                  <code className="text-[10px] text-amber-400 font-mono select-all tracking-wider">{item.cd_key}</code>
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(item.cd_key);
+                                      alert("CD-Key nusxalandi!");
+                                    }}
+                                    className="text-[9px] text-primary hover:text-white font-bold hover:underline transition-colors shrink-0"
+                                  >
+                                    Nusxalash
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : activeSetting === "Striming sozlamalari" ? (
                 <div className="space-y-4">
                   <div>
                     <label className="text-xs text-secondary font-bold block mb-1">Strim havolasi (URL)</label>
