@@ -164,7 +164,7 @@ const Hero = () => {
                     <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
                   </svg>
                 </div>
-                <span>Windows App</span>
+                <span>Maroqli Launcher</span>
               </a>
               <Link href="/tournaments" className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20 w-full sm:w-auto font-display tracking-widest uppercase text-sm">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">

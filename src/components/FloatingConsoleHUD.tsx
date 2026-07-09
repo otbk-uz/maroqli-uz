@@ -125,6 +125,18 @@ export default function FloatingConsoleHUD() {
 
         {/* Right actions */}
         <div className="flex items-center space-x-3 z-10 flex-shrink-0">
+          {/* Download Launcher Button */}
+          <a
+            href="https://github.com/otbk-uz/maroqli-uz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe"
+            download
+            className="flex items-center space-x-1.5 text-[9px] xl:text-[10px] font-display font-black text-amber-400 hover:text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 px-2.5 py-1.5 rounded-lg transition-all"
+          >
+            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+              <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
+            </svg>
+            <span>Launcher</span>
+          </a>
+
           {/* Language selector */}
           <div className="relative">
             <button
@@ -424,6 +436,16 @@ export default function FloatingConsoleHUD() {
 
               {/* Mobile Menu Footer Info */}
               <div className="pt-6 border-t border-white/5 flex flex-col space-y-4">
+                <a
+                  href="https://github.com/otbk-uz/maroqli-uz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe"
+                  download
+                  className="flex items-center justify-center space-x-2 text-[11px] font-display font-black text-amber-400 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 hover:border-amber-500/35 py-3 rounded-xl transition-all"
+                >
+                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                    <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
+                  </svg>
+                  <span>Maroqli Launcher (Windows)</span>
+                </a>
                 <div className="flex items-center justify-between text-[10px] text-secondary font-display font-bold uppercase tracking-widest px-2">
                   <span>MAROQLI ESPORTS</span>
                   <span>v0.1.0</span>
