@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { WhiteLabelPlayer } from "@/components/WhiteLabelPlayer";
 import { BookOpen, RefreshCw, Crown, Award, Play } from "lucide-react";
 import Link from "next/link";
+import { getCachedData, setCachedData } from "@/lib/cache";
 
 interface Lesson {
   id: string;
@@ -45,8 +46,21 @@ export default function LessonDetailsPage() {
 
     // Barcha uchun bepul (Premium check olib tashlandi)
 
+    const loadCachedLesson = () => {
+      const cachedLesson = getCachedData<Lesson>(`lesson_${lessonId}`);
+      const cachedOthers = getCachedData<Lesson[]>(`lesson_others_${lessonId}`);
+
+      if (cachedLesson) setLesson(cachedLesson);
+      if (cachedOthers) setOtherLessons(cachedOthers);
+
+      if (cachedLesson && cachedOthers) {
+        setLoading(false);
+      }
+    };
+
+    loadCachedLesson();
+
     const fetchLessonData = async () => {
-      setLoading(true);
       try {
         // Fetch lesson detail from DB
         const { data, error } = await supabase
@@ -56,15 +70,20 @@ export default function LessonDetailsPage() {
           .single();
 
         if (error || !data) {
-          // If not found in DB, check fallback mock data
-          const found = defaultLessons.find(l => l.id === lessonId);
-          if (found) {
-            setLesson(found);
+          const cached = getCachedData<Lesson>(`lesson_${lessonId}`);
+          if (cached) {
+            setLesson(cached);
           } else {
-            router.push("/gamedev");
+            const found = defaultLessons.find(l => l.id === lessonId);
+            if (found) {
+              setLesson(found);
+            } else {
+              router.push("/gamedev");
+            }
           }
         } else {
           setLesson(data);
+          setCachedData(`lesson_${lessonId}`, data);
         }
 
         // Fetch other lessons for listing
@@ -77,7 +96,9 @@ export default function LessonDetailsPage() {
         // Filter other mock lessons
         const dbLessons = listData || [];
         const filteredDefaults = defaultLessons.filter(l => l.id !== lessonId);
-        setOtherLessons([...dbLessons, ...filteredDefaults] as Lesson[]);
+        const otherLessonsList = [...dbLessons, ...filteredDefaults] as Lesson[];
+        setOtherLessons(otherLessonsList);
+        setCachedData(`lesson_others_${lessonId}`, otherLessonsList);
       } catch (err) {
         console.error("Dars ma'lumotlarini yuklashda xatolik:", err);
       } finally {

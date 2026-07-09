@@ -5,6 +5,7 @@ import Link from "next/link";
 import Hero from "@/components/Hero";
 import { Trophy, ArrowRight, Play, Gamepad2, Calendar, Eye, Users, ChevronRight, Activity, ShoppingCart } from "lucide-react";
 import { useTranslation } from "@/lib/store";
+import { getCachedData, setCachedData } from "@/lib/cache";
 
 interface Tournament {
   id: number;
@@ -48,6 +49,22 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadCachedData = () => {
+      const cachedTournaments = getCachedData<Tournament[]>("home_tournaments");
+      const cachedNews = getCachedData<NewsItem[]>("home_news");
+      const cachedStats = getCachedData<Stats>("home_stats");
+
+      if (cachedTournaments) setTournaments(cachedTournaments);
+      if (cachedNews) setNews(cachedNews);
+      if (cachedStats) setStats(cachedStats);
+
+      if (cachedTournaments || cachedNews || cachedStats) {
+        setLoading(false);
+      }
+    };
+
+    loadCachedData();
+
     const fetchHomeData = async () => {
       try {
         const { supabase } = await import('@/lib/supabase');
@@ -59,7 +76,10 @@ export default function Home() {
           .in('status', ['LIVE', 'UPCOMING'])
           .limit(5);
           
-        if (tData) setTournaments(tData as any);
+        if (tData) {
+          setTournaments(tData as any);
+          setCachedData("home_tournaments", tData);
+        }
 
         // Fetch News
         const { data: nData } = await supabase
@@ -68,27 +88,31 @@ export default function Home() {
           .order('created_at', { ascending: false })
           .limit(3);
           
+        let mappedNews: NewsItem[] = [];
         if (nData) {
-          const mappedNews = nData.map(n => ({
+          mappedNews = nData.map(n => ({
             id: n.id,
             title: n.title,
             category_display: t("news_badge", "YANGILIK"),
             created_at: n.created_at
           }));
           setNews(mappedNews as any);
+          setCachedData("home_news", mappedNews);
         }
 
         // Stats
         const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
         const { count: tCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
         
-        setStats({
+        const newStats = {
           users_count: usersCount || 0,
           tournaments_count: tCount || 0,
           games_count: 12,
           total_views: 12450000,
           streamers_count: 15,
-        });
+        };
+        setStats(newStats);
+        setCachedData("home_stats", newStats);
 
       } catch (err) {
         console.error("Home page data fetch error:", err);
