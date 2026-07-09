@@ -24,10 +24,9 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [ytReady, setYtReady] = useState(false);
   const [isGoogleDrive, setIsGoogleDrive] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
-  const [useIframeFallback, setUseIframeFallback] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
 
-  const isUsingIframe = isYoutube || (isGoogleDrive && useIframeFallback);
+  const isUsingIframe = isYoutube;
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -350,10 +349,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   };
 
   const handleVideoError = (e: any) => {
-    console.warn("Video failed to play natively, falling back to iframe:", e);
-    if (isGoogleDrive) {
-      setUseIframeFallback(true);
-    }
+    console.error("Video native playback error:", e);
   };
 
   // Controls Actions
@@ -416,6 +412,19 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   };
 
   const toggleFullscreen = () => {
+    // For iOS Safari native video fullscreen (which rotates natively and looks beautiful)
+    if (!isYoutube && videoRef.current) {
+      const video = videoRef.current as any;
+      if (video.webkitEnterFullscreen) {
+        try {
+          video.webkitEnterFullscreen();
+          return;
+        } catch (e) {
+          console.warn("Failed webkitEnterFullscreen:", e);
+        }
+      }
+    }
+
     if (!containerRef.current) return;
     
     const doc = document as any;
@@ -500,34 +509,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             frameBorder="0"
           />
         </div>
-      ) : (isGoogleDrive && useIframeFallback) ? (
-        <div className="absolute inset-0 w-full h-full bg-black overflow-hidden">
-          {/* Custom Branded Top Bar that also serves to hide Google Drive header controls and provides a custom Maximize/Minimize button */}
-          <div className="absolute top-0 left-0 w-full h-[60px] bg-background z-30 flex items-center justify-between px-6 pointer-events-auto border-b border-white/5">
-            <div className="flex items-center space-x-2.5">
-              <img src="/logo.jpg.png" alt="Logo" className="h-6 w-auto rounded shadow-sm" />
-              <span className="text-[10px] font-black tracking-widest text-white/70 uppercase font-display">MAROQLI</span>
-            </div>
-            <button 
-              onClick={toggleFullscreen}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-white/80 hover:text-white transition-colors"
-              aria-label="Toggle Fullscreen"
-            >
-              {isFullscreen || isPseudoFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-            </button>
-          </div>
-          
-          <iframe
-            src={`https://drive.google.com/file/d/${gDriveId}/preview`}
-            className="w-full h-full border-0 relative z-10"
-            style={{ width: "1px", minWidth: "100%", height: "100%", minHeight: "100%" }}
-            allow="autoplay; encrypted-media"
-          />
-        </div>
       ) : (
         <video
           ref={videoRef}
-          src={isGoogleDrive ? `https://docs.google.com/uc?export=download&id=${gDriveId}` : url}
+          src={isGoogleDrive ? `/api/video?id=${gDriveId}` : url}
           className="w-full h-full object-contain font-display"
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
