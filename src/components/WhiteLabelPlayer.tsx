@@ -517,6 +517,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
           onError={handleVideoError}
+          preload="auto"
           playsInline
         />
       )}
