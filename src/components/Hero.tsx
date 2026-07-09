@@ -153,19 +153,6 @@ const Hero = () => {
                 <Gamepad2 size={20} />
                 <span className="relative z-10">{t("open_sections", "Bo'limlarni ochish")}</span>
               </button>
-              <a 
-                href="https://github.com/otbk-uz/maroqli-uz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe" 
-                download
-                rel="noopener noreferrer"
-                className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-amber-500/5 hover:bg-amber-500/10 border-amber-500/20 hover:border-amber-500/40 w-full sm:w-auto font-display tracking-widest uppercase text-sm text-amber-400 hover:text-amber-300 transition-all duration-200"
-              >
-                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-black transition-all">
-                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
-                  </svg>
-                </div>
-                <span>Maroqli Launcher</span>
-              </a>
               <Link href="/tournaments" className="btn-outline flex items-center justify-center sm:justify-start space-x-3 !py-4 !px-10 group bg-white/5 border-white/10 hover:border-white/20 w-full sm:w-auto font-display tracking-widest uppercase text-sm">
                 <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                   <Play size={14} fill="currentColor" />
