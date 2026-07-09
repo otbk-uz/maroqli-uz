@@ -12,10 +12,10 @@ export const metadata: Metadata = {
   description: "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi ekotizim platformasi.",
   icons: {
     icon: [
-      { url: "/logo.jpg.png?v=2", type: "image/png" },
-      { url: "/favicon.ico?v=2", sizes: "any" }
+      { url: "/logo.jpg.png?v=3", type: "image/png" },
+      { url: "/favicon.ico?v=3", sizes: "any" }
     ],
-    apple: "/logo.jpg.png?v=2"
+    apple: "/logo.jpg.png?v=3"
   },
 };
 
