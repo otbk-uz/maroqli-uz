@@ -476,10 +476,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
       className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${isPseudoFullscreen
-          ? isPortrait
-            ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vw] rotate-90 z-[9999] rounded-none border-0"
-            : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
-          : "relative w-full aspect-video rounded-3xl border border-white/10"
+        ? isPortrait
+          ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vw] rotate-90 z-[9999] rounded-none border-0"
+          : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
+        : "relative w-full aspect-video rounded-3xl border border-white/10"
         }`}
     >
       {/* Floating Close Button for iOS Pseudo Fullscreen */}
@@ -511,7 +511,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       ) : isGoogleDrive ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Top black bar - hides Google Drive top header/filename */}
-          <div className="absolute top-0 left-0 w-full h-[48px] md:h-[48px] bg-black z-10 pointer-events-none" />
+          <div className="absolute top-0 left-0 w-full h-[50px] md:h-[50px] bg-black z-10 pointer-events-none" />
 
           <iframe
             ref={iframeRef}
