@@ -48,3 +48,6 @@ backend/media/
 /dummy-signtool.exe
 /public/maroqli-setup.exe
 *.mp4
+
+# Agent artifacts
+/artifacts/
