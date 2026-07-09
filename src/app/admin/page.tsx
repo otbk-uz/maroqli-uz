@@ -606,6 +606,25 @@ export default function AdminPage() {
                 {savingLesson ? "Yuklanmoqda..." : "Darslikni qo'shish"}
               </button>
             </form>
+            
+            <div className="mt-8 border-t border-white/10 pt-8">
+              <h3 className="text-xl font-black text-white mb-4 uppercase">Muammoli Darslarni O'chirish</h3>
+              <p className="text-sm text-secondary mb-4">Agar bazada ochilmayotgan (xato) Bunny.net videolari qolib ketgan bo'lsa, quyidagi tugmani bosing. U barcha xato "bunny://" havolali darslarni tozalaydi.</p>
+              <button
+                onClick={async () => {
+                  try {
+                    const { error } = await supabase.from('gamedev_lessons').delete().like('video_url', 'bunny://%');
+                    if (error) throw error;
+                    alert("Xato darslar muvaffaqiyatli tozalandi!");
+                  } catch (err: any) {
+                    alert("O'chirishda xatolik: " + err.message);
+                  }
+                }}
+                className="bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/40 px-6 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-wider"
+              >
+                Xato Darslarni O'chirish
+              </button>
+            </div>
           </div>
         </div>
 
