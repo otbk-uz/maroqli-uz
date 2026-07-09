@@ -40,6 +40,7 @@ interface GameDetail {
   cover: string | null;
   screenshots: { id: number; image: string }[];
   reviews: Review[];
+  download_url?: string | null;
 }
 
 const GameDetailPage = () => {
@@ -116,6 +117,7 @@ const GameDetailPage = () => {
             },
             cover: null,
             screenshots: [],
+            download_url: gameData.download_url,
             reviews: reviewsData ? reviewsData.map((r: any) => ({
               id: r.id,
               user_details: {
