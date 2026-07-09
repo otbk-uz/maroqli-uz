@@ -9,7 +9,8 @@ import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
 import { BackButton } from "@/components/ui/BackButton";
 import { supabase } from "@/lib/supabase";
-import { FileImage } from "lucide-react";
+import { FileImage, Video } from "lucide-react";
+import * as tus from "tus-js-client";
 
 interface AdminUser {
   id: number;
@@ -69,6 +70,8 @@ export default function AdminPage() {
     videoUrl: '',
     imageUrl: ''
   });
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [savingLesson, setSavingLesson] = useState(false);
 
   useEffect(() => {
@@ -329,20 +332,80 @@ export default function AdminPage() {
 
   const handlePostLesson = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!lessonForm.title || !lessonForm.videoUrl || !lessonForm.author) {
-      alert("Iltimos, darslik sarlavhasi, muallifi va video havolasini kiriting!");
+    if (!lessonForm.title || !lessonForm.author) {
+      alert("Iltimos, darslik sarlavhasi va muallifini kiriting!");
+      return;
+    }
+    if (!videoFile && !lessonForm.videoUrl) {
+      alert("Iltimos, video faylni tanlang yoki havolani kiriting!");
       return;
     }
     
     setSavingLesson(true);
+    let finalVideoUrl = lessonForm.videoUrl;
+
     try {
+      // 1. Direct Upload to Bunny.net if file is selected
+      if (videoFile) {
+        if (!user) throw new Error("Iltimos, profilga kiring.");
+        
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) throw new Error("Avtorizatsiya muammosi");
+
+        // 1.1 Get Bunny upload credentials via our secure API
+        const res = await fetch("/api/admin/bunny/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ title: lessonForm.title })
+        });
+        
+        if (!res.ok) throw new Error("Bunny API orqali video yaratishda xatolik");
+        
+        const { videoId, libraryId, apiKey } = await res.json();
+        
+        // 1.2 Upload via TUS
+        await new Promise<void>((resolve, reject) => {
+          const upload = new tus.Upload(videoFile, {
+            endpoint: "https://video.bunnycdn.com/tusapi",
+            retryDelays: [0, 3000, 5000, 10000, 20000],
+            headers: {
+              AccessKey: apiKey,
+            },
+            uploadUrl: `https://video.bunnycdn.com/tusapi/${libraryId}/${videoId}`,
+            metadata: {
+              filename: videoFile.name,
+              filetype: videoFile.type,
+              collection: "" // Optional collection ID
+            },
+            onError: (err) => {
+              reject(err);
+            },
+            onProgress: (bytesUploaded, bytesTotal) => {
+              const percentage = ((bytesUploaded / bytesTotal) * 100).toFixed(2);
+              setUploadProgress(Number(percentage));
+            },
+            onSuccess: () => {
+              resolve();
+            }
+          });
+          upload.start();
+        });
+
+        // Use custom protocol string to identify Bunny Stream videos in player
+        finalVideoUrl = `bunny://${videoId}`;
+      }
+
+      // 2. Save to database
       const { error } = await supabase
         .from('gamedev_lessons')
         .insert({
           title: lessonForm.title,
           author: lessonForm.author,
           level: lessonForm.level,
-          video_url: lessonForm.videoUrl,
+          video_url: finalVideoUrl,
           img: lessonForm.imageUrl || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070",
         });
         
@@ -356,9 +419,12 @@ export default function AdminPage() {
         videoUrl: '',
         imageUrl: ''
       });
+      setVideoFile(null);
+      setUploadProgress(0);
     } catch (err: any) {
       console.error(err);
       alert("Xatolik: " + (err.message || "Darslikni saqlashda muammo yuz berdi. (Siz ADMIN rolidamisiz?)"));
+      setUploadProgress(0);
     } finally {
       setSavingLesson(false);
     }
@@ -586,14 +652,47 @@ export default function AdminPage() {
               </div>
 
               <div>
+                <label className="block text-sm font-bold text-secondary mb-2">Video yuklash (Bunny.net orqali)</label>
+                <div className="flex items-center justify-center w-full">
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-white/10 border-dashed rounded-xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <Video className="w-8 h-8 mb-3 text-secondary" />
+                      <p className="mb-2 text-sm text-secondary">
+                        <span className="font-bold text-white">Video faylni yuklash</span>
+                      </p>
+                      {videoFile && <p className="text-xs text-primary font-bold mt-2">Tanlandi: {videoFile.name}</p>}
+                    </div>
+                    <input type="file" className="hidden" accept="video/*" onChange={(e) => setVideoFile(e.target.files?.[0] || null)} />
+                  </label>
+                </div>
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="mt-4">
+                    <div className="flex justify-between text-xs text-secondary mb-1">
+                      <span>Yuklanmoqda...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <div className="w-full bg-white/10 rounded-full h-2">
+                      <div className="bg-primary h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="relative flex py-4 items-center">
+                <div className="flex-grow border-t border-white/10"></div>
+                <span className="flex-shrink-0 mx-4 text-secondary text-xs uppercase font-bold">YOKI HAVOLA ORQALI</span>
+                <div className="flex-grow border-t border-white/10"></div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-bold text-secondary mb-2">Video havolasi (YouTube yoki Direct MP4 URL)</label>
                 <input 
                   type="url" 
                   value={lessonForm.videoUrl}
                   onChange={(e) => setLessonForm({...lessonForm, videoUrl: e.target.value})}
-                  required
-                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
+                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm disabled:opacity-50"
                   placeholder="Masalan: https://www.youtube.com/watch?v=... yoki https://sayt.com/video.mp4"
+                  disabled={videoFile !== null}
                 />
                 <span className="text-[10px] text-secondary mt-1 block">Tizim YouTube yoki to'g'ridan-to'g'ri MP4 havolasini qabul qiladi va uni o'zimizning maxsus brendsiz video pleyerimizda ko'rsatadi.</span>
               </div>

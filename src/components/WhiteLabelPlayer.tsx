@@ -23,10 +23,11 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [ytPlayer, setYtPlayer] = useState<any>(null);
   const [ytReady, setYtReady] = useState(false);
   const [isGoogleDrive, setIsGoogleDrive] = useState(false);
+  const [isBunny, setIsBunny] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
 
-  const isUsingIframe = isYoutube || isGoogleDrive;
+  const isUsingIframe = isYoutube || isGoogleDrive || isBunny;
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -49,6 +50,17 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     return match ? match[1] : null;
   };
   const gDriveId = getDriveId(url);
+
+  const getBunnyId = (urlStr: string) => {
+    if (!urlStr) return null;
+    // support direct bunny:// format or mediadelivery.net URLs
+    const directMatch = urlStr.match(/^bunny:\/\/(.+)$/);
+    if (directMatch) return directMatch[1];
+    
+    const urlMatch = urlStr.match(/iframe\.mediadelivery\.net\/embed\/[^\/]+\/([a-zA-Z0-9_-]+)/);
+    return urlMatch ? urlMatch[1] : null;
+  };
+  const bId = getBunnyId(url);
 
   // Print protection media queries block
   useEffect(() => {
@@ -275,6 +287,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     if (ytId) {
       setIsYoutube(true);
       setIsGoogleDrive(false);
+      setIsBunny(false);
       // Load YouTube Iframe API
       if (!(window as any).YT) {
         const tag = document.createElement("script");
@@ -292,11 +305,17 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     } else if (gDriveId) {
       setIsGoogleDrive(true);
       setIsYoutube(false);
+      setIsBunny(false);
+    } else if (bId) {
+      setIsBunny(true);
+      setIsGoogleDrive(false);
+      setIsYoutube(false);
     } else {
       setIsYoutube(false);
       setIsGoogleDrive(false);
+      setIsBunny(false);
     }
-  }, [url, ytId, gDriveId]);
+  }, [url, ytId, gDriveId, bId]);
 
   const initYtPlayer = () => {
     if (!ytId) return;
@@ -520,6 +539,16 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             allow="autoplay; encrypted-media; fullscreen"
             frameBorder="0"
             allowFullScreen
+          />
+        </div>
+      ) : isBunny ? (
+        <div className="absolute inset-0 w-full h-full overflow-hidden bg-black flex items-center justify-center">
+          <iframe
+            ref={iframeRef}
+            src={`https://iframe.mediadelivery.net/embed/${process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID}/${bId}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`}
+            className="w-full h-full border-0 object-contain"
+            allow="accelerometer;gyroscope;autoplay;encrypted-media;picture-in-picture;"
+            allowFullScreen={true}
           />
         </div>
       ) : (
