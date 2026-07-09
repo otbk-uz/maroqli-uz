@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export const runtime = "edge";
-
 interface CacheEntry {
   url: string;
   expires: number;
@@ -27,7 +25,7 @@ export async function GET(request: NextRequest) {
       finalDownloadUrl = cached.url;
     } else {
       const url = `https://docs.google.com/uc?export=download&id=${id}`;
-      
+
       // Step 1: Request initial download link
       const res1 = await fetch(url, {
         headers: {
@@ -37,13 +35,12 @@ export async function GET(request: NextRequest) {
       });
 
       let targetUrl = url;
-      const status1 = res1.status;
-      if (status1 >= 300 && status1 < 400) {
+      if (res1.status >= 300 && res1.status < 400) {
         const loc1 = res1.headers.get("location");
         if (loc1) targetUrl = loc1;
       }
 
-      // Step 2: Request the target URL to check for virus warning page
+      // Step 2: Check for virus warning page
       const res2 = await fetch(targetUrl, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -51,13 +48,10 @@ export async function GET(request: NextRequest) {
         redirect: "manual",
       });
 
-      const status2 = res2.status;
       finalDownloadUrl = targetUrl;
 
-      if (status2 === 200) {
+      if (res2.status === 200) {
         const text2 = await res2.text();
-        
-        // Parse confirm and uuid values from the form inputs
         const confirmMatch = text2.match(/name="confirm"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="confirm"/);
         const uuidMatch = text2.match(/name="uuid"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="uuid"/);
 
@@ -69,22 +63,48 @@ export async function GET(request: NextRequest) {
             finalDownloadUrl += `&uuid=${uuidVal}`;
           }
         }
-      } else if (status2 >= 300 && status2 < 400) {
+      } else if (res2.status >= 300 && res2.status < 400) {
         const loc2 = res2.headers.get("location");
         if (loc2) finalDownloadUrl = loc2;
       }
 
-      // Cache for 10 minutes (short cache to ensure tokens don't expire for late seeking, but fast for buffer range bursts)
+      // Cache for 10 minutes
       streamCache.set(id, {
         url: finalDownloadUrl,
         expires: now + 10 * 60 * 1000,
       });
     }
 
-    // Redirect the browser directly to Google User Content CDN
-    // This allows the browser to connect to Google directly, streaming at maximum speed
-    // and utilizing full native Range request seeking without proxy delays.
-    return NextResponse.redirect(finalDownloadUrl);
+    // Proxy the video stream, forwarding client Range headers for seeking
+    const streamHeaders: Record<string, string> = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    };
+    const clientRange = request.headers.get("range");
+    if (clientRange) {
+      streamHeaders["Range"] = clientRange;
+    }
+
+    const streamResponse = await fetch(finalDownloadUrl, {
+      headers: streamHeaders,
+      redirect: "follow",
+    });
+
+    // Forward the stream to the client
+    const headers = new Headers();
+    headers.set("Content-Type", streamResponse.headers.get("content-type") || "video/mp4");
+    headers.set("Accept-Ranges", "bytes");
+    headers.set("Cache-Control", "public, max-age=3600");
+
+    const contentRange = streamResponse.headers.get("content-range");
+    if (contentRange) headers.set("Content-Range", contentRange);
+
+    const contentLength = streamResponse.headers.get("content-length");
+    if (contentLength) headers.set("Content-Length", contentLength);
+
+    return new NextResponse(streamResponse.body, {
+      status: streamResponse.status,
+      headers,
+    });
   } catch (error) {
     console.error("Error resolving video stream:", error);
     return NextResponse.json({ error: "Failed to resolve stream" }, { status: 500 });
