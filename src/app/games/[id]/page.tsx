@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -54,6 +54,12 @@ const GameDetailPage = () => {
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [boughtCdKey, setBoughtCdKey] = useState<string | null>(null);
   const [showKeyModal, setShowKeyModal] = useState(false);
+
+  // Payment states
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState<any | null>(null);
 
   // Reviews states
   const [newReview, setNewReview] = useState("");
@@ -132,6 +138,18 @@ const GameDetailPage = () => {
           if (!libraryError && libraryData) {
             setLibraryGames(libraryData);
           }
+
+          const { data: payRequests } = await supabase
+            .from('payment_requests')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('item_id', id)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (payRequests && payRequests.length > 0) {
+            setPaymentRequest(payRequests[0]);
+          }
         }
       } catch (err) {
         console.error("Game detail fetch error:", err);
@@ -185,51 +203,69 @@ const GameDetailPage = () => {
     }
   };
 
-  const handleBuyGame = async () => {
+  const handleBuyGame = () => {
     if (!isAuthenticated || !user) {
       router.push("/login");
       return;
     }
-    if (!game) return;
+    setShowCheckoutModal(true);
+  };
 
-    const confirmBuy = window.confirm(`${game.title} o'yinini sotib olishni tasdiqlaysizmi?`);
-    if (!confirmBuy) return;
+  const handleSubmitReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receiptFile || !user || !game) return;
 
-    setPurchaseLoading(true);
+    setSubmittingPayment(true);
     try {
-      // Generate a unique CD Key on client side
-      const segment = () => Math.random().toString(36).substring(2, 6).toUpperCase();
-      const generatedCdKey = `PN-${segment()}-${segment()}-${segment()}`;
+      const fileExt = receiptFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}_receipt.${fileExt}`;
 
-      const { data, error } = await supabase
-        .from('bought_games')
-        .insert({
-          game_id: id,
-          user_id: user.id,
-          cd_key: generatedCdKey
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, receiptFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+
+      const finalPrice = user.is_premium ? Math.round(Number(game.price) * 0.8) : Number(game.price);
+
+      const response = await fetch('/api/payments/submit-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          itemType: 'GAME',
+          itemId: game.id,
+          amount: finalPrice,
+          receiptUrl: publicUrl,
+          itemName: game.title,
+          username: user.username || user.email?.split('@')[0] || 'username'
         })
-        .select()
-        .single();
+      });
 
-      if (error) throw error;
-
-      setBoughtCdKey(generatedCdKey);
-      setShowKeyModal(true);
-      
-      // Update library list
-      const { data: libraryData, error: libraryError } = await supabase
-        .from('bought_games')
-        .select('*')
-        .eq('user_id', user.id);
-
-      if (!libraryError && libraryData) {
-        setLibraryGames(libraryData);
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData.error || "To'lov arizasini yuborishda xatolik yuz berdi.");
       }
+
+      alert("To'lov cheki yuborildi! Admin tasdiqlashi bilan o'yin kaliti faollashadi.");
+      setShowCheckoutModal(false);
+      setReceiptFile(null);
+
+      setPaymentRequest({
+        id: resData.requestId,
+        status: 'PENDING',
+        receipt_url: publicUrl,
+        amount: finalPrice
+      });
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || "Sotib olish jarayonida xatolik yuz berdi.");
+      console.error("Receipt submission error:", err);
+      alert(err.message || "Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
     } finally {
-      setPurchaseLoading(false);
+      setSubmittingPayment(false);
     }
   };
 
@@ -472,21 +508,44 @@ const GameDetailPage = () => {
                     </div>
                   )}
                 </div>
+              ) : paymentRequest?.status === 'PENDING' ? (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-xl p-4 flex flex-col space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <Clock size={16} className="shrink-0 mt-0.5" />
+                    <span className="font-bold uppercase tracking-wide text-[10px]">To'lov tekshirilmoqda</span>
+                  </div>
+                  <p className="text-[11px] text-secondary leading-relaxed">
+                    Siz yuborgan to'lov cheki admin tomonidan tasdiqlanish jarayonida. Tasdiqlangach, o'yin kaliti shu yerda faollashadi.
+                  </p>
+                </div>
               ) : (
-                <button
-                  onClick={handleBuyGame}
-                  disabled={purchaseLoading}
-                  className="btn-primary w-full py-4 text-sm font-bold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {purchaseLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <ShoppingCart size={16} />
-                      <span>Sotib olish</span>
-                    </>
+                <div className="space-y-4">
+                  {paymentRequest?.status === 'REJECTED' && (
+                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs rounded-xl p-4 flex flex-col space-y-2">
+                      <div className="flex items-start space-x-2">
+                        <X size={16} className="shrink-0 mt-0.5" />
+                        <span className="font-bold uppercase tracking-wide text-[10px]">To'lov rad etildi</span>
+                      </div>
+                      <p className="text-[11px] text-secondary leading-relaxed">
+                        Yuborilgan to'lov tasdiqlanmadi (rad etildi). Iltimos, qayta to'lov qilib chekni yuklang.
+                      </p>
+                    </div>
                   )}
-                </button>
+                  <button
+                    onClick={handleBuyGame}
+                    disabled={purchaseLoading}
+                    className="btn-primary w-full py-4 text-sm font-bold flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {purchaseLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <>
+                        <ShoppingCart size={16} />
+                        <span>{paymentRequest?.status === 'REJECTED' ? "Qayta urinish" : "Sotib olish"}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
 
               <div className="text-[10px] text-secondary leading-normal text-center opacity-75">
@@ -536,6 +595,123 @@ const GameDetailPage = () => {
               Yopish
             </button>
           </motion.div>
+        </div>
+      )}
+
+      {/* Checkout Modal (Humo/Uzcard check upload) */}
+      {showCheckoutModal && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-[#121214] border border-white/5 p-6 md:p-8 rounded-3xl relative">
+            <button
+              onClick={() => {
+                setShowCheckoutModal(false);
+                setReceiptFile(null);
+              }}
+              className="absolute top-4 right-4 text-secondary hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2 border-b border-white/5 pb-4">
+              <ShoppingCart size={20} className="text-primary" />
+              <span>To'lov Tafsilotlari</span>
+            </h3>
+
+            <form onSubmit={handleSubmitReceipt} className="space-y-6">
+              <div className="bg-white/5 rounded-2xl p-5 border border-white/5 space-y-4">
+                <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">Karta raqami (P2P)</p>
+                <div className="flex items-center justify-between bg-black/40 px-4 py-3 rounded-xl border border-white/5">
+                  <div>
+                    <code className="text-base text-white font-mono select-all tracking-wider">8600 1234 5678 9012</code>
+                    <p className="text-[9px] text-secondary mt-1 uppercase font-bold">Kapitalbank — Humo/Uzcard</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText("8600123456789012");
+                      alert("Karta raqami nusxalandi!");
+                    }}
+                    className="text-xs text-primary font-bold hover:underline"
+                  >
+                    Nusxalash
+                  </button>
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-secondary">Karta Egasi (F.I.SH):</span>
+                  <span className="font-bold text-white uppercase">Alisher A.</span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs border-t border-white/5 pt-3">
+                  <span className="text-secondary">To'lov Summasi:</span>
+                  <span className="font-black text-amber-400 text-sm">
+                    {user?.is_premium 
+                      ? `${Math.round(Number(game.price) * 0.8).toLocaleString()} UZS (Premium -20% discount)`
+                      : `${Number(game.price).toLocaleString()} UZS`
+                    }
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-xs text-secondary leading-relaxed bg-primary/5 border border-primary/10 p-4 rounded-xl">
+                💡 **Yo'riqnoma:** Istalgan to'lov ilovasi (Click, Payme, Uzum va hk.) orqali yuqoridagi kartaga ko'rsatilgan summani o'tqazing va to'lov muvaffaqiyatli bo'lganligi to'g'risidagi **chek skrinshotini (rasmini)** pastda yuklang.
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-secondary block">To'lov Cheki (Skrinshot)</label>
+                <div className="relative border border-dashed border-white/10 hover:border-primary/50 transition-colors rounded-2xl p-6 text-center cursor-pointer bg-black/20">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    required
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setReceiptFile(e.target.files[0]);
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  {receiptFile ? (
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <FileText size={24} className="text-primary" />
+                      <p className="text-xs font-bold text-white truncate max-w-xs">{receiptFile.name}</p>
+                      <p className="text-[10px] text-secondary">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center space-y-2 text-secondary">
+                      <Upload size={24} className="mx-auto" />
+                      <p className="text-xs font-bold">Chek rasmini yuklash uchun bosing</p>
+                      <p className="text-[10px] text-secondary/60">PNG, JPG formatlar (maksimal 5MB)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCheckoutModal(false);
+                    setReceiptFile(null);
+                  }}
+                  className="flex-1 py-3.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all border border-white/5"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingPayment}
+                  className="flex-1 btn-primary py-3.5 text-xs font-bold flex items-center justify-center space-x-2"
+                >
+                  {submittingPayment ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>To'lovni tasdiqlashga yuborish</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </main>
