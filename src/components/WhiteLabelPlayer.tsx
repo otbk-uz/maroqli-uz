@@ -513,10 +513,6 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Top black bar - hides Google Drive top header/filename */}
           <div className="absolute top-0 left-0 w-full h-[52px] bg-black z-10 pointer-events-none" />
-          {/* Bottom black bar - hides Google Drive bottom controls */}
-          <div className="absolute bottom-0 left-0 w-full h-[44px] bg-black z-10 pointer-events-none" />
-          {/* Right side bar - hides popout/download/3-dot buttons */}
-          <div className="absolute top-0 right-0 w-[60px] h-[52px] bg-black z-10 pointer-events-none" />
           
           <iframe
             ref={iframeRef}
