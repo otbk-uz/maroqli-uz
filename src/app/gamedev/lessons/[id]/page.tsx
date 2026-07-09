@@ -103,7 +103,7 @@ export default function LessonDetailsPage() {
     <main className="min-h-screen bg-background text-white">
       <Navbar />
 
-      <div className="container mx-auto px-4 md:px-6 pt-32 pb-20 max-w-6xl">
+      <div className="container mx-auto px-4 md:px-6 pt-24 md:pt-32 pb-12 md:pb-20 max-w-6xl">
         <div className="mb-6">
           <BackButton />
         </div>
@@ -117,15 +117,15 @@ export default function LessonDetailsPage() {
               userIdentifier={user?.email || user?.username} 
             />
 
-            <div className="glass-card p-6 md:p-8 border border-white/5 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 pb-4">
+            <div className="glass-card p-4 sm:p-6 md:p-8 border border-white/5 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4">
                 <div>
                   <span className="bg-primary/20 text-primary text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-md">
                     {lesson.level}
                   </span>
-                  <h1 className="text-2xl md:text-3xl font-black mt-2 text-white">{lesson.title}</h1>
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-black mt-2 text-white">{lesson.title}</h1>
                 </div>
-                <div className="flex items-center space-x-1.5 text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm">
+                <div className="flex items-center space-x-1.5 text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm self-start sm:self-auto">
                   <Crown size={14} />
                   <span>PREMIUM DARS</span>
                 </div>

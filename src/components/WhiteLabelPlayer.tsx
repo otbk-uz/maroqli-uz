@@ -520,7 +520,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         ? isPortrait
           ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vw] rotate-90 z-[9999] rounded-none border-0"
           : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
-        : "relative w-full aspect-video rounded-3xl border border-white/10"
+        : "relative w-full aspect-video rounded-2xl md:rounded-3xl border border-white/10"
         }`}
     >
       {/* Floating Close Button for iOS Pseudo Fullscreen */}
@@ -579,21 +579,21 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           <div
             id="watermark-1"
             style={{ top: watermarkPos1.top, left: watermarkPos1.left }}
-            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
+            className="absolute z-20 pointer-events-none text-[8px] sm:text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             MAROQLI.uz • {userIdentifier} • STRICT PROTECTION
           </div>
           <div
             id="watermark-2"
             style={{ top: watermarkPos2.top, left: watermarkPos2.left }}
-            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.25] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
+            className="absolute z-20 pointer-events-none text-[8px] sm:text-[10px] md:text-xs font-mono font-bold text-white/[0.25] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             PROTECTED CONTENT • {userIdentifier}
           </div>
           <div
             id="watermark-3"
             style={{ top: watermarkPos3.top, left: watermarkPos3.left }}
-            className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
+            className="absolute z-20 pointer-events-none text-[8px] sm:text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             MAROQLI • DO NOT SHARE • {userIdentifier}
           </div>
