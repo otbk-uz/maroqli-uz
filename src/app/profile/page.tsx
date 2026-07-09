@@ -53,6 +53,10 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (activeSetting === "Mening Kutubxonam" && libraryGames.length === 0) {
+      if (profileData?.role !== "GAMER" && profileData?.role !== "ADMIN") {
+        setActiveSetting(null);
+        return;
+      }
       const fetchLibrary = async () => {
         setLoadingLibrary(true);
         try {
@@ -66,7 +70,7 @@ const ProfilePage = () => {
       };
       fetchLibrary();
     }
-  }, [activeSetting, libraryGames.length]);
+  }, [activeSetting, libraryGames.length, profileData?.role]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -522,16 +526,24 @@ const ProfilePage = () => {
                  </h3>
                </div>
                <div className="divide-y divide-white/5">
-                 {["Mening Jamoam", "Mening Kutubxonam", "Striming sozlamalari", "Hisob xavfsizligi", "Xabarnomalar sozlamalari", "To'lov usullari", "Maxfiylik va Xavfsizlik"].map((item) => (
-                   <button 
-                     key={item} 
-                     onClick={() => setActiveSetting(item)}
-                     className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group"
-                   >
-                     <span className="font-medium text-sm text-secondary group-hover:text-white transition-colors">{item}</span>
-                     <ChevronRight size={18} className="text-secondary group-hover:text-primary transition-colors" />
-                   </button>
-                 ))}
+                  {[
+                    "Mening Jamoam",
+                    ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? ["Mening Kutubxonam"] : []),
+                    "Striming sozlamalari",
+                    "Hisob xavfsizligi",
+                    "Xabarnomalar sozlamalari",
+                    "To'lov usullari",
+                    "Maxfiylik va Xavfsizlik"
+                  ].map((item) => (
+                    <button 
+                      key={item} 
+                      onClick={() => setActiveSetting(item)}
+                      className="w-full p-6 flex items-center justify-between hover:bg-white/5 transition-colors group"
+                    >
+                      <span className="font-medium text-sm text-secondary group-hover:text-white transition-colors">{item}</span>
+                      <ChevronRight size={18} className="text-secondary group-hover:text-primary transition-colors" />
+                    </button>
+                  ))}
                </div>
             </div>
           </div>
