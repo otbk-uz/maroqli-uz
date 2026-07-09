@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = "edge";
+
+interface CacheEntry {
+  url: string;
+  cookie: string;
+  expires: number;
+}
+
+// Global in-memory cache to store resolved stream URLs and cookies
+const streamCache = new Map<string, CacheEntry>();
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
@@ -9,61 +20,76 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const url = `https://docs.google.com/uc?export=download&id=${id}`;
-    
-    // Step 1: Request initial download link
-    const res1 = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-      redirect: "manual",
-    });
-
-    let targetUrl = url;
+    let finalDownloadUrl = "";
     let cookieHeader = "";
+    const now = Date.now();
 
-    const status1 = res1.status;
-    if (status1 >= 300 && status1 < 400) {
-      const loc1 = res1.headers.get("location");
-      if (loc1) targetUrl = loc1;
-    }
-
-    // Step 2: Request the target URL to check for virus warning page
-    const res2 = await fetch(targetUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-      redirect: "manual",
-    });
-
-    const status2 = res2.status;
-    let finalDownloadUrl = targetUrl;
-
-    // Grab set-cookie headers from Step 2
-    const setCookieHeaders = res2.headers.getSetCookie 
-      ? res2.headers.getSetCookie() 
-      : [res2.headers.get("set-cookie")].filter(Boolean) as string[];
-    
-    cookieHeader = setCookieHeaders.map(c => c.split(";")[0]).join("; ");
-
-    if (status2 === 200) {
-      const text2 = await res2.text();
+    const cached = streamCache.get(id);
+    if (cached && cached.expires > now) {
+      finalDownloadUrl = cached.url;
+      cookieHeader = cached.cookie;
+    } else {
+      const url = `https://docs.google.com/uc?export=download&id=${id}`;
       
-      // Parse confirm and uuid values from the form inputs
-      const confirmMatch = text2.match(/name="confirm"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="confirm"/);
-      const uuidMatch = text2.match(/name="uuid"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="uuid"/);
+      // Step 1: Request initial download link
+      const res1 = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+        redirect: "manual",
+      });
 
-      if (confirmMatch) {
-        const confirmVal = confirmMatch[1];
-        const uuidVal = uuidMatch ? uuidMatch[1] : "";
-        finalDownloadUrl = `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=${confirmVal}`;
-        if (uuidVal) {
-          finalDownloadUrl += `&uuid=${uuidVal}`;
-        }
+      let targetUrl = url;
+      const status1 = res1.status;
+      if (status1 >= 300 && status1 < 400) {
+        const loc1 = res1.headers.get("location");
+        if (loc1) targetUrl = loc1;
       }
-    } else if (status2 >= 300 && status2 < 400) {
-      const loc2 = res2.headers.get("location");
-      if (loc2) finalDownloadUrl = loc2;
+
+      // Step 2: Request the target URL to check for virus warning page
+      const res2 = await fetch(targetUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+        redirect: "manual",
+      });
+
+      const status2 = res2.status;
+      finalDownloadUrl = targetUrl;
+
+      // Grab set-cookie headers from Step 2
+      const setCookieHeaders = res2.headers.getSetCookie 
+        ? res2.headers.getSetCookie() 
+        : [res2.headers.get("set-cookie")].filter(Boolean) as string[];
+      
+      cookieHeader = setCookieHeaders.map(c => c.split(";")[0]).join("; ");
+
+      if (status2 === 200) {
+        const text2 = await res2.text();
+        
+        // Parse confirm and uuid values from the form inputs
+        const confirmMatch = text2.match(/name="confirm"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="confirm"/);
+        const uuidMatch = text2.match(/name="uuid"\s+value="([^"]+)"/) || text2.match(/value="([^"]+)"\s+name="uuid"/);
+
+        if (confirmMatch) {
+          const confirmVal = confirmMatch[1];
+          const uuidVal = uuidMatch ? uuidMatch[1] : "";
+          finalDownloadUrl = `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=${confirmVal}`;
+          if (uuidVal) {
+            finalDownloadUrl += `&uuid=${uuidVal}`;
+          }
+        }
+      } else if (status2 >= 300 && status2 < 400) {
+        const loc2 = res2.headers.get("location");
+        if (loc2) finalDownloadUrl = loc2;
+      }
+
+      // Cache for 1 hour (Google Drive download links expire in ~2 hours)
+      streamCache.set(id, {
+        url: finalDownloadUrl,
+        cookie: cookieHeader,
+        expires: now + 60 * 60 * 1000,
+      });
     }
 
     // Step 3: Fetch the final video stream and proxy it back to client, forwarding range requests
