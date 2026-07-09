@@ -4,11 +4,10 @@ export const runtime = "edge";
 
 interface CacheEntry {
   url: string;
-  cookie: string;
   expires: number;
 }
 
-// Global in-memory cache to store resolved stream URLs and cookies
+// In-memory cache to store resolved public stream URLs
 const streamCache = new Map<string, CacheEntry>();
 
 export async function GET(request: NextRequest) {
@@ -21,13 +20,11 @@ export async function GET(request: NextRequest) {
 
   try {
     let finalDownloadUrl = "";
-    let cookieHeader = "";
     const now = Date.now();
 
     const cached = streamCache.get(id);
     if (cached && cached.expires > now) {
       finalDownloadUrl = cached.url;
-      cookieHeader = cached.cookie;
     } else {
       const url = `https://docs.google.com/uc?export=download&id=${id}`;
       
@@ -57,13 +54,6 @@ export async function GET(request: NextRequest) {
       const status2 = res2.status;
       finalDownloadUrl = targetUrl;
 
-      // Grab set-cookie headers from Step 2
-      const setCookieHeaders = res2.headers.getSetCookie 
-        ? res2.headers.getSetCookie() 
-        : [res2.headers.get("set-cookie")].filter(Boolean) as string[];
-      
-      cookieHeader = setCookieHeaders.map(c => c.split(";")[0]).join("; ");
-
       if (status2 === 200) {
         const text2 = await res2.text();
         
@@ -84,55 +74,17 @@ export async function GET(request: NextRequest) {
         if (loc2) finalDownloadUrl = loc2;
       }
 
-      // Cache for 1 hour (Google Drive download links expire in ~2 hours)
+      // Cache for 10 minutes (short cache to ensure tokens don't expire for late seeking, but fast for buffer range bursts)
       streamCache.set(id, {
         url: finalDownloadUrl,
-        cookie: cookieHeader,
-        expires: now + 60 * 60 * 1000,
+        expires: now + 10 * 60 * 1000,
       });
     }
 
-    // Step 3: Fetch the final video stream and proxy it back to client, forwarding range requests
-    const clientRange = request.headers.get("range");
-    const streamHeaders: Record<string, string> = {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-    };
-    if (cookieHeader) {
-      streamHeaders["Cookie"] = cookieHeader;
-    }
-    if (clientRange) {
-      streamHeaders["Range"] = clientRange;
-    }
-
-    const streamResponse = await fetch(finalDownloadUrl, {
-      headers: streamHeaders,
-      redirect: "follow", // Follow redirects to the final googlevideo stream URL
-    });
-
-    // Return the stream directly to the client with range headers
-    const headers = new Headers();
-    headers.set("Content-Type", streamResponse.headers.get("content-type") || "video/mp4");
-    headers.set("Accept-Ranges", "bytes");
-    
-    const contentRange = streamResponse.headers.get("content-range");
-    if (contentRange) {
-      headers.set("Content-Range", contentRange);
-    }
-    
-    const contentLength = streamResponse.headers.get("content-length");
-    if (contentLength) {
-      headers.set("Content-Length", contentLength);
-    }
-
-    const contentDisposition = streamResponse.headers.get("content-disposition");
-    if (contentDisposition) {
-      headers.set("Content-Disposition", contentDisposition);
-    }
-
-    return new NextResponse(streamResponse.body, {
-      status: streamResponse.status,
-      headers: headers,
-    });
+    // Redirect the browser directly to Google User Content CDN
+    // This allows the browser to connect to Google directly, streaming at maximum speed
+    // and utilizing full native Range request seeking without proxy delays.
+    return NextResponse.redirect(finalDownloadUrl);
   } catch (error) {
     console.error("Error resolving video stream:", error);
     return NextResponse.json({ error: "Failed to resolve stream" }, { status: 500 });
