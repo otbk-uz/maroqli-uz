@@ -13,7 +13,7 @@ const MobileNav = () => {
   const navItems = [
     { name: t("home_short", "Bosh"), icon: Home, href: "/" },
     { name: t("tournaments", "Turnirlar"), icon: Trophy, href: "/tournaments" },
-    { name: t("gamedev", "Darslar"), icon: Code, href: "/gamedev" },
+    { name: t("darslar", "Darslar"), icon: Code, href: "/darslar" },
     { name: t("games", "O'yinlar"), icon: Gamepad2, href: "/games" },
     { name: t("profile", "Profil"), icon: User, href: "/profile" },
   ];
