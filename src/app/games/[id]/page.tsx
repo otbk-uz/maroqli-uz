@@ -74,14 +74,23 @@ const GameDetailPage = () => {
 
         if (gameError) throw gameError;
 
-        // Fetch reviews
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from('game_reviews')
-          .select('*, profiles:user_id(username, full_name)')
-          .eq('game_id', id)
-          .order('created_at', { ascending: false });
+        // Fetch reviews (fail-safe in case game_reviews table is not migrated in Supabase)
+        let reviewsData = [];
+        try {
+          const { data, error: reviewsError } = await supabase
+            .from('game_reviews')
+            .select('*, profiles:user_id(username, full_name)')
+            .eq('game_id', id)
+            .order('created_at', { ascending: false });
 
-        if (reviewsError) throw reviewsError;
+          if (!reviewsError && data) {
+            reviewsData = data;
+          } else if (reviewsError) {
+            console.warn("Reviews table fetch warning:", reviewsError.message);
+          }
+        } catch (reviewErr) {
+          console.warn("Reviews fetch exception:", reviewErr);
+        }
 
         if (gameData) {
           setGame({
