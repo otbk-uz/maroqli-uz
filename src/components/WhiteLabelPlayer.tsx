@@ -26,7 +26,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
 
-  const isUsingIframe = isYoutube;
+  const isUsingIframe = isYoutube || isGoogleDrive;
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -509,10 +509,28 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             frameBorder="0"
           />
         </div>
+      ) : isGoogleDrive ? (
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
+          {/* Top black bar - hides Google Drive top header/filename */}
+          <div className="absolute top-0 left-0 w-full h-[52px] bg-black z-10 pointer-events-none" />
+          {/* Bottom black bar - hides Google Drive bottom controls */}
+          <div className="absolute bottom-0 left-0 w-full h-[44px] bg-black z-10 pointer-events-none" />
+          {/* Right side bar - hides popout/download/3-dot buttons */}
+          <div className="absolute top-0 right-0 w-[60px] h-[52px] bg-black z-10 pointer-events-none" />
+          
+          <iframe
+            ref={iframeRef}
+            src={`https://drive.google.com/file/d/${gDriveId}/preview`}
+            className="w-full h-full border-0"
+            allow="autoplay; encrypted-media; fullscreen"
+            frameBorder="0"
+            allowFullScreen
+          />
+        </div>
       ) : (
         <video
           ref={videoRef}
-          src={isGoogleDrive ? `/api/video?id=${gDriveId}` : url}
+          src={url}
           className="w-full h-full object-contain font-display"
           onClick={togglePlay}
           onLoadedMetadata={handleLoadedMetadata}
