@@ -60,8 +60,21 @@ const ProfilePage = () => {
       const fetchLibrary = async () => {
         setLoadingLibrary(true);
         try {
-          const res = await api.get("/tournaments/library/");
-          setLibraryGames(res.data);
+          const { data, error } = await supabase
+            .from('bought_games')
+            .select('*, developed_games(*)')
+            .eq('user_id', user?.id);
+
+          if (error) throw error;
+
+          if (data) {
+            const mappedData = data.map((item: any) => ({
+              id: item.id,
+              cd_key: item.cd_key,
+              game_details: item.developed_games
+            }));
+            setLibraryGames(mappedData);
+          }
         } catch (err) {
           console.error("Kutubxonani yuklashda xatolik:", err);
         } finally {

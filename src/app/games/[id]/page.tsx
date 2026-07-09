@@ -123,9 +123,15 @@ const GameDetailPage = () => {
           } as any);
         }
         
-        if (isAuthenticated) {
-          const libraryRes = await api.get("/tournaments/library/");
-          setLibraryGames(libraryRes.data);
+        if (isAuthenticated && user) {
+          const { data: libraryData, error: libraryError } = await supabase
+            .from('bought_games')
+            .select('*')
+            .eq('user_id', user.id);
+
+          if (!libraryError && libraryData) {
+            setLibraryGames(libraryData);
+          }
         }
       } catch (err) {
         console.error("Game detail fetch error:", err);
@@ -180,7 +186,7 @@ const GameDetailPage = () => {
   };
 
   const handleBuyGame = async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !user) {
       router.push("/login");
       return;
     }
@@ -191,20 +197,37 @@ const GameDetailPage = () => {
 
     setPurchaseLoading(true);
     try {
-      const response = await api.post("/tournaments/library/", { game: game.id });
-      setBoughtCdKey(response.data.cd_key);
+      // Generate a unique CD Key on client side
+      const segment = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+      const generatedCdKey = `PN-${segment()}-${segment()}-${segment()}`;
+
+      const { data, error } = await supabase
+        .from('bought_games')
+        .insert({
+          game_id: id,
+          user_id: user.id,
+          cd_key: generatedCdKey
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setBoughtCdKey(generatedCdKey);
       setShowKeyModal(true);
       
       // Update library list
-      const libraryRes = await api.get("/tournaments/library/");
-      setLibraryGames(libraryRes.data);
+      const { data: libraryData, error: libraryError } = await supabase
+        .from('bought_games')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (!libraryError && libraryData) {
+        setLibraryGames(libraryData);
+      }
     } catch (err: any) {
       console.error(err);
-      if (err.response?.data?.detail) {
-        alert(err.response.data.detail);
-      } else {
-        alert("Sotib olish jarayonida xatolik yuz berdi.");
-      }
+      alert(err.message || "Sotib olish jarayonida xatolik yuz berdi.");
     } finally {
       setPurchaseLoading(false);
     }
@@ -240,8 +263,8 @@ const GameDetailPage = () => {
     );
   }
 
-  const isPurchased = libraryGames.some((lg: any) => lg.game === game.id);
-  const existingCdKey = libraryGames.find((lg: any) => lg.game === game.id)?.cd_key;
+  const isPurchased = libraryGames.some((lg: any) => lg.game_id === game.id);
+  const existingCdKey = libraryGames.find((lg: any) => lg.game_id === game.id)?.cd_key;
 
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
