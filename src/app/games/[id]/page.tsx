@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -506,6 +506,17 @@ const GameDetailPage = () => {
                         <code className="text-xs text-white font-mono">{existingCdKey}</code>
                       </div>
                     </div>
+                  )}
+
+                  {game.download_url && (
+                    <a
+                      href={game.download_url}
+                      download
+                      className="w-full py-3.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                    >
+                      <Download size={14} />
+                      <span>O'yinni yuklab olish</span>
+                    </a>
                   )}
                 </div>
               ) : paymentRequest?.status === 'PENDING' ? (

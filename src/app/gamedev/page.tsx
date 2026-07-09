@@ -75,6 +75,7 @@ export default function GamedevPage() {
   const [language, setLanguage] = useState("O'zbek, Rus, Ingliz");
   const [sysRequirements, setSysRequirements] = useState("OS: Windows 10, RAM: 8GB, GPU: GTX 1050");
   const [showUploadForm, setShowUploadForm] = useState(false);
+  const [gameFile, setGameFile] = useState<File | null>(null);
 
   // Past Projects Form States
   const [pastTitle, setPastTitle] = useState("");
@@ -259,6 +260,24 @@ export default function GamedevPage() {
     const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "-" + Date.now();
 
     try {
+      let download_url = null;
+      if (gameFile) {
+        const fileExt = gameFile.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}_game.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('game_files')
+          .upload(fileName, gameFile);
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('game_files')
+          .getPublicUrl(fileName);
+
+        download_url = publicUrl;
+      }
+
       const { error } = await supabase.from("developed_games").insert({
         developer_id: user.id,
         title,
@@ -268,6 +287,7 @@ export default function GamedevPage() {
         description,
         language,
         sys_requirements: sysRequirements,
+        download_url,
       });
 
       if (error) throw error;
@@ -280,6 +300,7 @@ export default function GamedevPage() {
       setPrice("");
       setPlatform("PC");
       setDescription("");
+      setGameFile(null);
       
       // Refresh dashboard data
       fetchDashboardData();
@@ -680,6 +701,23 @@ export default function GamedevPage() {
                               className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
                               placeholder="OS: Windows 10, CPU: Intel i5, RAM: 8GB, GPU: GTX 1050"
                             />
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-semibold text-secondary block mb-1">O'yin fayli (.zip, .exe, .rar - Majburiy emas)</label>
+                            <input
+                              type="file"
+                              accept=".zip,.exe,.rar"
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files.length > 0) {
+                                  setGameFile(e.target.files[0]);
+                                }
+                              }}
+                              className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none text-secondary"
+                            />
+                            {gameFile && (
+                              <p className="text-[10px] text-primary mt-1">Tanlandi: {gameFile.name} ({(gameFile.size/1024/1024).toFixed(2)} MB)</p>
+                            )}
                           </div>
 
                           <div className="flex gap-4">

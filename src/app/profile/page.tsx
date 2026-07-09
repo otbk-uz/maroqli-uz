@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2 } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -656,6 +656,17 @@ const ProfilePage = () => {
                                   </button>
                                 </div>
                               </div>
+
+                              {gameDetails.download_url && (
+                                <a
+                                  href={gameDetails.download_url}
+                                  download
+                                  className="mt-3 w-full py-2.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                >
+                                  <Download size={12} />
+                                  <span>O'yinni yuklab olish</span>
+                                </a>
+                              )}
                             </div>
                           </div>
                         );
