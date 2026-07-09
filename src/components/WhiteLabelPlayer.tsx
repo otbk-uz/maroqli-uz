@@ -22,11 +22,11 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   const [isYoutube, setIsYoutube] = useState(false);
   const [ytPlayer, setYtPlayer] = useState<any>(null);
   const [ytReady, setYtReady] = useState(false);
-  const [isGoogleDrive, setIsGoogleDrive] = useState(false);
+  const [isBunny, setIsBunny] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
 
-  const isUsingIframe = isYoutube || isGoogleDrive;
+  const isUsingIframe = isYoutube || isBunny;
 
   // Security Protection States
   const [isWindowBlurred, setIsWindowBlurred] = useState(false);
@@ -44,11 +44,22 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
   const ytId = getYoutubeId(url);
 
-  const getDriveId = (urlStr: string) => {
-    const match = urlStr.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
-    return match ? match[1] : null;
+
+
+  const getBunnyDetails = (urlStr: string) => {
+    if (!urlStr) return { libraryId: null, videoId: null };
+    if (urlStr.startsWith("bunny://")) {
+      const videoId = urlStr.replace("bunny://", "");
+      const libraryId = process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || "701099";
+      return { libraryId, videoId };
+    }
+    const match = urlStr.match(/iframe\.mediadelivery\.net\/embed\/(\d+)\/([a-zA-Z0-9_-]+)/);
+    if (match) {
+      return { libraryId: match[1], videoId: match[2] };
+    }
+    return { libraryId: null, videoId: null };
   };
-  const gDriveId = getDriveId(url);
+  const { libraryId: bunnyLibId, videoId: bunnyVideoId } = getBunnyDetails(url);
 
   // Print protection media queries block
   useEffect(() => {
@@ -72,6 +83,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       if (document.hidden && isPlaying) {
         if (isYoutube && ytPlayer && ytReady) {
           ytPlayer.pauseVideo();
+        } else if (isBunny && iframeRef.current) {
+          try {
+            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ method: "pause" }), "*");
+          } catch (e) {}
         } else if (!isYoutube && videoRef.current) {
           videoRef.current.pause();
         }
@@ -82,7 +97,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [isPlaying, isYoutube, ytPlayer, ytReady]);
+  }, [isPlaying, isYoutube, ytPlayer, ytReady, isBunny]);
 
   // Focus/Blur Protection (Triggered explicitly by shortcuts, not aggressive blur)
   useEffect(() => {
@@ -148,6 +163,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         if (isPlaying) {
           if (isYoutube && ytPlayer && ytReady) {
             ytPlayer.pauseVideo();
+          } else if (isBunny && iframeRef.current) {
+            try {
+              iframeRef.current.contentWindow?.postMessage(JSON.stringify({ method: "pause" }), "*");
+            } catch (e) {}
           } else if (!isYoutube && videoRef.current) {
             videoRef.current.pause();
           }
@@ -255,6 +274,10 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         setIsPlaying(false);
         if (isYoutube && ytPlayer && ytReady) {
           ytPlayer.pauseVideo();
+        } else if (isBunny && iframeRef.current) {
+          try {
+            iframeRef.current.contentWindow?.postMessage(JSON.stringify({ method: "pause" }), "*");
+          } catch (e) {}
         } else if (!isYoutube && videoRef.current) {
           videoRef.current.pause();
         }
@@ -274,7 +297,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   useEffect(() => {
     if (ytId) {
       setIsYoutube(true);
-      setIsGoogleDrive(false);
+      setIsBunny(false);
       // Load YouTube Iframe API
       if (!(window as any).YT) {
         const tag = document.createElement("script");
@@ -289,14 +312,32 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       } else {
         initYtPlayer();
       }
-    } else if (gDriveId) {
-      setIsGoogleDrive(true);
+    } else if (bunnyVideoId) {
+      setIsBunny(true);
       setIsYoutube(false);
     } else {
       setIsYoutube(false);
-      setIsGoogleDrive(false);
+      setIsBunny(false);
     }
-  }, [url, ytId, gDriveId]);
+  }, [url, ytId, bunnyVideoId]);
+
+  // Listen to messages from Bunny stream player to sync playback states
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin.includes("mediadelivery.net")) {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.event === "play") {
+            setIsPlaying(true);
+          } else if (data.event === "pause") {
+            setIsPlaying(false);
+          }
+        } catch (e) {}
+      }
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
 
   const initYtPlayer = () => {
     if (!ytId) return;
@@ -508,14 +549,11 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
             frameBorder="0"
           />
         </div>
-      ) : isGoogleDrive ? (
+      ) : isBunny ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
-          {/* Top black bar - hides Google Drive top header/filename */}
-          <div className="absolute top-0 left-0 w-full h-[50px] md:h-[50px] bg-black z-10 pointer-events-none" />
-
           <iframe
             ref={iframeRef}
-            src={`https://drive.google.com/file/d/${gDriveId}/preview`}
+            src={`https://iframe.mediadelivery.net/embed/${bunnyLibId}/${bunnyVideoId}?autoplay=true&loop=false&muted=false&preload=true&responsive=true`}
             className="w-full h-full border-0"
             allow="autoplay; encrypted-media; fullscreen"
             frameBorder="0"
