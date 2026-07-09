@@ -91,7 +91,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       setIsWindowBlurred(false);
     };
     window.addEventListener("focus", handleFocus);
-    
+
     return () => {
       window.removeEventListener("focus", handleFocus);
     };
@@ -133,7 +133,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
         navigator.clipboard.writeText("MAROQLI.uz - Ruxsatsiz nusxa ko'chirish taqiqlanadi!");
         setIsWindowBlurred(true);
       }
-      
+
       // Ctrl + P (Print)
       if ((e.ctrlKey || e.metaKey) && e.key === "p") {
         e.preventDefault();
@@ -173,7 +173,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   // Float watermark dynamically to prevent screen recordings from cropping it
   useEffect(() => {
     if (!userIdentifier) return;
-    
+
     const interval1 = setInterval(() => {
       const top = Math.floor(Math.random() * 25) + 5; // Top quadrant
       const left = Math.floor(Math.random() * 65) + 5;
@@ -332,7 +332,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           try {
             setCurrentTime(ytPlayer.getCurrentTime() || 0);
             if (duration === 0) setDuration(ytPlayer.getDuration() || 0);
-          } catch (e) {}
+          } catch (e) { }
         } else if (!isYoutube && videoRef.current) {
           setCurrentTime(videoRef.current.currentTime || 0);
         }
@@ -426,35 +426,35 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
     }
 
     if (!containerRef.current) return;
-    
+
     const doc = document as any;
     const container = containerRef.current as any;
-    
-    const requestFS = container.requestFullscreen || 
-                      container.webkitRequestFullscreen || 
-                      container.mozRequestFullScreen || 
-                      container.msRequestFullscreen;
 
-    const isFullscreenSupported = doc.fullscreenEnabled || 
-                                  doc.webkitFullscreenEnabled || 
-                                  doc.mozFullScreenEnabled || 
-                                  doc.msFullscreenEnabled;
+    const requestFS = container.requestFullscreen ||
+      container.webkitRequestFullscreen ||
+      container.mozRequestFullScreen ||
+      container.msRequestFullscreen;
+
+    const isFullscreenSupported = doc.fullscreenEnabled ||
+      doc.webkitFullscreenEnabled ||
+      doc.mozFullScreenEnabled ||
+      doc.msFullscreenEnabled;
 
     if (isFullscreenSupported && requestFS) {
-      const isFS = doc.fullscreenElement || 
-                   doc.webkitFullscreenElement || 
-                   doc.mozFullScreenElement || 
-                   doc.msFullscreenElement;
+      const isFS = doc.fullscreenElement ||
+        doc.webkitFullscreenElement ||
+        doc.mozFullScreenElement ||
+        doc.msFullscreenElement;
 
       if (!isFS) {
         requestFS.call(container).then(() => setIsFullscreen(true)).catch(() => {
           setIsPseudoFullscreen(true);
         });
       } else {
-        const exitFS = doc.exitFullscreen || 
-                       doc.webkitExitFullscreen || 
-                       doc.mozCancelFullScreen || 
-                       doc.msExitFullscreen;
+        const exitFS = doc.exitFullscreen ||
+          doc.webkitExitFullscreen ||
+          doc.mozCancelFullScreen ||
+          doc.msExitFullscreen;
         if (exitFS) exitFS.call(doc);
         setIsFullscreen(false);
       }
@@ -471,17 +471,16 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
   };
 
   return (
-    <div 
+    <div
       ref={containerRef}
       onContextMenu={(e) => e.preventDefault()}
       onDragStart={(e) => e.preventDefault()}
-      className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${
-        isPseudoFullscreen 
+      className={`overflow-hidden bg-black group shadow-2xl select-none transition-all duration-300 ${isPseudoFullscreen
           ? isPortrait
             ? "fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vh] h-[100vw] rotate-90 z-[9999] rounded-none border-0"
             : "fixed inset-0 w-screen h-screen z-[9999] rounded-none border-0"
           : "relative w-full aspect-video rounded-3xl border border-white/10"
-      }`}
+        }`}
     >
       {/* Floating Close Button for iOS Pseudo Fullscreen */}
       {isPseudoFullscreen && (
@@ -498,7 +497,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           {/* Black bars overlay to hide YouTube top title bar and bottom logo */}
           <div className="absolute top-0 left-0 w-full h-[60px] bg-black z-10" />
           <div className="absolute bottom-0 left-0 w-full h-[60px] bg-black z-10" />
-          
+
           <iframe
             id={`yt-player-${ytId}`}
             ref={iframeRef}
@@ -512,8 +511,8 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       ) : isGoogleDrive ? (
         <div className="absolute inset-0 w-full h-full overflow-hidden">
           {/* Top black bar - hides Google Drive top header/filename */}
-          <div className="absolute top-0 left-0 w-full h-[44px] md:h-[48px] bg-black z-10 pointer-events-none" />
-          
+          <div className="absolute top-0 left-0 w-full h-[48px] md:h-[48px] bg-black z-10 pointer-events-none" />
+
           <iframe
             ref={iframeRef}
             src={`https://drive.google.com/file/d/${gDriveId}/preview`}
@@ -539,21 +538,21 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
       {/* Dynamic Security Multi-Watermarks (scattered to prevent cropping) */}
       {userIdentifier && (
         <>
-          <div 
+          <div
             id="watermark-1"
             style={{ top: watermarkPos1.top, left: watermarkPos1.left }}
             className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             MAROQLI.uz • {userIdentifier} • STRICT PROTECTION
           </div>
-          <div 
+          <div
             id="watermark-2"
             style={{ top: watermarkPos2.top, left: watermarkPos2.left }}
             className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.25] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
           >
             PROTECTED CONTENT • {userIdentifier}
           </div>
-          <div 
+          <div
             id="watermark-3"
             style={{ top: watermarkPos3.top, left: watermarkPos3.left }}
             className="absolute z-20 pointer-events-none text-[10px] md:text-xs font-mono font-bold text-white/[0.18] select-none transition-all duration-[800ms] ease-in-out whitespace-nowrap bg-black/35 px-2.5 py-1 rounded uppercase tracking-wider shadow-[0_0_10px_rgba(0,0,0,0.6)] border border-white/5"
@@ -565,7 +564,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
       {/* Click-to-Play/Pause overlay (Not needed for iframes) */}
       {!isUsingIframe && (
-        <div 
+        <div
           className="absolute inset-0 cursor-pointer z-20 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors"
           onClick={togglePlay}
         >
@@ -580,66 +579,66 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
       {/* Custom styled control dock (fades in on hover) */}
       {!isUsingIframe && (
-      <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black via-black/80 to-transparent p-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
-        
-        {/* Progress slider bar */}
-        <div className="flex items-center gap-4 mb-4">
-          <span className="text-[10px] font-bold text-secondary font-mono">{formatTime(currentTime)}</span>
-          <input
-            type="range"
-            min={0}
-            max={duration || 100}
-            value={currentTime}
-            onChange={handleSeek}
-            className="flex-1 accent-primary h-1.5 rounded-full bg-white/10 outline-none cursor-pointer"
-          />
-          <span className="text-[10px] font-bold text-secondary font-mono">{formatTime(duration)}</span>
-        </div>
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-black via-black/80 to-transparent p-6 z-30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-auto">
 
-        {/* Buttons and volume dock */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={togglePlay}
-              className="text-white hover:text-primary transition-colors"
-            >
-              {isPlaying ? <Pause size={18} /> : <Play size={18} />}
-            </button>
+          {/* Progress slider bar */}
+          <div className="flex items-center gap-4 mb-4">
+            <span className="text-[10px] font-bold text-secondary font-mono">{formatTime(currentTime)}</span>
+            <input
+              type="range"
+              min={0}
+              max={duration || 100}
+              value={currentTime}
+              onChange={handleSeek}
+              className="flex-1 accent-primary h-1.5 rounded-full bg-white/10 outline-none cursor-pointer"
+            />
+            <span className="text-[10px] font-bold text-secondary font-mono">{formatTime(duration)}</span>
+          </div>
 
-            {/* Volume slider */}
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={toggleMute}
+          {/* Buttons and volume dock */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={togglePlay}
                 className="text-white hover:text-primary transition-colors"
               >
-                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                {isPlaying ? <Pause size={18} /> : <Play size={18} />}
               </button>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                value={isMuted ? 0 : volume}
-                onChange={handleVolumeChange}
-                className="w-16 accent-primary h-1 rounded-full bg-white/10 cursor-pointer"
-              />
+
+              {/* Volume slider */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={toggleMute}
+                  className="text-white hover:text-primary transition-colors"
+                >
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                </button>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  value={isMuted ? 0 : volume}
+                  onChange={handleVolumeChange}
+                  className="w-16 accent-primary h-1 rounded-full bg-white/10 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={toggleFullscreen}
+                className="text-white hover:text-primary transition-colors"
+              >
+                <Maximize size={18} />
+              </button>
             </div>
           </div>
-
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={toggleFullscreen}
-              className="text-white hover:text-primary transition-colors"
-            >
-              <Maximize size={18} />
-            </button>
-          </div>
         </div>
-      </div>
       )}
 
       {/* Safety blur overlay when window loses focus (Snipping tool active / focus blur protection) */}
       {isWindowBlurred && (
-        <div 
+        <div
           id="blur-safety-overlay"
           className="absolute inset-0 bg-[#030305]/95 backdrop-blur-3xl z-40 flex flex-col items-center justify-center text-center p-6 transition-all duration-300"
         >
@@ -658,7 +657,7 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
 
       {/* Tampering detected lockout screen overlay */}
       {isTampered && (
-        <div 
+        <div
           id="tamper-lockout-overlay"
           className="absolute inset-0 bg-red-950/95 backdrop-blur-3xl z-50 flex flex-col items-center justify-center text-center p-6 transition-all duration-300"
         >
@@ -671,8 +670,8 @@ export function WhiteLabelPlayer({ url, userIdentifier }: PlayerProps) {
           <p className="text-secondary text-xs max-w-xs leading-relaxed mb-4">
             Brauzer kodini o'zgartirish yoki xavfsizlik elementlarini o'chirish harakati aniqlandi. Videopleyer bloklandi.
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all"
           >
             Sahifani yangilash
