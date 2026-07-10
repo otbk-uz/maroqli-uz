@@ -76,6 +76,7 @@ export default function GamedevPage() {
   const [sysRequirements, setSysRequirements] = useState("OS: Windows 10, RAM: 8GB, GPU: GTX 1050");
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [gameFile, setGameFile] = useState<File | null>(null);
+  const [executablePath, setExecutablePath] = useState("");
 
   // Past Projects Form States
   const [pastTitle, setPastTitle] = useState("");
@@ -288,6 +289,7 @@ export default function GamedevPage() {
         language,
         sys_requirements: sysRequirements,
         download_url,
+        executable_path: executablePath,
       });
 
       if (error) throw error;
@@ -301,6 +303,7 @@ export default function GamedevPage() {
       setPlatform("PC");
       setDescription("");
       setGameFile(null);
+      setExecutablePath("");
       
       // Refresh dashboard data
       fetchDashboardData();
@@ -700,6 +703,17 @@ export default function GamedevPage() {
                               onChange={(e) => setSysRequirements(e.target.value)}
                               className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none"
                               placeholder="OS: Windows 10, CPU: Intel i5, RAM: 8GB, GPU: GTX 1050"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-semibold text-secondary block mb-1">Asosiy ishga tushiruvchi fayl nomi (Majburiy emas, Launcher uchun)</label>
+                            <input
+                              type="text"
+                              value={executablePath}
+                              onChange={(e) => setExecutablePath(e.target.value)}
+                              className="w-full bg-[#1e1e24] border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none focus:border-white/10"
+                              placeholder="Masalan: MyGame.exe yoki Launcher.exe"
                             />
                           </div>
 
