@@ -131,7 +131,7 @@ bot.on('callback_query', async (query) => {
     bot.answerCallbackQuery(query.id);
     bot.sendMessage(chatId, `💳 *CHIPTA XARID QILISH*\n\n` +
       `Turnir chiptasini olish uchun quyidagi kartaga to'lovni amalga oshiring:\n\n` +
-      `💳 *Karta raqami:* \`9860 0101 3799 2664\`\n` +
+      `💳 *Karta raqami:* \`9860010137992664\`\n` +
       `👤 *Karta egasi:* Zokirjonov Isfandiyor\n` +
       `💰 *Summa:* 10 000 UZS\n\n` +
       `To'lovni amalga oshirgach, to'lov chekining (skrinshotini) rasmini ushbu botga yuboring.`, {
@@ -184,12 +184,28 @@ bot.on('message', async (msg) => {
       });
     }
     else if (state.step === 'AWAITING_REGION') {
-      const region = text.trim();
+      state.region = text.trim();
+      state.step = 'AWAITING_PHONE';
+      
+      bot.sendMessage(chatId, "📞 *Telefon raqamingizni yuboring:*\n(Pastdagi tugmani bosib kontakt ulashishingiz yoki yozib yuborishingiz mumkin)", {
+        parse_mode: 'Markdown',
+        reply_markup: {
+          keyboard: [
+            [{ text: "📞 Kontaktni ulashish", request_contact: true }]
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: true
+        }
+      });
+    }
+    else if (state.step === 'AWAITING_PHONE') {
+      const phone = msg.contact ? msg.contact.phone_number : text.trim();
       
       users[userId] = {
         fullName: state.fullName,
         dob: state.dob,
-        region: region,
+        region: state.region,
+        phoneNumber: phone,
         registeredAt: new Date().toISOString()
       };
       saveDB();
@@ -224,6 +240,7 @@ bot.on('message', async (msg) => {
       if (userData) {
         bot.sendMessage(chatId, `👤 *Sizning Profilingiz:*\n\n` +
           `📝 *F.I.SH:* ${userData.fullName}\n` +
+          `📞 *Tel:* ${userData.phoneNumber || 'Kiritilmagan'}\n` +
           `📅 *Tug'ilgan sana:* ${userData.dob}\n` +
           `📍 *Hudud:* ${userData.region}\n` +
           `🆔 *Telegram ID:* ${userId}`, {
@@ -252,11 +269,12 @@ bot.on('photo', async (msg) => {
       await bot.sendPhoto(adminChatId, fileId, {
         caption: `🔔 *BRONZA TICKET TO'LOV SO'ROVI!*\n\n` +
                  `👤 *Ishtirokchi:* ${userData.fullName || 'Noma\'lum'}\n` +
+                 `📞 *Telefon:* ${userData.phoneNumber || 'Noma\'lum'}\n` +
                  `📅 *Tug'ilgan sana:* ${userData.dob || 'Noma\'lum'}\n` +
                  `📍 *Hudud:* ${userData.region || 'Noma\'lum'}\n` +
                  `🆔 *Telegram ID:* ${userId}\n` +
                  `💰 *Summa:* 10 000 UZS\n\n` +
-                 `Karta: Isfandiyor Zokirjonov (Openbank/Uzcard)`,
+                 `Karta: Isfandiyor Zokirjonov (\`9860010137992664\`)`,
         parse_mode: 'Markdown'
       });
       

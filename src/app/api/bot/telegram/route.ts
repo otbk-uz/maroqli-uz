@@ -127,7 +127,7 @@ export async function POST(req: Request) {
           chat_id: chatId,
           text: `💳 *CHIPTA XARID QILISH*\n\n` +
             `Turnir chiptasini olish uchun quyidagi kartaga to'lovni amalga oshiring:\n\n` +
-            `💳 *Karta raqami:* \`9860 0101 3799 2664\`\n` +
+            `💳 *Karta raqami:* \`9860010137992664\`\n` +
             `👤 *Karta egasi:* Zokirjonov Isfandiyor\n` +
             `💰 *Summa:* 10 000 UZS\n\n` +
             `To'lovni amalga oshirgach, to'lov chekining (skrinshotini) rasmini ushbu botga yuboring.`,
@@ -142,6 +142,7 @@ export async function POST(req: Request) {
       const userId = message.from.id.toString();
       const text = message.text;
       const photo = message.photo;
+      const contact = message.contact;
 
       // /start komandasi
       if (text === '/start') {
@@ -215,13 +216,41 @@ export async function POST(req: Request) {
         }
         else if (stateRow.step === 'AWAITING_REGION' && text) {
           const region = text.trim();
+          await supabase.from('bot_states').update({
+            step: 'AWAITING_PHONE',
+            region: region
+          }).eq('telegram_id', userId);
+
+          await sendTelegram('sendMessage', {
+            chat_id: chatId,
+            text: "📞 *Telefon raqamingizni yuboring:*\n(Pastdagi tugmani bosib kontakt ulashishingiz yoki yozib yuborishingiz mumkin)",
+            parse_mode: 'Markdown',
+            reply_markup: {
+              keyboard: [
+                [{ text: "📞 Kontaktni ulashish", request_contact: true }]
+              ],
+              resize_keyboard: true,
+              one_time_keyboard: true
+            }
+          });
+        }
+        else if (stateRow.step === 'AWAITING_PHONE') {
+          const phone = contact?.phone_number || text || '';
+          if (!phone) {
+            await sendTelegram('sendMessage', {
+              chat_id: chatId,
+              text: "⚠️ Iltimos, telefon raqamingizni yuboring yoki yozib yuboring:"
+            });
+            return NextResponse.json({ success: true });
+          }
 
           // Foydalanuvchini bot_users jadvaliga yozish
           await supabase.from('bot_users').upsert({
             telegram_id: userId,
             full_name: stateRow.full_name,
             dob: stateRow.dob,
-            region: region
+            region: stateRow.region,
+            phone_number: phone
           });
 
           // Holatni o'chirish
@@ -254,11 +283,12 @@ export async function POST(req: Request) {
             photo: fileId,
             caption: `🔔 *BRONZA TICKET TO'LOV SO'ROVI!*\n\n` +
                      `👤 *Ishtirokchi:* ${userName}\n` +
+                     `📞 *Telefon:* ${userRow?.phone_number || 'Noma\'lum'}\n` +
                      `📅 *Tug'ilgan sana:* ${userDob}\n` +
                      `📍 *Hudud:* ${userRegion}\n` +
                      `🆔 *Telegram ID:* ${userId}\n` +
                      `💰 *Summa:* 10 000 UZS\n\n` +
-                     `Karta: Isfandiyor Zokirjonov (Openbank/Uzcard)`,
+                     `Karta: Isfandiyor Zokirjonov (\`9860010137992664\`)`,
             parse_mode: 'Markdown'
           });
 
@@ -306,6 +336,7 @@ export async function POST(req: Request) {
             chat_id: chatId,
             text: `👤 *Sizning Profilingiz:*\n\n` +
               `📝 *F.I.SH:* ${userRow.full_name}\n` +
+              `📞 *Tel:* ${userRow.phone_number || 'Kiritilmagan'}\n` +
               `📅 *Tug'ilgan sana:* ${userRow.dob}\n` +
               `📍 *Hudud:* ${userRow.region}\n` +
               `🆔 *Telegram ID:* ${userId}`,
