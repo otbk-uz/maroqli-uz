@@ -446,6 +446,7 @@ export async function POST(req: Request) {
               `📞 *Tel:* ${userRow.phone_number || 'Kiritilmagan'}\n` +
               `📅 *Tug'ilgan sana:* ${userRow.dob}\n` +
               `📍 *Hudud:* ${userRow.region}\n` +
+              `🎫 *Bronza ticket:* ${userRow.has_bronze_ticket ? '✅ Tasdiqlangan (Sizda bor)' : '❌ Sotib olinmagan'}\n` +
               `🆔 *Telegram ID:* ${userId}`,
             parse_mode: 'Markdown'
           });

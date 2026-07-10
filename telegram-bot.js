@@ -297,6 +297,7 @@ bot.on('message', async (msg) => {
           `📞 *Tel:* ${userData.phoneNumber || 'Kiritilmagan'}\n` +
           `📅 *Tug'ilgan sana:* ${userData.dob}\n` +
           `📍 *Hudud:* ${userData.region}\n` +
+          `🎫 *Bronza ticket:* ${userData.hasBronzeTicket ? '✅ Tasdiqlangan (Sizda bor)' : '❌ Sotib olinmagan'}\n` +
           `🆔 *Telegram ID:* ${userId}`, {
             parse_mode: 'Markdown'
           });
