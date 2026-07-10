@@ -139,6 +139,60 @@ bot.on('callback_query', async (query) => {
       });
     userStates[chatId] = { step: 'AWAITING_RECEIPT' };
   }
+  else if (data.startsWith('approve_ticket:')) {
+    const targetUserId = data.split(':')[1];
+    const targetUser = users[targetUserId] || {};
+    
+    // Grant ticket locally
+    targetUser.hasBronzeTicket = true;
+    saveDB();
+    
+    bot.answerCallbackQuery(query.id, { text: "Chipta tasdiqlandi!" });
+    
+    const adminUsername = query.from.username ? `@${query.from.username}` : query.from.first_name;
+    
+    bot.editMessageCaption(`✅ *BRONZA TICKET TASDIQLANDI!*\n\n` +
+      `👤 *Ishtirokchi:* ${targetUser.fullName || 'Noma\'lum'}\n` +
+      `📞 *Telefon:* ${targetUser.phoneNumber || 'Noma\'lum'}\n` +
+      `📅 *Tug'ilgan sana:* ${targetUser.dob || 'Noma\'lum'}\n` +
+      `📍 *Hudud:* ${targetUser.region || 'Noma\'lum'}\n` +
+      `🆔 *Telegram ID:* ${targetUserId}\n` +
+      `✍️ *Tasdiqladi:* ${adminUsername}\n` +
+      `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}`, {
+        chat_id: chatId,
+        message_id: query.message.message_id,
+        reply_markup: { inline_keyboard: [] },
+        parse_mode: 'Markdown'
+      });
+      
+    bot.sendMessage(targetUserId, "🎉 *Tabriklaymiz!* Siz yuborgan to'lov cheki adminlar tomonidan tasdiqlandi. *Bronza turniri chiptasi* profilingizga muvaffaqiyatli qo'shildi!", {
+      parse_mode: 'Markdown'
+    });
+  }
+  else if (data.startsWith('reject_ticket:')) {
+    const targetUserId = data.split(':')[1];
+    const targetUser = users[targetUserId] || {};
+    
+    bot.answerCallbackQuery(query.id, { text: "Chipta rad etildi." });
+    
+    const adminUsername = query.from.username ? `@${query.from.username}` : query.from.first_name;
+    
+    bot.editMessageCaption(`❌ *BRONZA TICKET RAD ETILDI!*\n\n` +
+      `👤 *Ishtirokchi:* ${targetUser.fullName || 'Noma\'lum'}\n` +
+      `📞 *Telefon:* ${targetUser.phoneNumber || 'Noma\'lum'}\n` +
+      `📅 *Tug'ilgan sana:* ${targetUser.dob || 'Noma\'lum'}\n` +
+      `📍 *Hudud:* ${targetUser.region || 'Noma\'lum'}\n` +
+      `🆔 *Telegram ID:* ${targetUserId}\n` +
+      `✍️ *Rad etdi:* ${adminUsername}\n` +
+      `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}`, {
+        chat_id: chatId,
+        message_id: query.message.message_id,
+        reply_markup: { inline_keyboard: [] },
+        parse_mode: 'Markdown'
+      });
+      
+    bot.sendMessage(targetUserId, "❌ Kechirasiz, siz yuborgan to'lov cheki adminlar tomonidan rad etildi. Muammo bo'lsa, adminlar bilan bog'laning.");
+  }
 });
 
 // 7. Xabarlarni boshqarish

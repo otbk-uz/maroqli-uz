@@ -139,6 +139,100 @@ export async function POST(req: Request) {
           parse_mode: 'Markdown'
         });
       }
+      else if (data.startsWith('approve_ticket:')) {
+        const targetUserId = data.split(':')[1];
+        
+        // Fetch user data to build correct caption
+        const { data: userRow } = await supabase
+          .from('bot_users')
+          .select('*')
+          .eq('telegram_id', targetUserId)
+          .single();
+        
+        const userName = userRow ? userRow.full_name : 'Noma\'lum';
+        const userPhone = userRow ? userRow.phone_number : 'Noma\'lum';
+        const userDob = userRow ? userRow.dob : 'Noma\'lum';
+        const userRegion = userRow ? userRow.region : 'Noma\'lum';
+        
+        // Grant ticket in Supabase
+        await supabase
+          .from('bot_users')
+          .update({ has_bronze_ticket: true })
+          .eq('telegram_id', targetUserId);
+          
+        await sendTelegram('answerCallbackQuery', {
+          callback_query_id: callbackQueryId,
+          text: "Chipta tasdiqlandi!"
+        });
+        
+        const adminUsername = callbackQuery.from.username ? `@${callbackQuery.from.username}` : callbackQuery.from.first_name;
+        
+        // Edit admin caption
+        await sendTelegram('editMessageCaption', {
+          chat_id: chatId,
+          message_id: callbackQuery.message.message_id,
+          caption: `✅ *BRONZA TICKET TASDIQLANDI!*\n\n` +
+                   `👤 *Ishtirokchi:* ${userName}\n` +
+                   `📞 *Telefon:* ${userPhone}\n` +
+                   `📅 *Tug'ilgan sana:* ${userDob}\n` +
+                   `📍 *Hudud:* ${userRegion}\n` +
+                   `🆔 *Telegram ID:* ${targetUserId}\n` +
+                   `✍️ *Tasdiqladi:* ${adminUsername}\n` +
+                   `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}`,
+          parse_mode: 'Markdown',
+          reply_markup: { inline_keyboard: [] }
+        });
+        
+        // Notify user in private chat
+        await sendTelegram('sendMessage', {
+          chat_id: targetUserId,
+          text: "🎉 *Tabriklaymiz!* Siz yuborgan to'lov cheki adminlar tomonidan tasdiqlandi. *Bronza turniri chiptasi* profilingizga muvaffaqiyatli qo'shildi!",
+          parse_mode: 'Markdown'
+        });
+      }
+      else if (data.startsWith('reject_ticket:')) {
+        const targetUserId = data.split(':')[1];
+        
+        const { data: userRow } = await supabase
+          .from('bot_users')
+          .select('*')
+          .eq('telegram_id', targetUserId)
+          .single();
+        
+        const userName = userRow ? userRow.full_name : 'Noma\'lum';
+        const userPhone = userRow ? userRow.phone_number : 'Noma\'lum';
+        const userDob = userRow ? userRow.dob : 'Noma\'lum';
+        const userRegion = userRow ? userRow.region : 'Noma\'lum';
+        
+        await sendTelegram('answerCallbackQuery', {
+          callback_query_id: callbackQueryId,
+          text: "Chipta rad etildi."
+        });
+        
+        const adminUsername = callbackQuery.from.username ? `@${callbackQuery.from.username}` : callbackQuery.from.first_name;
+        
+        // Edit admin caption
+        await sendTelegram('editMessageCaption', {
+          chat_id: chatId,
+          message_id: callbackQuery.message.message_id,
+          caption: `❌ *BRONZA TICKET RAD ETILDI!*\n\n` +
+                   `👤 *Ishtirokchi:* ${userName}\n` +
+                   `📞 *Telefon:* ${userPhone}\n` +
+                   `📅 *Tug'ilgan sana:* ${userDob}\n` +
+                   `📍 *Hudud:* ${userRegion}\n` +
+                   `🆔 *Telegram ID:* ${targetUserId}\n` +
+                   `✍️ *Rad etdi:* ${adminUsername}\n` +
+                   `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}`,
+          parse_mode: 'Markdown',
+          reply_markup: { inline_keyboard: [] }
+        });
+        
+        // Notify user in private chat
+        await sendTelegram('sendMessage', {
+          chat_id: targetUserId,
+          text: "❌ Kechirasiz, siz yuborgan to'lov cheki adminlar tomonidan rad etildi. Muammo bo'lsa, adminlar bilan bog'laning."
+        });
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -294,7 +388,15 @@ export async function POST(req: Request) {
                      `🆔 *Telegram ID:* ${userId}\n` +
                      `💰 *Summa:* 10 000 UZS\n\n` +
                      `Karta: Isfandiyor Zokirjonov (\`9860010137992664\`)`,
-            parse_mode: 'Markdown'
+            parse_mode: 'Markdown',
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: "✅ Tasdiqlash", callback_data: `approve_ticket:${userId}` },
+                  { text: "❌ Rad etish", callback_data: `reject_ticket:${userId}` }
+                ]
+              ]
+            }
           });
 
           // Holatni o'chirish
