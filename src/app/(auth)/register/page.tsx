@@ -4,7 +4,7 @@ import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Chrome, Send, ArrowLeft, ArrowRight, UserCheck, Upload, Check, AlertCircle } from "lucide-react";
+import { Chrome, Send, ArrowLeft, ArrowRight, UserCheck, Upload, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { registerSchema, registerBaseSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
@@ -77,6 +77,8 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [globalError, setGlobalError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -514,27 +516,45 @@ const RegisterPage = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-secondary ml-1">Parol</label>
-                      <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        className={`w-full bg-white/5 border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
-                      />
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          value={formData.password}
+                          onChange={handleChange}
+                          placeholder="••••••••"
+                          className={`w-full bg-white/5 border ${errors.password ? 'border-red-500/50' : 'border-white/10'} rounded-xl pl-4 pr-12 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors"
+                        >
+                          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                       {errors.password && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.password}</p>}
                     </div>
 
                     <div className="space-y-1">
                       <label className="text-xs font-medium text-secondary ml-1">Parolni tasdiqlash</label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="••••••••"
-                        className={`w-full bg-white/5 border ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
-                      />
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          name="confirmPassword"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          placeholder="••••••••"
+                          className={`w-full bg-white/5 border ${errors.confirmPassword ? 'border-red-500/50' : 'border-white/10'} rounded-xl pl-4 pr-12 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-secondary hover:text-white transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
+                      </div>
                       {errors.confirmPassword && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.confirmPassword}</p>}
                     </div>
                   </div>

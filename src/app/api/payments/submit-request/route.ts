@@ -8,29 +8,34 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(req: Request) {
   try {
-    const { userId, itemType, itemId, amount, receiptUrl, itemName, username } = await req.json();
+    const { requestId, userId, itemType, itemId, amount, receiptUrl, itemName, username } = await req.json();
 
-    if (!userId || !itemType || !amount || !receiptUrl) {
-      return NextResponse.json({ error: "Barcha majburiy maydonlarni to'ldiring." }, { status: 400 });
-    }
+    let finalRequestId = requestId;
 
-    // 1. Insert request into payment_requests table
-    const { data: requestData, error: insertError } = await supabase
-      .from('payment_requests')
-      .insert({
-        user_id: userId,
-        item_type: itemType,
-        item_id: itemId || null,
-        amount: parseFloat(amount),
-        receipt_url: receiptUrl,
-        status: 'PENDING'
-      })
-      .select()
-      .single();
+    if (!finalRequestId) {
+      if (!userId || !itemType || !amount || !receiptUrl) {
+        return NextResponse.json({ error: "Barcha majburiy maydonlarni to'ldiring." }, { status: 400 });
+      }
 
-    if (insertError) {
-      console.error("Supabase payment request insert error:", insertError);
-      return NextResponse.json({ error: "To'lov arizasini bazada yaratishda xatolik yuz berdi." }, { status: 500 });
+      // 1. Insert request into payment_requests table
+      const { data: requestData, error: insertError } = await supabase
+        .from('payment_requests')
+        .insert({
+          user_id: userId,
+          item_type: itemType,
+          item_id: itemId || null,
+          amount: parseFloat(amount),
+          receipt_url: receiptUrl,
+          status: 'PENDING'
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Supabase payment request insert error:", insertError);
+        return NextResponse.json({ error: "To'lov arizasini bazada yaratishda xatolik yuz berdi." }, { status: 500 });
+      }
+      finalRequestId = requestData.id;
     }
 
     // 2. Notify Telegram Bot Admin
@@ -49,8 +54,8 @@ export async function POST(req: Request) {
       const inlineKeyboard = {
         inline_keyboard: [
           [
-            { text: "✅ Tasdiqlash", callback_data: `approve:${requestData.id}` },
-            { text: "Rad etish ❌", callback_data: `reject:${requestData.id}` }
+            { text: "✅ Tasdiqlash", callback_data: `approve:${finalRequestId}` },
+            { text: "Rad etish ❌", callback_data: `reject:${finalRequestId}` }
           ]
         ]
       };
@@ -76,7 +81,7 @@ export async function POST(req: Request) {
       console.warn("Telegram BOT settings are not configured. Request saved in database only.");
     }
 
-    return NextResponse.json({ success: true, requestId: requestData.id });
+    return NextResponse.json({ success: true, requestId: finalRequestId });
   } catch (err: any) {
     console.error("Submit request handler error:", err);
     return NextResponse.json({ error: err.message || "Server xatoligi yuz berdi." }, { status: 500 });

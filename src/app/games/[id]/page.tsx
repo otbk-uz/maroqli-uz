@@ -234,10 +234,28 @@ const GameDetailPage = () => {
 
       const finalPrice = user.is_premium ? Math.round(Number(game.price) * 0.8) : Number(game.price);
 
+      // 1. Client side insert first to pass user RLS policies securely
+      const { data: requestData, error: insertError } = await supabase
+        .from('payment_requests')
+        .insert({
+          user_id: user.id,
+          item_type: 'GAME',
+          item_id: game.id,
+          amount: finalPrice,
+          receipt_url: publicUrl,
+          status: 'PENDING'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 2. Call backend to send Telegram notifications
       const response = await fetch('/api/payments/submit-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          requestId: requestData.id,
           userId: user.id,
           itemType: 'GAME',
           itemId: game.id,
