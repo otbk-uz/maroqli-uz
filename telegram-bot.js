@@ -26,7 +26,7 @@ loadEnv();
 // 2. Konfiguratsiyalar
 const token = process.env.TELEGRAM_BOT_TOKEN || '8691594274:AAFuehA_27DpYZM_Fd2XZQyrURIjWA6Qddo';
 const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || '-1003901938291';
-const channelUsername = '@maroqli_uz'; // Kanal username
+const channelUsername = '@maroqliku'; // Kanal username
 
 console.log('Bot ishga tushmoqda...');
 const bot = new TelegramBot(token, { polling: true });

@@ -7,7 +7,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 const TELEGRAM_BOT_TOKEN = process.env.KIBERSPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8691594274:AAFuehA_27DpYZM_Fd2XZQyrURIjWA6Qddo';
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '-1003901938291';
-const CHANNEL_USERNAME = '@maroqli_uz';
+const CHANNEL_USERNAME = '@maroqliku';
 
 // Helper: Telegram API so'rovlari
 async function sendTelegram(method: string, payload: any) {
