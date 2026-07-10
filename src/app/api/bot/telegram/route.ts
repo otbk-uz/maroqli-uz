@@ -33,11 +33,16 @@ async function checkSubscription(userId: string | number): Promise<boolean> {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getChatMember?chat_id=${CHANNEL_USERNAME}&user_id=${userId}`;
   try {
     const res = await fetch(url);
-    if (!res.ok) return true; // Bot kanalda admin bo'lmasa o'tkazib yuboradi
     const data = await res.json();
+    console.log("Subscription Check Response:", JSON.stringify(data));
+    if (!data.ok) {
+      console.warn("getChatMember API error:", data.description);
+      return true; // Fallback: bot kanalda admin bo'lmasa o'tkazib yuboradi
+    }
     const status = data.result?.status;
     return ['member', 'administrator', 'creator'].includes(status);
-  } catch {
+  } catch (err: any) {
+    console.error("Subscription check exception:", err);
     return true;
   }
 }
