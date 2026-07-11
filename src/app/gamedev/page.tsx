@@ -369,7 +369,23 @@ export default function GamedevPage() {
     }
   };
 
+  const handleDeleteGame = async (gameId: string) => {
+    if (!confirm("Haqiqatan ham o'yinni o'chirishni xohlaysizmi? Bu amalni ortga qaytarib bo'lmaydi!")) return;
 
+    try {
+      const { error } = await supabase
+        .from("developed_games")
+        .delete()
+        .eq("id", gameId);
+
+      if (error) throw error;
+      
+      alert("O'yin muvaffaqiyatli o'chirildi!");
+      fetchDashboardData();
+    } catch (err: any) {
+      alert(err.message || "O'yinni o'chirishda xatolik yuz berdi.");
+    }
+  };
 
   const isDeveloper = user?.role === "GAMEDEV";
 
@@ -771,9 +787,18 @@ export default function GamedevPage() {
                           <div>
                             <div className="flex justify-between items-start mb-2">
                               <h4 className="font-bold text-lg">{game.title}</h4>
-                              <span className="bg-primary/20 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
-                                {game.platform}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-primary/20 text-primary text-[10px] font-bold px-2 py-0.5 rounded-md uppercase">
+                                  {game.platform}
+                                </span>
+                                <button
+                                  onClick={() => handleDeleteGame(game.id)}
+                                  className="text-red-400 hover:text-red-300 transition-colors p-1"
+                                  title="O'yinni o'chirish"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </div>
                             <p className="text-xs text-secondary/80 line-clamp-2 mb-4 leading-relaxed">
                               {game.description}
