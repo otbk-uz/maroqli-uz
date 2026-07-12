@@ -346,7 +346,7 @@ export default function StreamerDetailPage() {
                 </div>
               )}
             </div>
-
+        </div>
       </div>
 
       {/* Donation Simulation Modal */}
