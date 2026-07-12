@@ -262,7 +262,7 @@ const StreamersPage = () => {
                 className="glass-card overflow-hidden mb-12"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3">
-                  <div className="lg:col-span-2 aspect-video bg-black relative group cursor-pointer" onClick={() => router.push(`/streamers/${featuredStreamer.id}`)}>
+                  <div className="lg:col-span-2 aspect-video bg-gradient-to-br from-black to-primary/10 relative group cursor-pointer" onClick={() => router.push(`/streamers/${featuredStreamer.id}`)}>
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10">
                       <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center shadow-2xl shadow-primary/40">
                         <Play size={32} fill="white" />
@@ -273,6 +273,10 @@ const StreamersPage = () => {
                         <span className="bg-primary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20">{t("live_badge", "EFIRDA")}</span>
                       </div>
                     )}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40 group-hover:bg-black/60 transition-colors">
+                      <Play size={64} className="text-white/20 mb-4" />
+                      <p className="text-white/40 text-sm font-bold uppercase tracking-widest">Efirni tomosha qilish</p>
+                    </div>
                     <div className="absolute bottom-6 left-6 z-10 flex items-center space-x-4">
                       <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold flex items-center">
                         <Users size={14} className="mr-2" />
@@ -280,7 +284,7 @@ const StreamersPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="p-8 flex flex-col justify-between">
+                  <div className="p-8 flex flex-col justify-between h-full min-h-[300px]">
                     <div>
                       <div className="flex items-center space-x-4 mb-6">
                         <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xl border-2 border-primary/50 overflow-hidden">
