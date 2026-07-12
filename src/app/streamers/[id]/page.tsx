@@ -28,9 +28,6 @@ export default function StreamerDetailPage() {
   const [streamer, setStreamer] = useState<any | null>(null);
   const [loadingStreamer, setLoadingStreamer] = useState(true);
   
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  
   const [isFollowing, setIsFollowing] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   
@@ -42,8 +39,6 @@ export default function StreamerDetailPage() {
   const [donateMessage, setDonateMessage] = useState("Keyingi raundlarda omad!");
   const [donateProvider, setDonateProvider] = useState<"PAYME" | "CLICK">("PAYME");
   const [donating, setDonating] = useState(false);
-  
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Load Streamer details and donations
   useEffect(() => {
@@ -168,74 +163,7 @@ export default function StreamerDetailPage() {
     return url;
   };
 
-  // Generate bot messages periodically to simulate active chat
-  useEffect(() => {
-    setChatMessages([
-      { id: 1, user: "Alibek", text: "Salom hammaga!", time: "18:40" },
-      { id: 2, user: "KiberRider", text: "Strim zo'r bo'lyapti", time: "18:41" },
-      { id: 3, user: "DotaMaster", text: "Qachon turnir boshlanadi?", time: "18:41", isPremium: true },
-    ]);
 
-    const botNames = ["Bekzod", "Sardor", "Nodira", "KiberUz", "CyberHero", "UzGamer", "Geymer_99", "SniperUz"];
-    const botTexts = [
-      "GG!",
-      "Ajoyib raund!",
-      "Qaysi sichqoncha va klaviaturadan foydalanasiz?",
-      "Zo'r o'ynayapsiz lekin, o'yin klass!",
-      "Strim qotyaptimi menda?",
-      "Keyingi o'yinda meni ham oling iltimos",
-      "Kameralarni to'g'irlang sal",
-      "Kiber-sport rivojlanmoqda!",
-      "Hujum qiling tezroq!",
-      "Chiroyli kill bo'ldi"
-    ];
-
-    const interval = setInterval(() => {
-      const randomName = botNames[Math.floor(Math.random() * botNames.length)];
-      const randomText = botTexts[Math.floor(Math.random() * botTexts.length)];
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-      
-      setChatMessages((prev: ChatMessage[]) => [
-        ...prev,
-        {
-          id: Date.now(),
-          user: randomName,
-          text: randomText,
-          time: timeStr,
-          isPremium: Math.random() > 0.7
-        }
-      ]);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  // Scroll to bottom of chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const senderName = isAuthenticated && user ? user.nickname : "Mehmon";
-    const now = new Date();
-    const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-    setChatMessages((prev: ChatMessage[]) => [
-      ...prev,
-      {
-        id: Date.now(),
-        user: senderName,
-        text: newMessage,
-        time: timeStr,
-        isPremium: user?.is_premium
-      }
-    ]);
-    setNewMessage("");
-  };
 
   const handleDonateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,24 +186,7 @@ export default function StreamerDetailPage() {
       if (error) throw error;
 
       const amtStr = amountNum.toLocaleString() + " UZS";
-      const now = new Date();
-      const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-      // 1. Add donation message in chat locally
-      setChatMessages((prev: ChatMessage[]) => [
-        ...prev,
-        {
-          id: Date.now(),
-          user: donorName,
-          text: `Donat yubordi: "${donateMessage}"`,
-          isDonation: true,
-          amount: amtStr,
-          time: timeStr,
-          isPremium: user?.is_premium
-        }
-      ]);
-
-      // 2. Refresh donations feed from DB
+      // Refresh donations feed from DB
       fetchDonations();
 
       setShowDonateModal(false);
@@ -319,14 +230,12 @@ export default function StreamerDetailPage() {
     <div className="min-h-screen bg-background text-white">
       <Navbar />
 
-      <div className="pt-32 pb-20 container mx-auto px-4 max-w-7xl">
+      <div className="pt-32 pb-20 container mx-auto px-4 max-w-5xl">
         <div className="mb-6">
           <BackButton />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Left Column: Player and Details */}
-          <div className="lg:col-span-3 flex flex-col space-y-6">
+        <div className="flex flex-col space-y-6">
             
             {/* Stream Player */}
             <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/5 bg-black shadow-2xl relative">
@@ -438,74 +347,6 @@ export default function StreamerDetailPage() {
               )}
             </div>
 
-          </div>
-
-          {/* Right Column: Live Chat */}
-          <div className="lg:col-span-1 flex flex-col h-[600px] lg:h-auto lg:min-h-[600px] glass-card overflow-hidden">
-            <div className="bg-white/5 px-6 py-4 border-b border-white/5 flex items-center justify-between">
-              <h3 className="font-bold text-sm tracking-wide uppercase">Jonli Chat</h3>
-              <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /> Faol
-              </span>
-            </div>
-
-            {/* Chat message list */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px] lg:max-h-[550px] min-h-[300px]">
-              {chatMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`p-3 rounded-2xl text-xs leading-relaxed transition-all ${
-                    msg.isDonation
-                      ? "bg-gradient-to-r from-amber-400/10 to-orange-500/10 border border-amber-400/30 shadow-lg shadow-amber-400/5"
-                      : "bg-white/[0.01] hover:bg-white/[0.03]"
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold flex items-center gap-1 text-white">
-                      {msg.user}
-                      {msg.isPremium && (
-                        <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-[8px] text-black px-1 rounded-sm font-extrabold uppercase scale-90">
-                          PRO
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-[10px] opacity-40">{msg.time}</span>
-                  </div>
-                  {msg.isDonation ? (
-                    <div>
-                      <span className="inline-block bg-amber-400/20 text-amber-400 font-black px-2 py-0.5 rounded-md text-[10px] uppercase tracking-wider mb-1">
-                        💰 DONAT {msg.amount}
-                      </span>
-                      <p className="text-secondary italic font-medium mt-0.5">{msg.text}</p>
-                    </div>
-                  ) : (
-                    <p className="text-secondary">{msg.text}</p>
-                  )}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Chat Send Form */}
-            <form onSubmit={handleSendMessage} className="p-4 bg-white/[0.02] border-t border-white/5 flex gap-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder={isAuthenticated ? "Suhbatga qo'shiling..." : "Yozish uchun kiring..."}
-                disabled={!isAuthenticated}
-                className="flex-1 bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-xs focus:outline-none focus:border-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-              <button
-                type="submit"
-                disabled={!isAuthenticated || !newMessage.trim()}
-                className="p-3 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Send size={14} />
-              </button>
-            </form>
-          </div>
-        </div>
       </div>
 
       {/* Donation Simulation Modal */}

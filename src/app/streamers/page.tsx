@@ -157,8 +157,8 @@ const StreamersPage = () => {
     }
   };
 
-  const liveCount = streamers.filter(s => s.is_live).length;
-  const featuredStreamer = streamers.length > 0 ? streamers[0] : null;
+  const featuredStreamer = streamers.find(s => s.is_live) || null;
+  const liveCount = liveStreams.length + streamers.filter(s => s.is_live).length;
 
   if (loading) {
     return (
@@ -331,9 +331,8 @@ const StreamersPage = () => {
               </motion.div>
             )}
 
-            {/* Streamers Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {streamers.slice(1).map((s) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {streamers.filter(s => s.id !== featuredStreamer?.id).map((s) => (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
