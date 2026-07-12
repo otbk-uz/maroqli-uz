@@ -59,15 +59,14 @@ const StreamersPage = () => {
   const fetchStreamers = async () => {
     try {
       setLoading(true);
-      // Fetch streamers
       const { data: streamersData, error: streamersError } = await supabase
-        .from('streamers')
+        .from("streamers")
         .select(`
           *,
           profile:user_id(username, full_name, avatar_url)
         `)
-        .order('is_live', { ascending: false })
-        .order('viewers_count', { ascending: false });
+        .eq("is_live", true)
+        .order("viewers_count", { ascending: false });
 
       if (streamersError) throw streamersError;
 
