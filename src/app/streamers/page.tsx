@@ -284,7 +284,7 @@ const StreamersPage = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="p-8 flex flex-col justify-between h-full min-h-[300px]">
+                  <div className="p-8 flex flex-col justify-center space-y-8">
                     <div>
                       <div className="flex items-center space-x-4 mb-6">
                         <div className="w-14 h-14 rounded-full bg-primary/20 flex items-center justify-center font-bold text-xl border-2 border-primary/50 overflow-hidden">

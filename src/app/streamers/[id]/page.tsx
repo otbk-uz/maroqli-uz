@@ -330,13 +330,20 @@ export default function StreamerDetailPage() {
             
             {/* Stream Player */}
             <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/5 bg-black shadow-2xl relative">
-              <iframe
-                src={getEmbedUrl(streamer.stream_url)}
-                title={streamer.title || "Live Stream"}
-                className="w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
+              {streamer.stream_url ? (
+                <iframe
+                  src={getEmbedUrl(streamer.stream_url)}
+                  title={streamer.title || "Live Stream"}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-black to-primary/10 flex flex-col items-center justify-center">
+                  <Play size={64} className="text-white/20 mb-4" />
+                  <p className="text-white/40 text-lg font-bold uppercase tracking-widest">Strim havolasi kiritilmagan</p>
+                </div>
+              )}
             </div>
 
             {/* Stream Info & Actions */}
