@@ -330,7 +330,7 @@ export default function StreamerDetailPage() {
             
             {/* Stream Player */}
             <div className="w-full aspect-video rounded-3xl overflow-hidden border border-white/5 bg-black shadow-2xl relative">
-              {streamer.stream_url ? (
+              {streamer.stream_url && streamer.stream_url !== '#' && streamer.stream_url !== '' ? (
                 <iframe
                   src={getEmbedUrl(streamer.stream_url)}
                   title={streamer.title || "Live Stream"}

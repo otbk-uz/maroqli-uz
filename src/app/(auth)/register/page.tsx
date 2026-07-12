@@ -239,11 +239,10 @@ const RegisterPage = () => {
 
         if (profileError) throw profileError;
 
-        // 4. Agar role === 'STREAMER' bo'lsa, streamers jadvaliga ham qo'shib qo'yamiz
         if (formData.role === 'STREAMER') {
           await supabase.from('streamers').insert({
             user_id: authData.user.id,
-            stream_url: '#',
+            stream_url: '',
             platform: 'Twitch',
             title: 'Yangi Strimer',
             game: 'O\'yin tanlanmagan'
