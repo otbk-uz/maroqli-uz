@@ -124,14 +124,16 @@ export default function DarslarPage() {
 
         {/* Lessons Playlist */}
         {loadingLessons ? (
-          <div className="glass-card divide-y divide-white/5 overflow-hidden">
-            {[0, 1, 2, 3, 4].map((n) => (
-              <div key={n} className="flex items-center gap-4 p-3 md:p-4">
-                <div className="skeleton h-5 w-6 shrink-0" />
-                <div className="skeleton aspect-video w-28 md:w-40 shrink-0 rounded-xl" />
-                <div className="flex-1 space-y-2">
-                  <div className="skeleton h-4 w-2/3" />
-                  <div className="skeleton h-3 w-1/3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {[0, 1, 2, 3, 4, 5].map((n) => (
+              <div key={n} className="flex flex-col space-y-3">
+                <div className="skeleton aspect-video w-full rounded-2xl" />
+                <div className="flex space-x-3 px-1">
+                  <div className="skeleton w-9 h-9 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <div className="skeleton h-4 w-5/6" />
+                    <div className="skeleton h-3 w-2/3" />
+                  </div>
                 </div>
               </div>
             ))}
@@ -159,71 +161,74 @@ export default function DarslarPage() {
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card divide-y divide-white/5 overflow-hidden"
+            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"
           >
-            {filteredLessons.map((lesson, i) => (
-              <button
+            {filteredLessons.map((lesson) => (
+              <div
                 key={lesson.id}
                 onClick={() => router.push(`/gamedev/lessons/${lesson.id}`)}
-                className="group flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-white/5 md:gap-4 md:p-4"
+                className="group cursor-pointer flex flex-col space-y-3 transition-all duration-200 active:scale-[0.98]"
               >
-                {/* Tartib raqami */}
-                <span className="w-7 shrink-0 text-center font-display text-sm font-black tabular-nums text-secondary group-hover:text-primary md:w-9 md:text-base">
-                  {i + 1}
-                </span>
-
-                {/* Miniatyura */}
-                <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-xl bg-white/5 md:w-40">
+                {/* Thumbnail Container */}
+                <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-white/5 border border-white/5">
                   {lesson.img ? (
                     <img
                       src={lesson.img}
                       alt={lesson.title}
-                      className="h-full w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-brand-gradient-soft">
-                      <Play size={18} className="text-white/70" />
+                      <Play size={24} className="text-white/70" />
                     </div>
                   )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shadow-glow">
-                      <Play size={15} className="ml-0.5 fill-current text-white" />
+                  
+                  {/* Play Hover Overlay */}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary shadow-glow transform scale-90 group-hover:scale-100 transition-transform duration-300">
+                      <Play size={20} className="ml-1 fill-current text-white" />
                     </div>
                   </div>
+
+                  {/* Duration Badge */}
                   {lesson.duration && (
-                    <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute bottom-2.5 right-2.5 rounded bg-black/80 px-2 py-0.5 text-[10px] font-bold text-white tracking-wider">
                       {lesson.duration}
                     </span>
                   )}
                 </div>
 
-                {/* Ma'lumot */}
-                <div className="min-w-0 flex-1">
-                  <h3 className="truncate font-display text-sm font-bold tracking-tight text-white transition-colors group-hover:text-primary md:text-base">
-                    {lesson.title}
-                  </h3>
-                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary">
-                    {lesson.level && (
-                      <span className="inline-flex items-center gap-1 font-display uppercase tracking-wider text-violet">
-                        <GraduationCap size={12} />
-                        {lesson.level}
-                      </span>
-                    )}
-                    <span className="truncate">
-                      Muallif: <span className="text-white/90">{lesson.author || "Maroqli.uz"}</span>
-                    </span>
+                {/* Info Section */}
+                <div className="flex space-x-3 px-1">
+                  {/* Author/Channel Avatar */}
+                  <div className="w-9 h-9 rounded-full bg-brand-gradient text-xs font-bold text-white flex items-center justify-center shrink-0 shadow-sm border border-white/10 uppercase select-none">
+                    {lesson.author?.[0]?.toUpperCase() || "M"}
+                  </div>
+
+                  {/* Metadata */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-display text-sm font-bold text-white leading-snug group-hover:text-primary transition-colors line-clamp-2">
+                      {lesson.title}
+                    </h3>
+                    <p className="text-xs text-secondary mt-1 font-semibold truncate hover:text-white transition-colors">
+                      {lesson.author || "Maroqli.uz"}
+                    </p>
+                    <div className="flex items-center gap-1.5 text-[11px] text-secondary/80 mt-0.5">
+                      {lesson.level && (
+                        <>
+                          <span className="text-violet font-semibold">{lesson.level}</span>
+                          <span>•</span>
+                        </>
+                      )}
+                      <span>{new Date(lesson.created_at || Date.now()).toLocaleDateString('uz-UZ', { month: 'short', day: 'numeric' })}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* O'ng ko'rsatkich */}
-                <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-bold text-secondary transition-all group-hover:border-primary group-hover:text-primary sm:flex">
-                  <Play size={12} className="fill-current" />
-                  Ko'rish
-                </div>
-              </button>
+              </div>
             ))}
           </motion.div>
         )}
+
       </div>
     </main>
   );
