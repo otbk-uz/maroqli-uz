@@ -27,6 +27,7 @@ export default function StreamDashboardPage() {
   const [showKey, setShowKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [guideTab, setGuideTab] = useState<"PC" | "MOBILE">("MOBILE");
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   // Form states
   const [title, setTitle] = useState("");
@@ -38,12 +39,17 @@ export default function StreamDashboardPage() {
   const SERVER_URL = "rtmps://global-live.mux.com:5222/app";
 
   useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydrated) return;
     if (!isAuthenticated) {
       router.push("/login");
       return;
     }
     fetchSettings();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, hasHydrated]);
 
   const fetchSettings = async () => {
     if (!user) return;
@@ -153,7 +159,7 @@ export default function StreamDashboardPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  if (loading) {
+  if (!hasHydrated || loading) {
     return (
       <main className="min-h-screen bg-background text-white">
         <Navbar />
