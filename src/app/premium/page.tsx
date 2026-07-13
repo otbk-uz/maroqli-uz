@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Check, X, Award, Star, Sparkles, Crown, Zap } from "lucide-react";
+import { Check, X, Award, Star, Sparkles, Crown, Zap, Upload, FileText, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -23,6 +23,9 @@ export default function PremiumPage() {
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
+  const [paymentRequest, setPaymentRequest] = useState<any>(null);
 
   const PLANS = [
     {
@@ -103,6 +106,19 @@ export default function PremiumPage() {
           is_premium: data.is_premium || false
         }, useAuthStore.getState().token || "");
       }
+      // Fetch latest premium payment request
+      const { data: reqData } = await supabase
+        .from('payment_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('item_type', 'PREMIUM')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (reqData) {
+        setPaymentRequest(reqData);
+      }
     } catch (err) {
       console.error("Obunani yuklashda xatolik:", err);
     } finally {
@@ -117,6 +133,87 @@ export default function PremiumPage() {
     }
     setSelectedPlan(planKey);
     setShowModal(true);
+  };
+
+  const handleSubmitReceipt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receiptFile || !user || !selectedPlan) return;
+
+    setSubmittingPayment(true);
+    try {
+      const plan = PLANS.find(p => p.key === selectedPlan);
+      if (!plan) throw new Error("Plan not found");
+
+      const amountVal = parseFloat(plan.price.replace(/[^\d]/g, ''));
+
+      const fileExt = receiptFile.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}_receipt.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('receipts')
+        .upload(fileName, receiptFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(fileName);
+
+      // 1. Insert locally
+      const { data: requestData, error: insertError } = await supabase
+        .from('payment_requests')
+        .insert({
+          user_id: user.id,
+          item_type: 'PREMIUM',
+          item_id: null,
+          amount: amountVal,
+          receipt_url: publicUrl,
+          status: 'PENDING'
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 2. Notify Telegram via API
+      const response = await fetch('/api/payments/submit-request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().token || ''}`,
+        },
+        body: JSON.stringify({
+          requestId: requestData.id,
+          itemType: 'PREMIUM',
+          itemId: null,
+          amount: amountVal,
+          receiptUrl: publicUrl,
+          itemName: plan.name,
+          username: user.username || user.email?.split('@')[0] || 'username'
+        })
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData.error || "To'lov arizasini yuborishda xatolik yuz berdi.");
+      }
+
+      alert("To'lov cheki yuborildi! Admin tasdiqlashi bilan Premium obuna faollashadi.");
+      setShowModal(false);
+      setReceiptFile(null);
+
+      setPaymentRequest({
+        id: resData.requestId,
+        status: 'PENDING',
+        receipt_url: publicUrl,
+        amount: amountVal
+      });
+    } catch (err: any) {
+      console.error("Receipt submission error:", err);
+      alert(err.message || "Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
+    } finally {
+      setSubmittingPayment(false);
+    }
   };
 
   return (
@@ -202,6 +299,27 @@ export default function PremiumPage() {
                 </div>
                 <div className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider">
                   {t("active_status", "Faol Mavqei")}
+                </div>
+              </motion.div>
+            ) : paymentRequest?.status === 'PENDING' ? (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="relative overflow-hidden rounded-3xl bg-amber-500/10 border border-amber-500/30 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+              >
+                <div className="flex items-center gap-4 text-center md:text-left">
+                  <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl">
+                    <Clock size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-amber-400">To'lov tekshirilmoqda</h3>
+                    <p className="text-sm text-secondary">
+                      Siz yuborgan to'lov cheki admin tomonidan tasdiqlanish jarayonida. Tasdiqlangach, Premium obuna avtomatik faollashadi.
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider">
+                  Kutish jarayonida
                 </div>
               </motion.div>
             ) : (
@@ -349,55 +467,109 @@ export default function PremiumPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass-card relative w-full max-w-md p-8 overflow-hidden shadow-2xl text-center"
+              className="glass-card relative w-full max-w-md p-8 overflow-hidden shadow-2xl"
             >
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setReceiptFile(null);
+                }}
+                className="absolute top-4 right-4 text-secondary hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all"
+              >
+                <X size={18} />
+              </button>
+
               <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-4">
                 <Crown size={26} className="fill-current" />
               </div>
-              <h3 className="font-display text-2xl font-black mb-4">{t("payment", "To'lov")}</h3>
-              <p className="text-sm text-secondary mb-6 leading-relaxed">
-                {t("telegram_payment_desc", "Premium obunani xarid qilish uchun to'lovni amalga oshiring va to'lov chekini bizning Telegram administratorimizga yuboring.")}
-              </p>
-
-              <div className="flex flex-col gap-4">
-                {(() => {
-                  const plan = PLANS.find(p => p.key === selectedPlan);
-                  const planName = plan ? plan.name : selectedPlan;
-                  const messageText = `Salom, men Premium obuna sotib olmoqchiman.
-
-Ma'lumotlarim:
-- Nickname: ${user?.nickname || user?.username || "Noma'lum"}
-- Email: ${user?.email || "Noma'lum"}
-- ID: ${user?.id || "Noma'lum"}
-
-Tanlangan reja: ${planName}
-
-To'lov chekini quyida yuboraman:`;
-
-                  const telegramUrl = `https://t.me/izi_uzb?text=${encodeURIComponent(messageText)}`;
-
-                  return (
-                    <a
-                      href={telegramUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 p-4 rounded-xl border border-[#0088cc]/50 bg-[#0088cc]/10 hover:bg-[#0088cc]/20 transition-all font-semibold text-[#0088cc]"
+              <h3 className="font-display text-xl font-black mb-4 text-center">Premium Obuna To'lovi</h3>
+              
+              <form onSubmit={handleSubmitReceipt} className="space-y-4 text-left">
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-3">
+                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">Karta raqami (P2P)</p>
+                  <div className="flex items-center justify-between bg-black/40 px-3 py-2.5 rounded-xl border border-white/5">
+                    <div>
+                      <code className="text-sm text-white font-mono select-all tracking-wider">9860 0101 3799 2664</code>
+                      <p className="text-[8px] text-secondary mt-0.5 uppercase font-bold">Zokirjonov Isfandiyor</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText("9860010137992664");
+                        alert("Karta raqami nusxalandi!");
+                      }}
+                      className="text-xs text-primary font-bold hover:underline"
                     >
-                      <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.19-.08-.05-.19-.02-.27 0-.11.03-1.84 1.18-5.21 3.45-.49.34-.94.5-1.35.49-.45-.01-1.32-.26-1.96-.46-.79-.26-1.42-.4-1.36-.84.03-.23.35-.47.96-.73 3.78-1.64 6.3-2.73 7.55-3.25 3.59-1.49 4.33-1.75 4.81-1.76.11 0 .35.03.48.14.11.09.14.22.15.34-.01.07-.01.18-.03.26z"/>
-                      </svg>
-                      @izi_uzb ga o'tish
-                    </a>
-                  );
-                })()}
-              </div>
+                      Nusxalash
+                    </button>
+                  </div>
 
-              <button
-                onClick={() => setShowModal(false)}
-                className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 rounded-lg text-sm text-secondary font-medium transition-all"
-              >
-                {t("close", "Yopish")}
-              </button>
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-secondary">To'lov summasi:</span>
+                    <span className="font-black text-amber-400 text-sm">
+                      {PLANS.find(p => p.key === selectedPlan)?.price}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-secondary leading-relaxed bg-primary/5 border border-primary/10 p-3 rounded-xl">
+                  Har qanday to'lov ilovasi (Click, Payme, Uzum) orqali yuqoridagi kartaga to'lovni amalga oshiring va <span className="font-bold text-white">chek skrinshotini</span> pastda yuklang.
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-secondary block">To'lov Cheki (Skrinshot)</label>
+                  <div className="relative border border-dashed border-white/10 hover:border-primary/50 transition-colors rounded-2xl p-5 text-center cursor-pointer bg-black/20">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      required
+                      onChange={(e) => {
+                        if (e.target.files && e.target.files.length > 0) {
+                          setReceiptFile(e.target.files[0]);
+                        }
+                      }}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                    />
+                    {receiptFile ? (
+                      <div className="flex flex-col items-center justify-center space-y-1">
+                        <FileText size={20} className="text-primary" />
+                        <p className="text-xs font-bold text-white truncate max-w-xs">{receiptFile.name}</p>
+                        <p className="text-[9px] text-secondary">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center space-y-1 text-secondary">
+                        <Upload size={20} className="mx-auto" />
+                        <p className="text-xs font-bold">Chek rasmini yuklash</p>
+                        <p className="text-[9px] text-secondary/60">PNG, JPG (maks 5MB)</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setReceiptFile(null);
+                    }}
+                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all border border-white/5"
+                  >
+                    Bekor qilish
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submittingPayment}
+                    className="flex-1 btn-primary py-3 text-xs font-bold flex items-center justify-center space-x-2"
+                  >
+                    {submittingPayment ? (
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <span>Chekni yuborish</span>
+                    )}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
