@@ -19,7 +19,7 @@ import {
   X,
   Home,
   GraduationCap,
- 
+  Globe,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
@@ -169,31 +169,44 @@ export default function FloatingConsoleHUD() {
 
         {/* Right actions */}
         <div className="z-10 flex flex-shrink-0 items-center gap-2.5">
-          {/* Language — segmented control */}
-          <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-0.5">
-            {LOCALES.map((lng) => {
-              const active = locale === lng.code;
-              return (
-                <button
-                  key={lng.code}
-                  onClick={() => setLocale(lng.code)}
-                  aria-label={`Til: ${lng.label}`}
-                  aria-pressed={active}
-                  className={`relative rounded-full px-2 py-1 text-[10px] font-display font-black transition-colors ${
-                    active ? "text-white" : "text-secondary hover:text-white"
-                  }`}
+          {/* Language Selector Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              aria-label="Tilni o'zgartirish"
+              className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-display font-black text-secondary transition-colors hover:text-white hover:bg-white/10 hover:border-white/20"
+            >
+              <Globe size={13} className="text-secondary" />
+              <span>{locale === "uz" ? "O'Z" : locale === "ru" ? "РУ" : "EN"}</span>
+            </button>
+
+            <AnimatePresence>
+              {showLangMenu && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.16 }}
+                  className="glass-card absolute right-0 z-50 mt-2 w-32 overflow-hidden rounded-2xl border border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]"
                 >
-                  {active && (
-                    <motion.span
-                      layoutId="desktop-lang-active"
-                      className="absolute inset-0 rounded-full bg-brand-gradient shadow-glow"
-                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
-                    />
-                  )}
-                  <span className="relative z-10">{lng.label}</span>
-                </button>
-              );
-            })}
+                  {LOCALES.map((lng) => (
+                    <button
+                      key={lng.code}
+                      onClick={() => {
+                        setLocale(lng.code);
+                        setShowLangMenu(false);
+                      }}
+                      className={`w-full px-4 py-2.5 text-left text-xs transition-colors hover:bg-white/5 flex items-center justify-between ${
+                        locale === lng.code ? "font-black text-primary bg-white/[0.02]" : "text-secondary font-medium"
+                      }`}
+                    >
+                      <span>{lng.code === "uz" ? "O'zbekcha" : lng.code === "ru" ? "Русский" : "English"}</span>
+                      {locale === lng.code && <span className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {isAuthenticated && user ? (
