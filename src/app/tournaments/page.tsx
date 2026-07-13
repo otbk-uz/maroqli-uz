@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, useTranslation } from "@/lib/store";
+import TournamentLiveBanner from "@/components/TournamentLiveBanner";
 
 interface Tournament {
   id: string;
@@ -231,6 +232,9 @@ const TournamentsPage = () => {
           )}
         </div>
       </section>
+
+      {/* Jonli efir — KATTA, hamma ko'radi (faqat efir bo'lsa) */}
+      <TournamentLiveBanner />
 
       {/* Tournament Grid */}
       <section className="pb-32">
