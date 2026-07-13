@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar, Crown } from "lucide-react";
+import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar, Crown, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -55,7 +55,7 @@ const TournamentsPage = () => {
 
         const { data, error } = await query.order('created_at', { ascending: false });
         if (error) throw error;
-        
+
         if (data) {
           const formatted = data.map((tItem: any) => ({
             ...tItem,
@@ -90,46 +90,71 @@ const TournamentsPage = () => {
     return "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=2070";
   };
 
+  // Statusni Uzbekcha yorliq + ranglarga o'girish (faqat vizual)
+  const getStatusMeta = (status: string) => {
+    const s = (status || "").toUpperCase();
+    if (s === "LIVE" || s === "ONGOING") {
+      return { label: t("status_live", "Faol"), pill: "bg-success/15 text-success border-success/30" };
+    }
+    if (s === "UPCOMING") {
+      return { label: t("status_upcoming", "Kutilmoqda"), pill: "bg-violet/15 text-violet border-violet/30" };
+    }
+    return { label: t("status_finished", "Tugagan"), pill: "bg-white/10 text-secondary border-white/15" };
+  };
+
+  const filterTabs = [
+    { value: "ALL", label: t("all", "Barchasi") },
+    { value: "LIVE", label: t("status_live", "Faol") },
+    { value: "UPCOMING", label: t("status_upcoming", "Kutilmoqda") },
+    { value: "FINISHED", label: t("status_finished", "Tugagan") },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#050506]">
+    <main className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Premium Header */}
-      <section className="relative pt-40 pb-20 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-primary/10 to-transparent -z-10" />
-        <div className="container mx-auto px-4 md:px-6">
-          <div className="max-w-3xl mb-16">
+      <section className="relative pt-36 pb-14 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_50%_-10%,rgba(255,51,85,0.16),transparent_60%)]" />
+        <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_85%_0%,rgba(139,92,246,0.12),transparent_55%)]" />
+
+        <div className="container-app">
+          <div className="max-w-3xl mb-12">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center space-x-2 text-primary font-bold text-xs uppercase tracking-widest mb-4"
+              className="chip mb-5 border-primary/25 bg-primary/10 text-primary"
             >
               <Trophy size={14} />
-              <span>{t("tournaments_subtitle", "Raqobat boshlanmoqda")}</span>
+              <span className="font-display uppercase tracking-[0.2em] text-[11px]">
+                {t("tournaments_subtitle", "Raqobat boshlanmoqda")}
+              </span>
             </motion.div>
-            <motion.h1 
+
+            <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-5xl md:text-7xl font-black text-white mb-6 tracking-tighter"
+              className="font-display text-4xl sm:text-5xl md:text-7xl font-black text-white mb-6 tracking-tight leading-[1.05] uppercase"
             >
               {locale === "ru" ? (
                 <>
                   Профессиональные <br />
-                  <span className="text-primary">Турниры</span>
+                  <span className="text-gradient">Турниры</span>
                 </>
               ) : locale === "en" ? (
                 <>
                   Professional <br />
-                  <span className="text-primary">Tournaments</span>
+                  <span className="text-gradient">Tournaments</span>
                 </>
               ) : (
                 <>
                   Professional <br />
-                  <span className="text-primary">Turnirlar</span>
+                  <span className="text-gradient">Turnirlar</span>
                 </>
               )}
             </motion.h1>
-            <motion.p 
+
+            <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -139,128 +164,178 @@ const TournamentsPage = () => {
             </motion.p>
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 bg-white/5 backdrop-blur-xl border border-white/10 p-4 rounded-3xl">
-            <div className="flex items-center space-x-2 overflow-x-auto no-scrollbar p-1">
-              {["ALL", "LIVE", "UPCOMING", "FINISHED"].map((statusOption) => (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 glass-card p-3 md:p-4"
+          >
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-1">
+              {filterTabs.map((tab) => (
                 <button
-                  key={statusOption}
-                  onClick={() => setFilter(statusOption)}
-                  className={`px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
-                    filter === statusOption 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                    : "text-secondary hover:text-white hover:bg-white/5"
+                  key={tab.value}
+                  onClick={() => setFilter(tab.value)}
+                  className={`px-5 py-2.5 rounded-full font-display text-[11px] font-bold uppercase tracking-[0.15em] transition-all whitespace-nowrap ${
+                    filter === tab.value
+                      ? "bg-primary text-white shadow-glow"
+                      : "text-secondary hover:text-white hover:bg-white/5"
                   }`}
                 >
-                  {statusOption === "ALL" ? t("all", "Barchasi") : statusOption}
+                  {tab.label}
                 </button>
               ))}
             </div>
-            
-            <div className="flex items-center space-x-4">
+
+            <div className="flex items-center gap-3">
               <div className="relative flex-1 lg:w-80">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-secondary" size={18} />
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder={t("search_tournament", "Turnir qidirish...")}
-                  className="bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-3 outline-none focus:border-primary/50 transition-all w-full text-sm font-medium text-white"
+                  className="bg-white/5 border border-white/10 rounded-full pl-12 pr-4 py-3 outline-none focus:border-primary/50 transition-all w-full text-sm font-medium text-white placeholder:text-secondary"
                 />
               </div>
               {isOrganizer && (
                 <button
                   onClick={() => setShowCreateModal(true)}
-                  className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
+                  className="btn-primary !py-3 !px-6 font-display uppercase tracking-widest text-xs whitespace-nowrap"
                 >
-                  + Turnir tashkil qilish
+                  + {t("create_tournament", "Turnir tashkil qilish")}
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
+
+          {/* Count badge */}
+          {!loading && tournaments.length > 0 && (
+            <div className="mt-6 flex items-center gap-2 text-secondary">
+              <Sparkles size={15} className="text-violet" />
+              <span className="font-display text-xs font-bold uppercase tracking-[0.18em]">
+                {tournaments.length} {t("tournaments_count_label", "ta turnir topildi")}
+              </span>
+            </div>
+          )}
         </div>
       </section>
- 
+
       {/* Tournament Grid */}
       <section className="pb-32">
-        <div className="container mx-auto px-4 md:px-6">
+        <div className="container-app">
           {loading ? (
-            <div className="flex justify-center items-center py-40">
-              <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[0, 1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="glass-card overflow-hidden flex flex-col h-full">
+                  <div className="skeleton aspect-[16/9] rounded-none" />
+                  <div className="p-8 space-y-6">
+                    <div className="skeleton h-7 w-3/4" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="skeleton h-20" />
+                      <div className="skeleton h-20" />
+                    </div>
+                    <div className="skeleton h-12 w-full" />
+                    <div className="skeleton h-14 w-full rounded-2xl" />
+                  </div>
+                </div>
+              ))}
             </div>
+          ) : tournaments.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card py-24 px-6 text-center flex flex-col items-center"
+            >
+              <div className="relative mb-8">
+                <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+                <div className="relative w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center animate-float">
+                  <Trophy size={40} className="text-primary" />
+                </div>
+              </div>
+              <h3 className="font-display text-2xl md:text-3xl font-black text-white mb-3 uppercase tracking-tight">
+                {t("no_active_tournaments", "Hozircha faol turnirlar yo'q")}
+              </h3>
+              <p className="text-secondary max-w-md">
+                {t("try_changing_filters", "Qidiruv so'rovini yoki filtrlarni o'zgartirib ko'ring")}
+              </p>
+            </motion.div>
           ) : (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <AnimatePresence mode="popLayout">
-                  {tournaments.map((tItem, i) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <AnimatePresence mode="popLayout">
+                {tournaments.map((tItem, i) => {
+                  const statusMeta = getStatusMeta(tItem.status);
+                  const isLive = (tItem.status || "").toUpperCase() === "LIVE" || (tItem.status || "").toUpperCase() === "ONGOING";
+                  return (
                     <motion.div
                       layout
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
+                      initial={{ opacity: 0, y: 24 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
                       transition={{ duration: 0.4, delay: i * 0.05 }}
                       key={tItem.id}
-                      className="glass-card overflow-hidden group hover:border-primary/40 transition-all duration-500 flex flex-col h-full"
+                      className="card-interactive overflow-hidden group flex flex-col h-full hover:border-primary/40"
                     >
                       {/* Card Header with Image */}
                       <div className="aspect-[16/9] relative overflow-hidden bg-white/5">
-                        <img 
-                          src={getGameImage(tItem.game)} 
+                        <img
+                          src={getGameImage(tItem.game)}
                           alt={tItem.title}
                           className="w-full h-full object-cover opacity-50 group-hover:scale-110 group-hover:opacity-70 transition-all duration-700"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#050506] via-[#050506]/20 to-transparent" />
-                        
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
+
                         <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[85%]">
                           {tItem.is_premium && (
-                            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest shadow-xl flex items-center gap-0.5">
+                            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-xl flex items-center gap-1">
                               <Crown size={10} className="fill-current" />
-                              PREMIUM
+                              Premium
                             </span>
                           )}
-                          <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-xl ${
-                            tItem.status === 'LIVE' || tItem.status === 'ONGOING' ? 'bg-primary' : tItem.status === 'UPCOMING' ? 'bg-blue-500' : 'bg-white/20'
-                          }`}>
-                            {tItem.status}
+                          <span className={`px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest backdrop-blur-md ${statusMeta.pill}`}>
+                            {statusMeta.label}
                           </span>
-                          <span className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                          <span className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white">
                             {tItem.game}
                           </span>
                         </div>
 
-                        {tItem.status === 'LIVE' && (
-                          <div className="absolute bottom-4 right-4 flex items-center space-x-2 bg-primary/20 backdrop-blur-md px-3 py-1.5 rounded-lg border border-primary/30">
-                            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">LIVE NOW</span>
+                        {isLive && (
+                          <div className="absolute bottom-4 right-4 flex items-center gap-2 bg-primary/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-primary/30">
+                            <span className="relative flex h-2 w-2">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                            </span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Live now</span>
                           </div>
                         )}
                       </div>
 
                       {/* Card Body */}
-                      <div className="p-8 flex-1 flex flex-col">
-                        <h3 className="text-2xl font-black text-white mb-6 group-hover:text-primary transition-colors line-clamp-2 min-h-[4rem]">
+                      <div className="p-7 flex-1 flex flex-col">
+                        <h3 className="font-display text-xl md:text-2xl font-black text-white mb-6 group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem] tracking-tight">
                           {tItem.title}
                         </h3>
-                        
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                            <div className="flex items-center space-x-2 text-secondary mb-1">
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 group-hover:border-primary/20 transition-colors">
+                            <div className="flex items-center gap-2 text-secondary mb-1.5">
                               <Trophy size={14} className="text-primary" />
                               <span className="text-[10px] font-black uppercase tracking-widest">{t("prize_label", "Sovrin")}</span>
                             </div>
-                            <p className="text-xl font-black text-white">
+                            <p className="font-display text-xl font-black text-gradient">
                               {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : t("free", "Bepul")}
                             </p>
                           </div>
-                          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
-                            <div className="flex items-center space-x-2 text-secondary mb-1">
-                              <Users size={14} className="text-primary" />
+                          <div className="bg-white/5 p-4 rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
+                            <div className="flex items-center gap-2 text-secondary mb-1.5">
+                              <Users size={14} className="text-violet" />
                               <span className="text-[10px] font-black uppercase tracking-widest">{t("teams_label", "Jamoalar")}</span>
                             </div>
-                            <p className="text-xl font-black text-white">{tItem.participant_count || 0}/{tItem.max_teams}</p>
+                            <p className="font-display text-xl font-black text-white">{tItem.participant_count || 0}/{tItem.max_teams}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-center space-x-3 text-secondary text-xs font-bold mb-8 bg-white/5 p-3 rounded-xl border border-white/5">
+                        <div className="flex items-center gap-3 text-secondary text-xs font-bold mb-6 bg-white/5 p-3 rounded-xl border border-white/5">
                           <Calendar size={14} className="text-primary" />
                           <span className="uppercase tracking-widest">
                             {new Date(tItem.start_date).toLocaleDateString(
@@ -276,39 +351,30 @@ const TournamentsPage = () => {
                         </div>
 
                         <div className="mt-auto">
-                          <Link 
+                          <Link
                             href={`/tournaments/${tItem.id}`}
-                            className="w-full py-4 bg-white/5 hover:bg-primary text-white font-black rounded-2xl transition-all duration-300 border border-white/10 hover:border-primary active:scale-95 flex items-center justify-center space-x-2"
+                            className="w-full py-3.5 bg-white/5 hover:bg-primary text-white font-display font-bold uppercase tracking-widest text-xs rounded-2xl transition-all duration-300 border border-white/10 hover:border-primary hover:shadow-glow active:scale-95 flex items-center justify-center gap-2"
                           >
                             {tItem.status === 'FINISHED' ? (
                               <>
                                 <span>{t("view_results", "Natijalarni ko'rish")}</span>
-                                <ArrowRight size={18} />
+                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                               </>
                             ) : (
                               <>
-                                <Gamepad2 size={18} />
+                                <Gamepad2 size={16} />
                                 <span>{t("more_details", "Batafsil ma'lumot")}</span>
+                                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                               </>
                             )}
                           </Link>
                         </div>
                       </div>
                     </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-
-              {tournaments.length === 0 && (
-                <div className="py-40 text-center">
-                  <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 border border-white/10">
-                    <Search size={32} className="text-secondary" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{t("no_tournaments_found", "Turnirlar topilmadi")}</h3>
-                  <p className="text-secondary">{t("try_changing_filters", "Qidiruv so'rovini yoki filtrlarni o'zgartirib ko'ring")}</p>
-                </div>
-              )}
-            </>
+                  );
+                })}
+              </AnimatePresence>
+            </div>
           )}
         </div>
       </section>
@@ -328,14 +394,14 @@ const TournamentsPage = () => {
               exit={{ scale: 0.95, opacity: 0 }}
               className="glass-card max-w-2xl w-full p-8 rounded-3xl border border-white/10 max-h-[90vh] overflow-y-auto"
             >
-              <h2 className="text-2xl font-black mb-6 text-white">Yangi Turnir Tashkil Qilish</h2>
-              
+              <h2 className="font-display text-2xl font-black mb-6 text-white uppercase tracking-tight">Yangi Turnir Tashkil Qilish</h2>
+
               <form className="space-y-6">
                 <div>
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Turnir Nomi</label>
                   <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin turi</label>

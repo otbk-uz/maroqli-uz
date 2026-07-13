@@ -3,10 +3,9 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { Check, X, Award, Star, Sparkles } from "lucide-react";
+import { Check, X, Award, Star, Sparkles, Crown, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
-import api from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 interface SubscriptionDetails {
@@ -67,6 +66,8 @@ export default function PremiumPage() {
     { name: t("feat_7", "Texnik ko'makda birinchi navbat"), free: false, premium: true },
   ];
 
+  const PREMIUM_FEATURES = FEATURES.filter((f) => f.premium);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetchSubscription();
@@ -85,16 +86,16 @@ export default function PremiumPage() {
         .select('is_premium, premium_expires_at')
         .eq('id', user.id)
         .single();
-        
+
       if (error) throw error;
-      
+
       setSubscription({
         has_active_subscription: data.is_premium || false,
         plan_name: data.is_premium ? "Premium (Faol)" : "Free Plan",
         is_active: data.is_premium || false,
         expires_at: data.premium_expires_at || null
       });
-      
+
       // Update local storage user premium status if changed
       if (data.is_premium !== user.is_premium) {
         setAuth({
@@ -122,48 +123,49 @@ export default function PremiumPage() {
     <div className="min-h-screen bg-background text-white">
       <Navbar />
 
-      <div className="pt-32 pb-20 container mx-auto px-4 max-w-6xl">
-        {/* Header */}
-        <div className="text-center mb-16 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-primary/20 blur-[120px] rounded-full -z-10" />
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <span className="bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-widest uppercase px-4 py-1.5 rounded-full inline-flex items-center gap-1.5 mb-4">
-              <Sparkles size={12} className="animate-spin" /> {t("premium_subtitle", "Maroqli.uz PREMIUM")}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6">
-              {locale === 'ru' ? (
-                <>
-                  Безграничные Возможности и <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
-                    Премиум Гейминг
-                  </span>
-                </>
-              ) : locale === 'en' ? (
-                <>
-                  Unlimited Opportunities & <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
-                    Premium Gaming Experience
-                  </span>
-                </>
-              ) : (
-                <>
-                  Cheksiz Imkoniyatlar va <br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-pink-500 to-amber-400">
-                    Premium Gaming Tajriba
-                  </span>
-                </>
-              )}
-            </h1>
-            <p className="text-secondary max-w-2xl mx-auto text-base md:text-lg">
-              {t("premium_desc", "Hamjamiyat turnirlarida birinchilardan bo'ling, maxsus sovrinlarni yutib oling va platformani qo'llab-quvvatlab o'zgacha mavqega ega bo'ling.")}
-            </p>
-          </motion.div>
-        </div>
+      {/* Hero */}
+      <section className="relative pt-36 pb-16 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[620px] -z-10 bg-[radial-gradient(circle_at_50%_-5%,rgba(255,51,85,0.20),transparent_60%)]" />
+        <div className="absolute inset-x-0 top-0 h-[620px] -z-10 bg-[radial-gradient(circle_at_80%_10%,rgba(139,92,246,0.16),transparent_55%)]" />
 
+        <div className="container-app max-w-6xl mx-auto">
+          <div className="text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <span className="chip mb-6 border-primary/25 bg-primary/10 text-primary">
+                <Sparkles size={13} className="animate-pulse-glow" />
+                <span className="font-display uppercase tracking-[0.2em] text-[11px]">{t("premium_subtitle", "Maroqli.uz PREMIUM")}</span>
+              </span>
+              <h1 className="font-display text-4xl md:text-6xl font-black tracking-tight mb-6 leading-[1.05] uppercase">
+                {locale === 'ru' ? (
+                  <>
+                    Безграничные Возможности и <br />
+                    <span className="text-gradient">Премиум Гейминг</span>
+                  </>
+                ) : locale === 'en' ? (
+                  <>
+                    Unlimited Opportunities & <br />
+                    <span className="text-gradient">Premium Gaming Experience</span>
+                  </>
+                ) : (
+                  <>
+                    Cheksiz Imkoniyatlar va <br />
+                    <span className="text-gradient">Premium Gaming Tajriba</span>
+                  </>
+                )}
+              </h1>
+              <p className="text-secondary max-w-2xl mx-auto text-base md:text-lg leading-relaxed">
+                {t("premium_desc", "Hamjamiyat turnirlarida birinchilardan bo'ling, maxsus sovrinlarni yutib oling va platformani qo'llab-quvvatlab o'zgacha mavqega ega bo'ling.")}
+              </p>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <div className="container-app max-w-6xl mx-auto pb-24">
         {/* User Active Subscription info */}
         {isAuthenticated && subscription && (
           <div className="mb-12 max-w-3xl mx-auto">
@@ -171,10 +173,10 @@ export default function PremiumPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6"
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/30 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6"
               >
                 <div className="flex items-center gap-4 text-center md:text-left">
-                  <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                  <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl">
                     <Award size={32} />
                   </div>
                   <div>
@@ -206,10 +208,10 @@ export default function PremiumPage() {
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="rounded-2xl bg-card border border-white/5 p-6 flex flex-col md:flex-row items-center justify-between gap-6"
+                className="glass-card p-6 flex flex-col md:flex-row items-center justify-between gap-6"
               >
                 <div className="flex items-center gap-4 text-center md:text-left">
-                  <div className="p-3 bg-white/5 text-secondary rounded-xl">
+                  <div className="p-3 bg-white/5 text-secondary rounded-2xl">
                     <Star size={32} />
                   </div>
                   <div>
@@ -224,7 +226,7 @@ export default function PremiumPage() {
         )}
 
         {/* Plans Grid */}
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
+        <div className="grid md:grid-cols-3 gap-6 lg:gap-8 mb-20 items-start">
           {PLANS.map((plan, idx) => {
             return (
               <motion.div
@@ -232,36 +234,58 @@ export default function PremiumPage() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
-                className={`relative rounded-3xl bg-card border transition-all duration-300 flex flex-col justify-between overflow-hidden group ${
-                  plan.popular ? "border-primary scale-100 md:scale-105 shadow-lg shadow-primary/10" : "border-white/5 hover:border-white/10"
+                className={`relative rounded-3xl bg-card border transition-all duration-300 flex flex-col overflow-hidden group ${
+                  plan.popular
+                    ? "border-primary/60 md:scale-105 shadow-glow"
+                    : "border-white/10 hover:border-white/20 hover:shadow-card-hover"
                 }`}
               >
                 {plan.popular && (
-                  <div className="absolute top-0 right-0 left-0 bg-primary text-black text-center text-xs font-bold py-1.5 uppercase tracking-widest font-mono">
-                    {t("most_popular", "Eng Ommabop")}
-                  </div>
+                  <>
+                    <div className="absolute -right-16 -top-16 w-40 h-40 bg-primary/20 blur-3xl rounded-full" />
+                    <div className="relative bg-brand-gradient bg-[length:200%_200%] animate-gradient-move text-white text-center text-[11px] font-black py-2 uppercase tracking-[0.2em] flex items-center justify-center gap-1.5">
+                      <Crown size={13} className="fill-current" />
+                      {t("most_popular", "Eng Ommabop")}
+                    </div>
+                  </>
                 )}
-                
-                <div className={`p-8 ${plan.popular ? "pt-12" : ""}`}>
+
+                <div className={`p-7 md:p-8 ${plan.popular ? "" : "pt-8"} flex flex-col flex-1`}>
+                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${plan.color} flex items-center justify-center mb-5 shadow-lg`}>
+                    <Zap size={22} className="text-white" />
+                  </div>
+
                   <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                  <p className="text-xs text-secondary mb-6 h-12 leading-relaxed">{plan.desc}</p>
-                  
+                  <p className="text-xs text-secondary mb-6 leading-relaxed min-h-[3rem]">{plan.desc}</p>
+
                   <div className="mb-6">
-                    <span className="text-4xl font-extrabold tracking-tight">{plan.price}</span>
-                    <span className="text-secondary text-sm ml-2">/ {plan.period}</span>
+                    <div className="flex items-end gap-2">
+                      <span className="font-display text-4xl font-black tracking-tight tabular-nums">{plan.price}</span>
+                      <span className="text-secondary text-sm mb-1">/ {plan.period}</span>
+                    </div>
                     {plan.oldPrice && (
-                      <div className="text-sm text-red-400 line-through mt-1 font-semibold">{plan.oldPrice}</div>
+                      <div className="text-sm text-primary/80 line-through mt-1 font-semibold">{plan.oldPrice}</div>
                     )}
                   </div>
-                </div>
 
-                <div className="px-8 pb-8 pt-0 mt-auto">
+                  {/* Feature checklist */}
+                  <ul className="space-y-2.5 mb-8 flex-1">
+                    {PREMIUM_FEATURES.map((feat, i) => (
+                      <li key={i} className="flex items-start gap-2.5 text-xs text-secondary">
+                        <span className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${plan.popular ? "bg-primary/20 text-primary" : "bg-white/5 text-white/70"}`}>
+                          <Check size={11} className="stroke-[3]" />
+                        </span>
+                        <span className="leading-snug">{feat.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+
                   <button
                     onClick={() => handlePurchaseClick(plan.key)}
-                    className={`w-full py-4 rounded-xl font-bold text-center transition-all ${
+                    className={`w-full text-center text-sm ${
                       plan.popular
-                        ? "bg-primary text-white hover:bg-primary-hover shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                        : "bg-white/5 hover:bg-white/10 text-white"
+                        ? "btn-gradient !py-4"
+                        : "btn-outline !py-4"
                     }`}
                   >
                     {t("subscribe", "Obuna bo'lish")}
@@ -274,14 +298,14 @@ export default function PremiumPage() {
 
         {/* Features Table */}
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-center mb-10">{t("features_compare", "Rejalar Solishtiruvi")}</h2>
-          <div className="rounded-2xl border border-white/5 overflow-hidden bg-card backdrop-blur-md">
+          <h2 className="font-display text-2xl md:text-3xl font-black text-center mb-10 uppercase tracking-tight">{t("features_compare", "Rejalar Solishtiruvi")}</h2>
+          <div className="glass-card overflow-hidden">
             <div className="grid grid-cols-12 bg-white/5 border-b border-white/5 p-4 font-bold text-sm tracking-wider uppercase text-secondary">
               <div className="col-span-6 md:col-span-8">{t("features_label", "Imkoniyatlar")}</div>
               <div className="col-span-3 md:col-span-2 text-center">Free</div>
               <div className="col-span-3 md:col-span-2 text-center text-primary">Premium</div>
             </div>
-            
+
             <div className="divide-y divide-white/5">
               {FEATURES.map((feat, idx) => (
                 <div key={idx} className="grid grid-cols-12 p-4 text-sm items-center hover:bg-white/[0.02] transition-colors">
@@ -290,14 +314,16 @@ export default function PremiumPage() {
                     {feat.free ? (
                       <Check size={18} className="text-emerald-500" />
                     ) : (
-                      <X size={18} className="text-red-500/60" />
+                      <X size={18} className="text-white/25" />
                     )}
                   </div>
                   <div className="col-span-3 md:col-span-2 flex justify-center">
                     {feat.premium ? (
-                      <Check size={18} className="text-primary font-bold" />
+                      <span className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center">
+                        <Check size={15} className="text-primary stroke-[3]" />
+                      </span>
                     ) : (
-                      <X size={18} className="text-red-500/60" />
+                      <X size={18} className="text-white/25" />
                     )}
                   </div>
                 </div>
@@ -318,14 +344,17 @@ export default function PremiumPage() {
               onClick={() => setShowModal(false)}
               className="absolute inset-0 bg-black/75 backdrop-blur-sm"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-card border border-white/10 rounded-3xl p-8 overflow-hidden shadow-2xl text-center"
+              className="glass-card relative w-full max-w-md p-8 overflow-hidden shadow-2xl text-center"
             >
-              <h3 className="text-2xl font-bold mb-4">{t("payment", "To'lov")}</h3>
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-4">
+                <Crown size={26} className="fill-current" />
+              </div>
+              <h3 className="font-display text-2xl font-black mb-4">{t("payment", "To'lov")}</h3>
               <p className="text-sm text-secondary mb-6 leading-relaxed">
                 {t("telegram_payment_desc", "Premium obunani xarid qilish uchun to'lovni amalga oshiring va to'lov chekini bizning Telegram administratorimizga yuboring.")}
               </p>
@@ -344,7 +373,7 @@ Ma'lumotlarim:
 Tanlangan reja: ${planName}
 
 To'lov chekini quyida yuboraman:`;
-                  
+
                   const telegramUrl = `https://t.me/izi_uzb?text=${encodeURIComponent(messageText)}`;
 
                   return (

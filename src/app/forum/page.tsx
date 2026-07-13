@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { MessageSquare, Pin, Lock, User, Calendar, MessageCircle, PlusCircle, Search, ThumbsUp, X, Send } from "lucide-react";
+import { MessageSquare, Pin, Lock, User, Calendar, MessageCircle, PlusCircle, Search, ThumbsUp, X, Send, LifeBuoy, Flame, Trophy, Users, Gamepad2, Hash, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -38,6 +38,8 @@ interface Topic {
   user_reaction?: "like" | "dislike" | null;
   created_at: string;
 }
+
+const SECTION_ICONS = [MessageSquare, Flame, Trophy, Users, Gamepad2, Hash];
 
 const ForumPage = () => {
   const router = useRouter();
@@ -147,7 +149,7 @@ const ForumPage = () => {
 
         const { data, error } = await query;
         if (error) throw error;
-        
+
         if (data) {
           const formattedTopics = data.map((t: any) => ({
             id: t.id,
@@ -202,214 +204,313 @@ const ForumPage = () => {
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
       <Navbar />
-      <div className="container mx-auto px-4 md:px-6 pt-32 pb-20 relative z-10">
-        <div className="mb-8 flex flex-wrap gap-4 items-center justify-between">
+
+      {/* Premium Header */}
+      <section className="relative pt-36 pb-10 overflow-hidden">
+        <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_50%_-10%,rgba(255,51,85,0.16),transparent_60%)]" />
+        <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_85%_0%,rgba(139,92,246,0.12),transparent_55%)]" />
+
+        <div className="container-app">
           <BackButton />
-          
-          <div className="flex items-center gap-3">
-            <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 hidden md:flex">
-              <button
-                onClick={() => setActiveTab("topics")}
-                className={`py-2 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                  activeTab === "topics" ? "bg-primary text-white" : "text-secondary hover:text-white"
-                }`}
+
+          <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8 mt-2">
+            <div className="max-w-2xl">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="chip mb-5 border-primary/25 bg-primary/10 text-primary"
               >
-                Mavzular
-              </button>
-              <button
-                onClick={() => setActiveTab("chat")}
-                className={`py-2 px-6 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
-                  activeTab === "chat" ? "bg-primary text-white" : "text-secondary hover:text-white"
-                }`}
+                <MessageSquare size={14} />
+                <span className="font-display uppercase tracking-[0.2em] text-[11px]">
+                  {t("forum_short", "Hamjamiyat")}
+                </span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="font-display text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 tracking-tight leading-[1.05] uppercase"
               >
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                Ochiq Chat
-              </button>
+                {locale === "ru" ? (
+                  <>Игровой <span className="text-gradient">Форум</span></>
+                ) : locale === "en" ? (
+                  <>Gaming <span className="text-gradient">Forum</span></>
+                ) : (
+                  <>Gaming <span className="text-gradient">Forum</span></>
+                )}
+              </motion.h1>
+
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-secondary text-base md:text-lg leading-relaxed"
+              >
+                {t("forum_desc", "Gaming hamjamiyati bilan suhbatlashish, savol-javob va jonli chat bo'limi")}
+              </motion.p>
             </div>
 
+            {/* Actions */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="hidden md:flex bg-white/5 p-1 rounded-2xl border border-white/10">
+                <button
+                  onClick={() => setActiveTab("topics")}
+                  className={`py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                    activeTab === "topics" ? "bg-primary text-white shadow-glow" : "text-secondary hover:text-white"
+                  }`}
+                >
+                  Mavzular
+                </button>
+                <button
+                  onClick={() => setActiveTab("chat")}
+                  className={`py-2.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+                    activeTab === "chat" ? "bg-primary text-white shadow-glow" : "text-secondary hover:text-white"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                  Ochiq Chat
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  setShowSupportModal(true);
+                  setSupportSuccess(false);
+                }}
+                className="btn-outline !py-3 !px-5 text-xs uppercase tracking-wider gap-2 hidden md:inline-flex"
+              >
+                <LifeBuoy size={16} />
+                Adminga Murojaat
+              </button>
+
+              {isAuthenticated && activeTab === "topics" && (
+                <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider gap-2">
+                  <PlusCircle size={16} />
+                  <span>Yangi mavzu</span>
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="container-app pb-24 relative z-10">
+        {/* Search + Mobile tabs */}
+        <div className="flex flex-col gap-4 mb-8">
+          {activeTab === "topics" && (
+            <div className="relative w-full md:max-w-md">
+              <input
+                type="text"
+                placeholder="Mavzularni qidirish..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 outline-none focus:border-primary/50 text-sm text-white transition-colors"
+              />
+              <Search className="absolute left-4 top-4 text-secondary" size={16} />
+            </div>
+          )}
+
+          {/* Mobile Tabs */}
+          <div className="flex md:hidden bg-white/5 p-1 rounded-2xl border border-white/10 w-full">
             <button
-              onClick={() => {
-                setShowSupportModal(true);
-                setSupportSuccess(false);
-              }}
-              className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all hidden md:block"
+              onClick={() => setActiveTab("topics")}
+              className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
+                activeTab === "topics" ? "bg-primary text-white" : "text-secondary"
+              }`}
             >
-              Adminga Murojaat
+              Mavzular
             </button>
-
-            {isAuthenticated && activeTab === "topics" && (
-              <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider flex items-center space-x-2">
-                <PlusCircle size={16} />
-                <span>Yangi mavzu</span>
-              </Link>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight">Forum</h1>
-            <p className="text-secondary text-sm mt-2">Gaming hamjamiyati bilan suhbatlashish bo'limi</p>
+            <button
+              onClick={() => setActiveTab("chat")}
+              className={`flex-1 py-3 px-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                activeTab === "chat" ? "bg-primary text-white" : "text-secondary"
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              Ochiq Chat
+            </button>
           </div>
 
-          <div className="relative w-full md:w-80">
-            {activeTab === "topics" && (
-              <>
-                <input
-                  type="text"
-                  placeholder="Mavzularni qidirish..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-3 outline-none focus:border-primary/50 text-sm text-white transition-colors"
-                />
-                <Search className="absolute left-3 top-3.5 text-secondary" size={16} />
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile Tabs */}
-        <div className="flex md:hidden bg-white/5 p-1 rounded-xl border border-white/10 mb-8 w-full">
           <button
-            onClick={() => setActiveTab("topics")}
-            className={`flex-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-              activeTab === "topics" ? "bg-primary text-white" : "text-secondary"
-            }`}
+            onClick={() => {
+              setShowSupportModal(true);
+              setSupportSuccess(false);
+            }}
+            className="btn-outline !py-3 text-xs uppercase tracking-wider gap-2 md:hidden w-full"
           >
-            Mavzular
-          </button>
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`flex-1 py-3 px-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
-              activeTab === "chat" ? "bg-primary text-white" : "text-secondary"
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            Ochiq Chat
+            <LifeBuoy size={16} />
+            Adminga Murojaat
           </button>
         </div>
 
         {activeTab === "topics" ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Sections Sidebar */}
-          <div className="lg:col-span-3 space-y-4">
-            <div className="text-xs font-bold text-secondary uppercase tracking-widest ml-1 mb-2">Bo'limlar</div>
-            <button
-              onClick={() => setSelectedSection(null)}
-              className={`w-full text-left p-4 rounded-2xl border transition-all flex justify-between items-center ${
-                selectedSection === null
-                  ? "bg-primary/10 border-primary text-white"
-                  : "bg-white/5 border-white/5 text-secondary hover:border-white/10 hover:text-white"
-              }`}
-            >
-              <span className="font-bold text-sm">Barcha bo'limlar</span>
-            </button>
-
-            {sections.map((section) => (
+            {/* Sections Sidebar */}
+            <div className="lg:col-span-3 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest ml-1 mb-3">
+                <Layers size={14} />
+                Bo'limlar
+              </div>
               <button
-                key={section.id}
-                onClick={() => setSelectedSection(section.id)}
-                className={`w-full text-left p-4 rounded-2xl border transition-all flex flex-col gap-1 ${
-                  selectedSection === section.id
-                    ? "bg-primary/10 border-primary text-white"
-                    : "bg-white/5 border-white/5 text-secondary hover:border-white/10 hover:text-white"
+                onClick={() => setSelectedSection(null)}
+                className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center gap-3 ${
+                  selectedSection === null
+                    ? "bg-primary/10 border-primary/50 text-white shadow-glow"
+                    : "glass-card border-white/5 text-secondary hover:border-white/15 hover:text-white"
                 }`}
               >
-                <div className="flex justify-between items-center w-full">
-                  <span className="font-bold text-sm">{section.name}</span>
-                  <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
-                    {section.topics_count}
-                  </span>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedSection === null ? "bg-primary text-white" : "bg-white/5 text-secondary"}`}>
+                  <MessageSquare size={16} />
                 </div>
-                <p className="text-[10px] opacity-75 line-clamp-1 text-left">{section.description}</p>
+                <span className="font-bold text-sm">Barcha bo'limlar</span>
               </button>
-            ))}
-          </div>
 
-          {/* Topics Feed */}
-          <div className="lg:col-span-9 space-y-4">
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((n) => (
-                  <div key={n} className="glass-card p-6 h-28 animate-pulse" />
-                ))}
-              </div>
-            ) : topics.length === 0 ? (
-              <div className="text-center py-20 bg-white/5 rounded-2xl border border-white/5">
-                <MessageSquare size={48} className="text-secondary mx-auto mb-4 opacity-50" />
-                <p className="text-secondary text-sm">Hech qanday mavzu topilmadi.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <AnimatePresence mode="popLayout">
-                  {topics.map((t) => (
-                    <motion.div
-                      layout
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.98 }}
-                      key={t.id}
-                      className="glass-card p-6 hover:border-white/15 transition-all duration-300 flex flex-col md:flex-row md:items-center justify-between gap-6"
-                    >
-                      <div className="flex-1 space-y-3">
-                        <div className="flex items-center space-x-2 text-[10px]">
-                          <span className="bg-primary/10 border border-primary/20 text-primary px-2.5 py-0.5 rounded-full font-bold">
-                            {t.section_name}
-                          </span>
-                          {t.is_pinned && (
-                            <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 p-1 rounded-md flex items-center">
-                              <Pin size={10} className="stroke-[3]" />
-                            </span>
-                          )}
-                          {t.is_locked && (
-                            <span className="bg-red-500/10 border border-red-500/20 text-red-500 p-1 rounded-md flex items-center">
-                              <Lock size={10} className="stroke-[3]" />
-                            </span>
-                          )}
-                          <span className="text-secondary flex items-center">
-                            <User size={10} className="mr-1" />
-                            @{t.author_details.username}
-                          </span>
-                          <span className="text-secondary flex items-center">
-                            <Calendar size={10} className="mr-1" />
-                            {new Date(t.created_at).toLocaleDateString("uz-UZ")}
-                          </span>
-                        </div>
-
-                        <Link href={`/forum/topic/${t.id}`} className="block">
-                          <h3 className="text-lg font-bold text-white hover:text-primary transition-colors cursor-pointer">
-                            {t.title}
-                          </h3>
-                        </Link>
+              {sections.map((section, idx) => {
+                const Icon = SECTION_ICONS[idx % SECTION_ICONS.length];
+                const active = selectedSection === section.id;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setSelectedSection(section.id)}
+                    className={`w-full text-left p-4 rounded-2xl border transition-all flex items-start gap-3 ${
+                      active
+                        ? "bg-primary/10 border-primary/50 text-white shadow-glow"
+                        : "glass-card border-white/5 text-secondary hover:border-white/15 hover:text-white"
+                    }`}
+                  >
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${active ? "bg-primary text-white" : "bg-white/5 text-secondary"}`}>
+                      <Icon size={16} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center w-full gap-2">
+                        <span className="font-bold text-sm truncate">{section.name}</span>
+                        <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded-full border border-white/10 shrink-0">
+                          {section.topics_count ?? 0}
+                        </span>
                       </div>
+                      {section.description && (
+                        <p className="text-[10px] opacity-75 line-clamp-1 text-left mt-1">{section.description}</p>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
 
-                      {/* Stats & Actions */}
-                      <div className="flex items-center space-x-6 shrink-0 bg-white/5 md:bg-transparent p-3 md:p-0 rounded-xl">
-                        <div className="flex items-center space-x-1 text-secondary">
-                          <MessageCircle size={16} />
-                          <span className="text-xs font-bold">{t.replies_count}</span>
+            {/* Topics Feed */}
+            <div className="lg:col-span-9 space-y-4">
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((n) => (
+                    <div key={n} className="skeleton h-28 rounded-3xl" />
+                  ))}
+                </div>
+              ) : topics.length === 0 ? (
+                <div className="glass-card py-20 px-6 text-center flex flex-col items-center">
+                  <div className="relative mb-6">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full" />
+                    <div className="relative w-20 h-20 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center animate-float">
+                      <MessageSquare size={34} className="text-primary" />
+                    </div>
+                  </div>
+                  <h3 className="font-display text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-tight">
+                    Hech qanday mavzu topilmadi
+                  </h3>
+                  <p className="text-secondary text-sm max-w-sm">
+                    Bu bo'limda hali mavzular yo'q. Birinchi bo'lib yangi mavzu oching!
+                  </p>
+                  {isAuthenticated && (
+                    <Link href="/forum/new-topic" className="btn-primary mt-6 !py-2.5 !px-6 text-xs uppercase tracking-wider gap-2">
+                      <PlusCircle size={14} /> Yangi mavzu
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <AnimatePresence mode="popLayout">
+                    {topics.map((t) => (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.98 }}
+                        key={t.id}
+                        className="card-interactive p-5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-5"
+                      >
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                          {/* Author avatar */}
+                          <div className="w-11 h-11 rounded-2xl overflow-hidden bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                            {t.author_details.avatar ? (
+                              <img src={t.author_details.avatar} alt={t.author_details.username} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="font-display font-bold text-sm text-secondary uppercase">
+                                {t.author_details.username?.substring(0, 2) || "US"}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2 text-[10px]">
+                              <span className="bg-primary/10 border border-primary/20 text-primary px-2.5 py-0.5 rounded-full font-bold">
+                                {t.section_name}
+                              </span>
+                              {t.is_pinned && (
+                                <span className="bg-warning/10 border border-warning/20 text-warning p-1 rounded-md flex items-center" title="Mahkamlangan">
+                                  <Pin size={10} className="stroke-[3]" />
+                                </span>
+                              )}
+                              {t.is_locked && (
+                                <span className="bg-primary/10 border border-primary/20 text-primary p-1 rounded-md flex items-center" title="Yopilgan">
+                                  <Lock size={10} className="stroke-[3]" />
+                                </span>
+                              )}
+                            </div>
+
+                            <Link href={`/forum/topic/${t.id}`} className="block">
+                              <h3 className="text-base md:text-lg font-bold text-white hover:text-primary transition-colors cursor-pointer leading-snug">
+                                {t.title}
+                              </h3>
+                            </Link>
+
+                            <div className="flex flex-wrap items-center gap-3 text-[11px] text-secondary">
+                              <span className="flex items-center gap-1">
+                                <User size={11} />
+                                @{t.author_details.username}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar size={11} />
+                                {new Date(t.created_at).toLocaleDateString("uz-UZ")}
+                              </span>
+                            </div>
+                          </div>
                         </div>
 
-                        {/* Likes */}
-                        <div className="flex items-center space-x-3">
+                        {/* Stats & Actions */}
+                        <div className="flex items-center gap-5 shrink-0 md:pl-6 md:border-l border-white/5">
+                          <div className="flex flex-col items-center text-secondary">
+                            <MessageCircle size={16} />
+                            <span className="text-xs font-bold mt-1">{t.replies_count ?? 0}</span>
+                            <span className="text-[9px] uppercase tracking-wider opacity-60">Javob</span>
+                          </div>
+
                           <button
                             onClick={() => handleReact(t.id, true)}
-                            className={`flex items-center space-x-1.5 transition-colors ${
+                            className={`flex flex-col items-center transition-colors ${
                               t.user_reaction === "like" ? "text-primary" : "text-secondary hover:text-white"
                             }`}
                           >
-                            <ThumbsUp size={14} className={t.user_reaction === "like" ? "fill-primary/20" : ""} />
-                            <span className="text-xs font-bold">{t.likes_count}</span>
+                            <ThumbsUp size={16} className={t.user_reaction === "like" ? "fill-primary/20" : ""} />
+                            <span className="text-xs font-bold mt-1">{t.likes_count ?? 0}</span>
+                            <span className="text-[9px] uppercase tracking-wider opacity-60">Like</span>
                           </button>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </div>
-            )}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         ) : (
           /* Ochiq Chat Tab */
           <div className="w-full max-w-5xl mx-auto">
@@ -433,7 +534,7 @@ const ForumPage = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass-card relative z-10 w-full max-w-md p-6 md:p-8 overflow-hidden border border-white/10 shadow-2xl bg-[#121214]/95 text-white rounded-3xl"
+              className="glass-card relative z-10 w-full max-w-md p-6 md:p-8 overflow-hidden shadow-2xl text-white"
             >
               {/* Close Button */}
               <button
@@ -444,7 +545,10 @@ const ForumPage = () => {
               </button>
 
               <div className="mb-6">
-                <h3 className="text-2xl font-black tracking-tight mb-2">Adminga Murojaat</h3>
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mb-4">
+                  <LifeBuoy size={22} />
+                </div>
+                <h3 className="font-display text-2xl font-black tracking-tight mb-2">Adminga Murojaat</h3>
                 <p className="text-secondary text-xs">Muammo yoki takliflaringizni to'g'ridan-to'g'ri adminstratsiyaga yuboring.</p>
               </div>
 
@@ -459,7 +563,7 @@ const ForumPage = () => {
                   </p>
                   <button
                     onClick={() => setShowSupportModal(false)}
-                    className="w-full mt-6 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all"
+                    className="btn-primary w-full mt-6 !py-3 text-sm"
                   >
                     Tushunarli
                   </button>
@@ -529,7 +633,7 @@ const ForumPage = () => {
                     <button
                       type="submit"
                       disabled={submittingSupport}
-                      className="w-full mt-4 py-3 bg-primary hover:bg-primary/90 text-white font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                      className="btn-primary w-full mt-2 !py-3 text-sm gap-2 disabled:opacity-50"
                     >
                       {submittingSupport ? "Yuborilmoqda..." : <><Send size={16} /> Yuborish</>}
                     </button>

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import Mux from "@mux/mux-node";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+import { getUserFromRequest } from "@/lib/authServer";
 
 // MUX SDK Configuration
 // We expect MUX_TOKEN_ID and MUX_TOKEN_SECRET in environment variables.
@@ -16,17 +17,15 @@ const mux = isMuxConfigured
 
 export async function POST(req: Request) {
   try {
-    // Initialize Supabase Admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    );
+    const supabaseAdmin = getSupabaseAdmin();
 
-    const { userId } = await req.json();
-
-    if (!userId) {
-      return NextResponse.json({ error: "Foydalanuvchi ID si (userId) taqdim etilmadi" }, { status: 400 });
+    // XAVFSIZLIK: userId'ni so'rov tanasidan OLMAYMIZ — tokendan olamiz.
+    // Aks holda har kim boshqa odam nomidan efir ochishi mumkin edi.
+    const authedUser = await getUserFromRequest(req);
+    if (!authedUser) {
+      return NextResponse.json({ error: "Avtorizatsiya talab qilinadi" }, { status: 401 });
     }
+    const userId = authedUser.id;
 
     // 0. CHECK ROLE / PERMISSION: Only tournament participants, GameDevs, and Admins can stream
     let isAllowed = false;

@@ -3,12 +3,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
-import TournamentBracket from "../../../components/TournamentBracket";
-import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown } from "lucide-react";
+import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown, GitBranch } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "../../../components/ui/BackButton";
+import TournamentBracket from "@/components/TournamentBracket";
+import TournamentLive from "@/components/TournamentLive";
 
 interface Tournament {
   id: string;
@@ -231,7 +232,7 @@ const TournamentDetail = () => {
 
             {/* Tabs */}
             <div className="flex space-x-8 border-b border-white/5 mb-8 overflow-x-auto no-scrollbar">
-              {["ISHTIROKCHILAR", "BRACKET", "QOIDALAR"].map((tab) => (
+              {["ISHTIROKCHILAR", "JONLI EFIR", "BRACKET", "QOIDALAR"].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -249,6 +250,11 @@ const TournamentDetail = () => {
 
             {/* Tab Content */}
             <div className="min-h-[400px]">
+              {activeTab === "JONLI EFIR" && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <TournamentLive />
+                </motion.div>
+              )}
               {activeTab === "BRACKET" && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                   <TournamentBracket />

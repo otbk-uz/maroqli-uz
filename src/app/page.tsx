@@ -43,8 +43,8 @@ export default function Home() {
     users_count: 0,
     tournaments_count: 0,
     games_count: 0,
-    total_views: 12450000,
-    streamers_count: 15,
+    total_views: 0,
+    streamers_count: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -100,16 +100,18 @@ export default function Home() {
           setCachedData("home_news", mappedNews);
         }
 
-        // Stats
+        // Stats — faqat HAQIQIY raqamlar (bazadan sanaladi)
         const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
         const { count: tCount } = await supabase.from('tournaments').select('*', { count: 'exact', head: true });
-        
+        const { count: gCount } = await supabase.from('developed_games').select('*', { count: 'exact', head: true });
+        const { count: sCount } = await supabase.from('streamers').select('*', { count: 'exact', head: true });
+
         const newStats = {
           users_count: usersCount || 0,
           tournaments_count: tCount || 0,
-          games_count: 12,
-          total_views: 12450000,
-          streamers_count: 15,
+          games_count: gCount || 0,
+          total_views: 0,
+          streamers_count: sCount || 0,
         };
         setStats(newStats);
         setCachedData("home_stats", newStats);
@@ -150,8 +152,8 @@ export default function Home() {
 
   return (
     <main className="bg-background min-h-screen relative overflow-hidden">
-      <Hero />
-      
+      <Hero stats={{ users: stats.users_count, tournaments: stats.tournaments_count, games: stats.games_count }} />
+
       {/* Dynamic Esports Section */}
       <section className="py-20 lg:py-28 relative overflow-hidden px-4 md:px-6">
         <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
@@ -242,7 +244,7 @@ export default function Home() {
                           <p className="text-xl font-display font-black text-white">{tItem.participant_count} / {tItem.max_participants}</p>
                         </div>
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors col-span-2 sm:col-span-1">
-                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">KIRISh</p>
+                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">KIRISH</p>
                           <p className="text-xl font-display font-black text-primary">
                             {Number(tItem.entry_fee) > 0 ? `$${Number(tItem.entry_fee).toLocaleString()}` : "FREE"}
                           </p>
@@ -256,12 +258,12 @@ export default function Home() {
                         {tItem.status === 'LIVE' ? (
                           <>
                             <Play size={16} fill="white" />
-                            <span>TOMOSHA QILISh</span>
+                            <span>TOMOSHA QILISH</span>
                           </>
                         ) : (
                           <>
                             <Gamepad2 size={16} />
-                            <span>IShTIROK ETISh</span>
+                            <span>ISHTIROK ETISH</span>
                           </>
                         )}
                       </Link>
@@ -366,45 +368,23 @@ export default function Home() {
                 <h3 className="text-xl font-display font-black text-white uppercase tracking-wider">TIZIM STATISTIKASI</h3>
               </div>
               
-              <div className="bg-card border border-white/5 rounded-3xl p-6 space-y-6">
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                      <Eye size={20} />
+              <div className="bg-card border border-white/5 rounded-3xl p-6 space-y-5">
+                {[
+                  { icon: <Users size={20} />, tint: "bg-blue-500/10 text-blue-400", label: "Foydalanuvchilar", value: stats.users_count },
+                  { icon: <Trophy size={20} />, tint: "bg-primary/10 text-primary", label: "Turnirlar", value: stats.tournaments_count },
+                  { icon: <Gamepad2 size={20} />, tint: "bg-white/5 text-white", label: "O'yinlar", value: stats.games_count },
+                  { icon: <Activity size={20} />, tint: "bg-violet/10 text-violet", label: "Streamerlar", value: stats.streamers_count },
+                ].map((row, i, arr) => (
+                  <div key={row.label} className={`flex items-center justify-between ${i < arr.length - 1 ? "border-b border-white/5 pb-5" : ""}`}>
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${row.tint}`}>
+                        {row.icon}
+                      </div>
+                      <p className="text-xs text-secondary uppercase font-bold tracking-wider">{row.label}</p>
                     </div>
-                    <div>
-                      <p className="text-xs text-secondary uppercase font-bold tracking-wider">Ko'rishlar</p>
-                      <p className="text-lg font-display font-black text-white">{formatViews(stats.total_views)}</p>
-                    </div>
+                    <p className="text-xl font-display font-black text-white tabular-nums">{row.value.toLocaleString()}</p>
                   </div>
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-500/20">+14.2%</span>
-                </div>
-                
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
-                      <Users size={20} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-secondary uppercase font-bold tracking-wider">Foydalanuvchilar</p>
-                      <p className="text-lg font-display font-black text-white">{stats.users_count.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 font-bold px-2 py-0.5 rounded-lg border border-emerald-500/20">+8.5%</span>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
-                      <ShoppingCart size={20} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-secondary uppercase font-bold tracking-wider">Mavjud O'yinlar</p>
-                      <p className="text-lg font-display font-black text-white">{stats.games_count}</p>
-                    </div>
-                  </div>
-                  <span className="text-[10px] bg-secondary/10 text-secondary font-bold px-2 py-0.5 rounded-lg">Stabill</span>
-                </div>
+                ))}
               </div>
             </div>
 

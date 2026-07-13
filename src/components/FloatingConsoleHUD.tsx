@@ -3,16 +3,39 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, User, LogOut, ChevronDown, Trophy, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, ShieldAlert, Menu, X } from "lucide-react";
+import {
+  Bell,
+  User,
+  Trophy,
+  Gamepad2,
+  Radio,
+  Crown,
+  TrendingUp,
+  Code2,
+  MessageSquare,
+  Newspaper,
+  ShieldAlert,
+  Menu,
+  X,
+  Home,
+  GraduationCap,
+ 
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import api from "@/lib/api";
+
+const LOCALES = [
+  { code: "uz", label: "O'Z" },
+  { code: "ru", label: "РУ" },
+  { code: "en", label: "EN" },
+] as const;
 
 export default function FloatingConsoleHUD() {
   const pathname = usePathname();
   const { isAuthenticated, user } = useAuthStore();
   const { t, locale, setLocale } = useTranslation();
-  
+
   const [mounted, setMounted] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -65,116 +88,128 @@ export default function FloatingConsoleHUD() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const navLinks = [
-    { name: t("home", "Bosh sahifa"), href: "/" },
-    { name: t("tournaments", "Turnirlar"), href: "/tournaments" },
-    { name: t("games", "O'yinlar"), href: "/games" },
-    { name: t("streamers", "Streamerlar"), href: "/streamers" },
-    { name: t("premium", "Premium"), href: "/premium" },
-    { name: t("leaderboard", "Reyting"), href: "/leaderboard" },
-    { name: t("gamedev", "GameDev"), href: "/gamedev" },
-    { name: t("darslar", "Videodarslar"), href: "/darslar" },
-    { name: t("forum", "Forum"), href: "/forum" },
-    { name: t("news", "Yangiliklar"), href: "/news" },
+    { name: t("home", "Bosh sahifa"), href: "/", icon: Home },
+    { name: t("tournaments", "Turnirlar"), href: "/tournaments", icon: Trophy },
+    { name: t("games", "O'yinlar"), href: "/games", icon: Gamepad2 },
+    { name: t("streamers", "Streamerlar"), href: "/streamers", icon: Radio },
+    { name: t("premium", "Premium"), href: "/premium", icon: Crown },
+    { name: t("leaderboard", "Reyting"), href: "/leaderboard", icon: TrendingUp },
+    { name: t("gamedev", "GameDev"), href: "/gamedev", icon: Code2 },
+    { name: t("darslar", "Videodarslar"), href: "/darslar", icon: GraduationCap },
+    { name: t("forum", "Forum"), href: "/forum", icon: MessageSquare },
+    { name: t("news", "Yangiliklar"), href: "/news", icon: Newspaper },
   ];
 
   if (user && user.role === "ADMIN") {
-    navLinks.push({ name: "Admin", href: "/admin" });
+    navLinks.push({ name: "Admin", href: "/admin", icon: ShieldAlert });
   }
+
+  const isRouteActive = (href: string) =>
+    pathname === href || (href !== "/" && pathname.startsWith(href));
 
   if (!mounted) return null;
 
+  // Brand lockup — MAR (white) + OQLI (brand gradient)
+  const BrandMark = ({ className = "" }: { className?: string }) => (
+    <Link href="/" className={`group flex items-center gap-2.5 ${className}`}>
+      <div className="relative">
+        <span className="absolute inset-0 rounded-xl bg-brand-gradient opacity-40 blur-md transition-opacity duration-300 group-hover:opacity-70" />
+        <img
+          src="/logo.jpg.png"
+          alt="Maroqli.uz"
+          className="relative h-8 w-8 rounded-xl object-cover ring-1 ring-white/10"
+        />
+      </div>
+      <span className="font-display text-base font-black uppercase leading-none tracking-[0.18em]">
+        <span className="text-white">MAR</span>
+        <span className="text-gradient">OQLI</span>
+      </span>
+    </Link>
+  );
+
   return (
     <>
-      {/* Desktop Header */}
-      <header 
-        className={`fixed top-0 left-0 w-full z-50 hidden lg:flex items-center justify-between px-4 xl:px-8 py-3 transition-all duration-300 ease-in-out border-b ${
-          scrolled 
-            ? "bg-background/95 backdrop-blur-xl border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.5)]" 
-            : "bg-transparent border-transparent"
+      {/* ===================== DESKTOP HEADER ===================== */}
+      <header
+        className={`fixed inset-x-0 top-0 z-50 hidden items-center gap-4 border-b px-4 py-2.5 transition-all duration-300 ease-out lg:flex xl:px-8 ${
+          scrolled
+            ? "border-white/10 bg-background/80 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.7)] backdrop-blur-2xl"
+            : "border-white/5 bg-background/30 backdrop-blur-md"
         }`}
       >
-        {/* Brand logo */}
-        <div className="flex items-center space-x-2.5 flex-shrink-0 z-10">
-          <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo.jpg.png" alt="Logo" className="h-8 w-auto rounded-lg shadow-[0_0_15px_rgba(255,70,85,0.15)]" />
-            <span className="font-display font-black text-sm tracking-widest text-white">
-              MAROQLI
-            </span>
-          </Link>
+        {/* Brand */}
+        <div className="z-10 flex flex-shrink-0 items-center">
+          <BrandMark />
         </div>
 
         {/* Nav Links */}
-        <nav className="flex items-center justify-center gap-1 xl:gap-1.5 z-10">
+        <nav className="z-10 flex flex-1 items-center justify-center gap-0.5">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+            const isActive = isRouteActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-2 py-1.5 rounded-lg text-[9px] xl:text-[10px] font-display font-black uppercase tracking-wider transition-all duration-200 whitespace-nowrap ${
-                  isActive 
-                    ? "text-primary bg-primary/5" 
-                    : "text-secondary hover:text-white hover:bg-white/5"
+                className={`relative rounded-full px-2.5 py-1.5 text-[10px] font-display font-bold uppercase tracking-wider transition-colors duration-200 whitespace-nowrap xl:text-[11px] ${
+                  isActive ? "text-white" : "text-secondary hover:text-white"
                 }`}
               >
-                <span>{link.name}</span>
+                {isActive && (
+                  <motion.span
+                    layoutId="desktop-nav-active"
+                    className="absolute inset-0 rounded-full border border-white/10 bg-white/[0.07] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+                <span className="relative z-10">{link.name}</span>
               </Link>
             );
           })}
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center space-x-3 z-10 flex-shrink-0">
-          {/* Download Launcher Button */}
-          <a
-            href="https://github.com/otbk-uz/maroqli-uz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe"
-            download
-            className="flex items-center space-x-1.5 text-[9px] xl:text-[10px] font-display font-black text-amber-400 hover:text-amber-300 bg-amber-500/5 hover:bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/40 px-2.5 py-1.5 rounded-lg transition-all"
-          >
-            <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
-              <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
-            </svg>
-            <span>Launcher</span>
-          </a>
-
-          {/* Language selector */}
-          <div className="relative">
-            <button
-              onClick={() => setShowLangMenu(!showLangMenu)}
-              className="flex items-center space-x-1 text-[10px] font-display font-black text-secondary hover:text-white bg-white/5 px-2.5 py-1.5 rounded-lg transition-colors border border-white/5"
-            >
-              <span>{locale === 'uz' ? 'O\'Z' : locale === 'ru' ? 'РУ' : 'EN'}</span>
-            </button>
-
-            <AnimatePresence>
-              {showLangMenu && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-28 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden"
+        <div className="z-10 flex flex-shrink-0 items-center gap-2.5">
+          {/* Language — segmented control */}
+          <div className="flex items-center gap-0.5 rounded-full border border-white/10 bg-white/5 p-0.5">
+            {LOCALES.map((lng) => {
+              const active = locale === lng.code;
+              return (
+                <button
+                  key={lng.code}
+                  onClick={() => setLocale(lng.code)}
+                  aria-label={`Til: ${lng.label}`}
+                  aria-pressed={active}
+                  className={`relative rounded-full px-2 py-1 text-[10px] font-display font-black transition-colors ${
+                    active ? "text-white" : "text-secondary hover:text-white"
+                  }`}
                 >
-                  <button onClick={() => { setLocale('uz'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'uz' ? 'text-primary font-bold' : 'text-secondary'}`}>O'zbek</button>
-                  <button onClick={() => { setLocale('ru'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'ru' ? 'text-primary font-bold' : 'text-secondary'}`}>Русский</button>
-                  <button onClick={() => { setLocale('en'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'en' ? 'text-primary font-bold' : 'text-secondary'}`}>English</button>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {active && (
+                    <motion.span
+                      layoutId="desktop-lang-active"
+                      className="absolute inset-0 rounded-full bg-brand-gradient shadow-glow"
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    />
+                  )}
+                  <span className="relative z-10">{lng.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {isAuthenticated && user ? (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center gap-2.5">
               {/* Notifications */}
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-1.5 text-secondary hover:text-white transition-colors relative bg-white/5 rounded-full border border-white/5"
+                  aria-label="Bildirishnomalar"
+                  className="relative rounded-full border border-white/10 bg-white/5 p-2 text-secondary transition-colors hover:text-white"
                 >
-                  <Bell size={13} />
+                  <Bell size={14} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary text-[6px] items-center justify-center text-white font-bold border border-background">
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full border border-background bg-primary text-[7px] font-bold text-white">
                         {unreadCount}
                       </span>
                     </span>
@@ -184,36 +219,39 @@ export default function FloatingConsoleHUD() {
                 <AnimatePresence>
                   {showNotifications && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-3 w-72 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                      transition={{ duration: 0.18 }}
+                      className="glass-card absolute right-0 mt-3 w-72 overflow-hidden rounded-2xl"
                     >
-                      <div className="p-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-                        <h3 className="font-bold text-white text-[10px]">Bildirishnomalar</h3>
+                      <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] p-3">
+                        <h3 className="text-[11px] font-bold text-white">Bildirishnomalar</h3>
                         {unreadCount > 0 && (
                           <button
                             onClick={handleMarkAllRead}
-                            className="text-[8px] text-primary hover:text-white transition-colors font-semibold"
+                            className="text-[9px] font-semibold text-primary transition-colors hover:text-white"
                           >
                             Hammasini o'qish
                           </button>
                         )}
                       </div>
-                      <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                      <div className="custom-scrollbar max-h-[250px] overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <div className="p-4 text-center text-secondary text-[10px]">Yangi xabarlar yo'q</div>
+                          <div className="p-4 text-center text-[11px] text-secondary">
+                            Yangi xabarlar yo'q
+                          </div>
                         ) : (
                           notifications.map((notif) => (
                             <div
                               key={notif.id}
-                              className={`p-3 border-b border-white/5 transition-colors ${
-                                notif.is_read ? "opacity-60 bg-transparent" : "bg-primary/5"
+                              className={`cursor-pointer border-b border-white/5 p-3 transition-colors hover:bg-white/[0.03] ${
+                                notif.is_read ? "opacity-60" : "bg-primary/5"
                               }`}
                               onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
                             >
-                              <p className="text-[10px] text-white mb-0.5">{notif.message}</p>
-                              <span className="text-[8px] text-secondary">
+                              <p className="mb-0.5 text-[11px] text-white">{notif.message}</p>
+                              <span className="text-[9px] text-secondary">
                                 {new Date(notif.created_at).toLocaleDateString()}
                               </span>
                             </div>
@@ -226,34 +264,39 @@ export default function FloatingConsoleHUD() {
               </div>
 
               {/* Profile Avatar */}
-              <Link href="/profile" className="flex items-center space-x-2 bg-white/5 hover:bg-white/10 pl-2 pr-3 py-1 rounded-full border border-white/5 transition-colors">
-                <div className="w-6 h-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-[10px] relative">
-                  {user.username?.[0]?.toUpperCase() || <User size={10} />}
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 transition-colors hover:border-white/20 hover:bg-white/10"
+              >
+                <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-brand-gradient text-[11px] font-bold text-white">
+                  {user.username?.[0]?.toUpperCase() || <User size={12} />}
                   {user.is_premium && (
-                    <div className="absolute -top-0.5 -right-0.5 bg-amber-500 text-black rounded-full p-0.5 shadow-[0_0_5px_rgba(245,158,11,0.5)]">
-                      <Crown size={5} className="fill-current" />
+                    <div className="absolute -right-0.5 -top-0.5 rounded-full bg-amber-500 p-0.5 text-black shadow-[0_0_6px_rgba(245,158,11,0.6)]">
+                      <Crown size={6} className="fill-current" />
                     </div>
                   )}
                 </div>
-                <span className="text-[10px] font-bold text-white truncate max-w-[70px] flex items-center gap-1">
-                  <span>{user.username}</span>
+                <span className="flex max-w-[80px] items-center gap-1 truncate text-[11px] font-bold text-white">
+                  <span className="truncate">{user.username}</span>
                   {user.is_premium && (
-                    <span className="text-amber-400 font-extrabold text-[7px] bg-amber-500/10 px-1 rounded">PRO</span>
+                    <span className="rounded bg-amber-500/15 px-1 text-[7px] font-extrabold text-amber-400">
+                      PRO
+                    </span>
                   )}
                 </span>
               </Link>
             </div>
           ) : (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Link
                 href="/login"
-                className="text-[10px] font-display font-black text-white hover:text-primary transition-colors px-3 py-1.5"
+                className="rounded-full border border-white/15 px-4 py-1.5 text-[11px] font-display font-bold text-white transition-all hover:border-white/30 hover:bg-white/5"
               >
                 Kirish
               </Link>
               <Link
                 href="/register"
-                className="text-[10px] font-display font-black bg-primary hover:bg-primary/95 text-white px-4 py-2 rounded-full transition-all shadow-[0_4px_15px_rgba(255,70,85,0.3)] hover:shadow-[0_4px_25px_rgba(255,70,85,0.5)]"
+                className="rounded-full bg-brand-gradient bg-[length:200%_200%] px-4 py-2 text-[11px] font-display font-black text-white shadow-glow-violet transition-all hover:animate-gradient-move active:scale-95"
               >
                 Ro'yxatdan o'tish
               </Link>
@@ -262,56 +305,69 @@ export default function FloatingConsoleHUD() {
         </div>
       </header>
 
-      {/* Mobile Header (Sleek, transparent, modest) */}
-      <header className={`fixed top-0 left-0 w-full z-50 flex lg:hidden items-center justify-between px-4 pt-[max(env(safe-area-inset-top),16px)] pb-3 transition-all duration-300 border-b ${
-        scrolled 
-          ? "bg-background/95 backdrop-blur-xl border-white/10 shadow-md" 
-          : "bg-background/50 backdrop-blur-md border-white/5"
-      }`}>
-        <Link href="/" className="flex items-center space-x-2">
-          <img src="/logo.jpg.png" alt="Logo" className="h-8 w-auto rounded-lg shadow-[0_0_10px_rgba(255,70,85,0.15)]" />
-          <span className="font-display font-black text-sm tracking-widest text-white">MAROQLI</span>
-        </Link>
+      {/* ===================== MOBILE HEADER ===================== */}
+      <header
+        className={`fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b px-4 pb-3 pt-[max(env(safe-area-inset-top),16px)] transition-all duration-300 lg:hidden ${
+          scrolled
+            ? "border-white/10 bg-background/85 shadow-lg backdrop-blur-2xl"
+            : "border-white/5 bg-background/50 backdrop-blur-md"
+        }`}
+      >
+        <BrandMark />
 
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-2.5">
           {/* Language selector */}
           <div className="relative">
             <button
               onClick={() => setShowLangMenu(!showLangMenu)}
-              className="flex items-center space-x-1 text-[10px] font-display font-black text-secondary hover:text-white bg-white/5 px-2.5 py-1.5 rounded-lg transition-colors border border-white/5"
+              aria-label="Tilni tanlash"
+              className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.5 text-[10px] font-display font-black text-secondary transition-colors hover:text-white"
             >
-              <span>{locale === 'uz' ? 'O\'Z' : locale === 'ru' ? 'РУ' : 'EN'}</span>
+              <span>{locale === "uz" ? "O'Z" : locale === "ru" ? "РУ" : "EN"}</span>
             </button>
 
             <AnimatePresence>
               {showLangMenu && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 10 }}
-                  className="absolute right-0 mt-2 w-28 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                  initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                  transition={{ duration: 0.16 }}
+                  className="glass-card absolute right-0 z-50 mt-2 w-28 overflow-hidden rounded-2xl"
                 >
-                  <button onClick={() => { setLocale('uz'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'uz' ? 'text-primary font-bold' : 'text-secondary'}`}>O'zbek</button>
-                  <button onClick={() => { setLocale('ru'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'ru' ? 'text-primary font-bold' : 'text-secondary'}`}>Русский</button>
-                  <button onClick={() => { setLocale('en'); setShowLangMenu(false); }} className={`w-full text-left px-3 py-1.5 text-xs hover:bg-white/5 ${locale === 'en' ? 'text-primary font-bold' : 'text-secondary'}`}>English</button>
+                  {LOCALES.map((lng) => (
+                    <button
+                      key={lng.code}
+                      onClick={() => {
+                        setLocale(lng.code);
+                        setShowLangMenu(false);
+                      }}
+                      className={`w-full px-3 py-2 text-left text-xs transition-colors hover:bg-white/5 ${
+                        locale === lng.code ? "font-bold text-primary" : "text-secondary"
+                      }`}
+                    >
+                      {lng.code === "uz" ? "O'zbek" : lng.code === "ru" ? "Русский" : "English"}
+                    </button>
+                  ))}
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
           {isAuthenticated && user ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               {/* Notifications */}
               <div className="relative">
                 <button
                   onClick={() => setShowNotifications(!showNotifications)}
-                  className="p-2 text-secondary hover:text-white transition-colors relative bg-white/5 rounded-full border border-white/5"
+                  aria-label="Bildirishnomalar"
+                  className="relative rounded-full border border-white/10 bg-white/5 p-2 text-secondary transition-colors hover:text-white"
                 >
                   <Bell size={14} />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-primary text-[7px] items-center justify-center text-white font-bold border border-background">
+                    <span className="absolute -right-0.5 -top-0.5 flex h-3 w-3">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                      <span className="relative inline-flex h-3 w-3 items-center justify-center rounded-full border border-background bg-primary text-[7px] font-bold text-white">
                         {unreadCount}
                       </span>
                     </span>
@@ -321,36 +377,39 @@ export default function FloatingConsoleHUD() {
                 <AnimatePresence>
                   {showNotifications && (
                     <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-3 w-64 bg-card border border-white/10 rounded-xl shadow-2xl overflow-hidden z-50"
+                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.97 }}
+                      transition={{ duration: 0.18 }}
+                      className="glass-card absolute right-0 z-50 mt-3 w-64 overflow-hidden rounded-2xl"
                     >
-                      <div className="p-3 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-                        <h3 className="font-bold text-white text-[10px]">Bildirishnomalar</h3>
+                      <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.02] p-3">
+                        <h3 className="text-[11px] font-bold text-white">Bildirishnomalar</h3>
                         {unreadCount > 0 && (
                           <button
                             onClick={handleMarkAllRead}
-                            className="text-[8px] text-primary hover:text-white transition-colors font-semibold"
+                            className="text-[9px] font-semibold text-primary transition-colors hover:text-white"
                           >
                             Barchasi
                           </button>
                         )}
                       </div>
-                      <div className="max-h-[200px] overflow-y-auto custom-scrollbar">
+                      <div className="custom-scrollbar max-h-[200px] overflow-y-auto">
                         {notifications.length === 0 ? (
-                          <div className="p-4 text-center text-secondary text-[10px]">Xabarlar yo'q</div>
+                          <div className="p-4 text-center text-[11px] text-secondary">
+                            Xabarlar yo'q
+                          </div>
                         ) : (
                           notifications.map((notif) => (
                             <div
                               key={notif.id}
-                              className={`p-2.5 border-b border-white/5 transition-colors ${
-                                notif.is_read ? "opacity-60 bg-transparent" : "bg-primary/5"
+                              className={`cursor-pointer border-b border-white/5 p-2.5 transition-colors hover:bg-white/[0.03] ${
+                                notif.is_read ? "opacity-60" : "bg-primary/5"
                               }`}
                               onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
                             >
-                              <p className="text-[10px] text-white mb-0.5">{notif.message}</p>
-                              <span className="text-[8px] text-secondary">
+                              <p className="mb-0.5 text-[11px] text-white">{notif.message}</p>
+                              <span className="text-[9px] text-secondary">
                                 {new Date(notif.created_at).toLocaleDateString()}
                               </span>
                             </div>
@@ -363,11 +422,14 @@ export default function FloatingConsoleHUD() {
               </div>
 
               {/* Profile Avatar */}
-              <Link href="/profile" className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-white/5 flex-shrink-0 relative">
-                {user.username?.[0]?.toUpperCase() || <User size={10} />}
+              <Link
+                href="/profile"
+                className="relative flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white"
+              >
+                {user.username?.[0]?.toUpperCase() || <User size={12} />}
                 {user.is_premium && (
-                  <div className="absolute -top-1 -right-1 bg-amber-500 text-black rounded-full p-0.5 shadow-[0_0_5px_rgba(245,158,11,0.5)]">
-                    <Crown size={5} className="fill-current" />
+                  <div className="absolute -right-1 -top-1 rounded-full bg-amber-500 p-0.5 text-black shadow-[0_0_6px_rgba(245,158,11,0.6)]">
+                    <Crown size={6} className="fill-current" />
                   </div>
                 )}
               </Link>
@@ -375,7 +437,7 @@ export default function FloatingConsoleHUD() {
           ) : (
             <Link
               href="/login"
-              className="text-[10px] font-display font-black bg-primary hover:bg-primary/95 text-white px-3 py-1.5 rounded-lg transition-all"
+              className="rounded-full bg-brand-gradient px-3.5 py-1.5 text-[10px] font-display font-black text-white shadow-glow-violet transition-all active:scale-95"
             >
               Kirish
             </Link>
@@ -384,15 +446,15 @@ export default function FloatingConsoleHUD() {
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="p-2 text-secondary hover:text-white transition-colors relative bg-white/5 rounded-full border border-white/5 z-50"
-            aria-label="Toggle mobile menu"
+            className="relative z-50 rounded-full border border-white/10 bg-white/5 p-2 text-secondary transition-colors hover:text-white"
+            aria-label="Menyuni ochish"
           >
-            {showMobileMenu ? <X size={14} /> : <Menu size={14} />}
+            {showMobileMenu ? <X size={16} /> : <Menu size={16} />}
           </button>
         </div>
       </header>
 
-      {/* Mobile Slide-over Menu Overlay */}
+      {/* ===================== MOBILE SLIDE-OVER MENU ===================== */}
       <AnimatePresence>
         {showMobileMenu && (
           <motion.div
@@ -400,16 +462,17 @@ export default function FloatingConsoleHUD() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: "100%" }}
             transition={{ type: "spring", bounce: 0.1, duration: 0.5 }}
-            className="fixed inset-0 z-40 lg:hidden bg-background/95 backdrop-blur-2xl flex flex-col pt-24 px-6 pb-8 overflow-y-auto"
+            className="fixed inset-0 z-40 flex flex-col overflow-y-auto bg-background/95 px-6 pb-8 pt-24 backdrop-blur-2xl lg:hidden"
           >
-            {/* Ambient glows inside menu */}
-            <div className="absolute top-0 right-0 -z-10 w-72 h-72 bg-primary/10 rounded-full blur-[100px]" />
-            <div className="absolute bottom-0 left-0 -z-10 w-72 h-72 bg-blue-500/5 rounded-full blur-[100px]" />
+            {/* Ambient glows */}
+            <div className="absolute right-0 top-0 -z-10 h-72 w-72 rounded-full bg-primary/10 blur-[100px]" />
+            <div className="absolute bottom-0 left-0 -z-10 h-72 w-72 rounded-full bg-violet/10 blur-[100px]" />
 
-            <div className="relative z-10 flex flex-col justify-between h-full">
-              <nav className="flex flex-col space-y-2">
+            <div className="relative z-10 flex h-full flex-col justify-between">
+              <nav className="flex flex-col gap-2">
                 {navLinks.map((link, idx) => {
-                  const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
+                  const isActive = isRouteActive(link.href);
+                  const Icon = link.icon;
                   return (
                     <motion.div
                       key={link.href}
@@ -420,33 +483,26 @@ export default function FloatingConsoleHUD() {
                       <Link
                         href={link.href}
                         onClick={() => setShowMobileMenu(false)}
-                        className={`flex items-center justify-between py-3.5 px-4 rounded-xl font-display font-black uppercase text-sm tracking-wider transition-all duration-200 border ${
-                          isActive 
-                            ? "text-primary bg-primary/5 border-primary/20 shadow-[0_0_15px_rgba(255,70,85,0.1)]" 
-                            : "text-secondary border-transparent hover:text-white hover:bg-white/5"
+                        className={`flex items-center gap-3 rounded-2xl border px-4 py-3.5 font-display text-sm font-black uppercase tracking-wider transition-all duration-200 ${
+                          isActive
+                            ? "border-primary/25 bg-primary/10 text-primary shadow-[0_0_20px_rgba(255,51,85,0.12)]"
+                            : "border-transparent text-secondary hover:bg-white/5 hover:text-white"
                         }`}
                       >
-                        <span>{link.name}</span>
-                        {isActive && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_#FF4655]" />}
+                        <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                        <span className="flex-1">{link.name}</span>
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_#FF3355]" />
+                        )}
                       </Link>
                     </motion.div>
                   );
                 })}
               </nav>
 
-              {/* Mobile Menu Footer Info */}
-              <div className="pt-6 border-t border-white/5 flex flex-col space-y-4">
-                <a
-                  href="https://github.com/otbk-uz/maroqli-uz/releases/download/v0.1.0/MAROQLI.Setup.0.1.0.exe"
-                  download
-                  className="flex items-center justify-center space-x-2 text-[11px] font-display font-black text-amber-400 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 hover:border-amber-500/35 py-3 rounded-xl transition-all"
-                >
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.95 1.937L24 0v11.55H10.95V1.937zM10.95 12.45H24v11.55l-13.05-1.937v-9.613z"/>
-                  </svg>
-                  <span>Maroqli Launcher (Windows)</span>
-                </a>
-                <div className="flex items-center justify-between text-[10px] text-secondary font-display font-bold uppercase tracking-widest px-2">
+              {/* Menu footer */}
+              <div className="flex flex-col gap-4 border-t border-white/5 pt-6">
+                <div className="flex items-center justify-between px-2 text-[10px] font-display font-bold uppercase tracking-widest text-secondary">
                   <span>MAROQLI ESPORTS</span>
                   <span>v0.1.0</span>
                 </div>

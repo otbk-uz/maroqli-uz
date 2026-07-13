@@ -74,23 +74,11 @@ const NewsDetailPage = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const getPlaceholderImage = (category: string) => {
-    switch (category) {
-      case "ESPORT":
-        return "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200";
-      case "GAMES":
-        return "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200";
-      case "PLATFORM":
-        return "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?q=80&w=1200";
-      default:
-        return "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?q=80&w=1200";
-    }
-  };
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-background relative flex items-center justify-center">
+      <main className="min-h-screen bg-background relative flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-secondary text-xs font-bold uppercase tracking-widest">Yuklanmoqda...</p>
       </main>
     );
   }
@@ -156,13 +144,15 @@ const NewsDetailPage = () => {
           </div>
 
           {/* Featured Image */}
-          <div className="aspect-[21/9] bg-white/5 rounded-2xl border border-white/5 overflow-hidden shadow-2xl relative">
-            <img 
-              src={news.image || getPlaceholderImage(news.category_display)} 
-              alt={news.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          {news.image && (
+            <div className="aspect-[21/9] bg-white/5 rounded-2xl border border-white/5 overflow-hidden shadow-2xl relative">
+              <img
+                src={news.image}
+                alt={news.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* Article Content */}
           <div className="text-secondary leading-relaxed text-base md:text-lg whitespace-pre-line space-y-6 opacity-90 font-medium">

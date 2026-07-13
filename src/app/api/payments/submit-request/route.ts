@@ -1,19 +1,24 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { getUserFromRequest } from '@/lib/authServer';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = getSupabaseAdmin();
 
 export async function POST(req: Request) {
   try {
-    const { requestId, userId, itemType, itemId, amount, receiptUrl, itemName, username } = await req.json();
+    // XAVFSIZLIK: kim ekanini tokendan aniqlaymiz, so'rov tanasidagi userId'ga ishonmaymiz.
+    const authedUser = await getUserFromRequest(req);
+    if (!authedUser) {
+      return NextResponse.json({ error: "Avtorizatsiya talab qilinadi" }, { status: 401 });
+    }
+    const userId = authedUser.id;
+
+    const { requestId, itemType, itemId, amount, receiptUrl, itemName, username } = await req.json();
 
     let finalRequestId = requestId;
 
     if (!finalRequestId) {
-      if (!userId || !itemType || !amount || !receiptUrl) {
+      if (!itemType || !amount || !receiptUrl) {
         return NextResponse.json({ error: "Barcha majburiy maydonlarni to'ldiring." }, { status: 400 });
       }
 

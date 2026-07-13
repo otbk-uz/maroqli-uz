@@ -72,24 +72,42 @@ export default function AdminPage() {
   const [savingLesson, setSavingLesson] = useState(false);
 
   useEffect(() => {
-    const savedAdmin = sessionStorage.getItem('customAdminLogin');
-    if (savedAdmin === 'true') {
-      setIsCustomAdmin(true);
-      fetchAdminData();
-    } else {
-      setLoading(false);
-    }
+    // Admin holatini SERVER tomondagi imzolangan cookie orqali tekshiramiz.
+    (async () => {
+      try {
+        const res = await fetch('/api/admin/session');
+        const data = await res.json();
+        if (data.authenticated) {
+          setIsCustomAdmin(true);
+          fetchAdminData();
+        } else {
+          setLoading(false);
+        }
+      } catch {
+        setLoading(false);
+      }
+    })();
   }, []);
 
-  const handleAdminLogin = (e: React.FormEvent) => {
+  const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginForm.username === 'admin' && loginForm.password === 'MAROQLI2026') {
-      setIsCustomAdmin(true);
-      sessionStorage.setItem('customAdminLogin', 'true');
-      setLoginError('');
-      fetchAdminData();
-    } else {
-      setLoginError('Login yoki parol xato!');
+    setLoginError('');
+    try {
+      // Parol SERVER tomonda tekshiriladi — kodda emas, brauzerdan buzib bo'lmaydi.
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm),
+      });
+      if (res.ok) {
+        setIsCustomAdmin(true);
+        fetchAdminData();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setLoginError(data.error || 'Login yoki parol xato!');
+      }
+    } catch {
+      setLoginError('Serverga ulanishda xatolik.');
     }
   };
 

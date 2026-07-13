@@ -6,9 +6,12 @@ import { Play, Trophy, Users, Shield, Gamepad2, Radio, Crown, TrendingUp, Code, 
 import Link from "next/link";
 import { useTranslation } from "@/lib/store";
 
-const Hero = () => {
+type HeroStats = { users: number; tournaments: number; games: number };
+
+const Hero = ({ stats }: { stats?: HeroStats }) => {
   const { t, locale } = useTranslation();
   const [showSections, setShowSections] = useState(false);
+  const fmt = (n?: number) => (n && n > 0 ? n.toLocaleString() : "—");
 
   const sectionsList = [
     { 
@@ -78,31 +81,16 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[95vh] flex items-center pt-28 pb-16 md:pt-48 md:pb-32 overflow-hidden bg-background">
-      {/* Dynamic Background */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,_#ff2d5533,_transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_0%_100%,_#3b82f61a,_transparent_50%)]" />
-        <div className="absolute inset-0 opacity-25 bg-[url('/hero_bg.png')] bg-cover bg-center mix-blend-overlay" />
-        
-        {/* Animated Orbs */}
-        <motion.div 
-          animate={{ 
-            x: [0, 100, 0], 
-            y: [0, -50, 0],
-            opacity: [0.2, 0.4, 0.2]
-          }}
-          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 right-1/4 w-[400px] h-[400px] bg-primary/20 rounded-full blur-[120px]" 
-        />
-        <motion.div 
-          animate={{ 
-            x: [0, -80, 0], 
-            y: [0, 60, 0],
-            opacity: [0.1, 0.3, 0.1]
-          }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[150px]" 
-        />
+      {/* Background — clean & premium, no moving orbs */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* Single primary glow anchored at the top */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,_rgba(255,51,85,0.13),_transparent_60%)]" />
+        {/* Faint texture */}
+        <div className="absolute inset-0 opacity-[0.10] bg-[url('/hero_bg.png')] bg-cover bg-center mix-blend-overlay" />
+        {/* Fine grid for subtle depth */}
+        <div className="absolute inset-0 opacity-[0.035] bg-[linear-gradient(to_right,#ffffff_1px,transparent_1px),linear-gradient(to_bottom,#ffffff_1px,transparent_1px)] bg-[size:64px_64px]" />
+        {/* Seamless fade into the page background */}
+        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-background" />
       </div>
 
       <div className="container mx-auto px-4 md:px-6 relative z-10">
@@ -173,39 +161,39 @@ const Hero = () => {
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 text-primary group-hover:scale-110 transition-transform">
                 <Users size={24} />
               </div>
-              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">5,000+</p>
+              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight tabular-nums">{fmt(stats?.users)}</p>
               <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("active_players", "Faol o'yinchilar")}</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.5 }}
-              className="glass-card p-5 border-blue-500/20 hover:border-blue-500/50 transition-colors group"
+              className="glass-card p-5 border-violet/20 hover:border-violet/50 transition-colors group"
             >
-              <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-6 text-blue-500 group-hover:scale-110 transition-transform">
-                <Shield size={24} />
+              <div className="w-12 h-12 bg-violet/10 rounded-xl flex items-center justify-center mb-6 text-violet group-hover:scale-110 transition-transform">
+                <Trophy size={24} />
               </div>
-              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">42</p>
-              <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("verified_tournaments", "Tasdiqlangan turnirlar")}</p>
+              <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight tabular-nums">{fmt(stats?.tournaments)}</p>
+              <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("tournaments", "Turnirlar")}</p>
             </motion.div>
 
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.6 }}
-              className="glass-card p-5 border-yellow-500/20 hover:border-yellow-500/50 transition-colors group md:col-span-2 lg:col-span-1"
+              className="glass-card p-5 border-white/10 hover:border-white/20 transition-colors group md:col-span-2 lg:col-span-1"
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="w-12 h-12 bg-yellow-500/10 rounded-xl flex items-center justify-center mb-6 text-yellow-500 group-hover:scale-110 transition-transform">
-                    <Trophy size={24} />
+                  <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-6 text-white group-hover:scale-110 transition-transform">
+                    <Gamepad2 size={24} />
                   </div>
-                  <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">$8,500+</p>
-                  <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("total_prize_pool", "Jami sovrin jamg'armasi")}</p>
+                  <p className="font-display text-4xl md:text-5xl font-black text-white mb-2 tracking-tight">{fmt(stats?.games)}</p>
+                  <p className="text-xs font-bold text-secondary uppercase tracking-widest">{t("available_games", "Mavjud o'yinlar")}</p>
                 </div>
-                <div className="hidden sm:block w-32 h-32 opacity-10">
-                   <Trophy size={128} />
+                <div className="hidden sm:block w-32 h-32 opacity-[0.06]">
+                   <Gamepad2 size={128} />
                  </div>
               </div>
             </motion.div>

@@ -53,8 +53,11 @@ export default function StreamDashboardPage() {
       // Call the MUX backend API to get or create stream keys
       const res = await fetch("/api/streams/setup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${useAuthStore.getState().token || ''}`,
+        },
+        body: JSON.stringify({}),
       });
       
       const data = await res.json();

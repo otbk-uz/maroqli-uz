@@ -253,10 +253,12 @@ const GameDetailPage = () => {
       // 2. Call backend to send Telegram notifications
       const response = await fetch('/api/payments/submit-request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().token || ''}`,
+        },
         body: JSON.stringify({
           requestId: requestData.id,
-          userId: user.id,
           itemType: 'GAME',
           itemId: game.id,
           amount: finalPrice,
@@ -289,20 +291,11 @@ const GameDetailPage = () => {
     }
   };
 
-  const getPlaceholderImage = (slug: string) => {
-    if (slug.includes("tashkent")) {
-      return "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200";
-    }
-    if (slug.includes("bukhara")) {
-      return "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=1200";
-    }
-    return "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1200";
-  };
-
   if (loading) {
     return (
-      <main className="min-h-screen bg-background relative flex items-center justify-center">
+      <main className="min-h-screen bg-background relative flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-secondary text-xs font-bold uppercase tracking-widest">Yuklanmoqda...</p>
       </main>
     );
   }
@@ -327,11 +320,17 @@ const GameDetailPage = () => {
       <Navbar />
 
       {/* Banner */}
-      <div className="h-64 md:h-96 w-full bg-gradient-to-b from-primary/20 to-background relative overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center opacity-25"
-          style={{ backgroundImage: `url(${game.cover || getPlaceholderImage(game.slug)})` }}
-        />
+      <div className="h-64 md:h-96 w-full relative overflow-hidden border-b border-white/5">
+        {game.cover ? (
+          <img
+            src={game.cover}
+            alt={game.title}
+            className="absolute inset-0 w-full h-full object-cover opacity-30"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(90rem_44rem_at_50%_-45%,rgba(255,51,85,0.20),transparent_60%)]" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/50 to-background" />
       </div>
 
       <div className="container mx-auto px-4 md:px-6 -mt-32 relative z-10 pb-20 max-w-5xl">
@@ -357,7 +356,7 @@ const GameDetailPage = () => {
                 </span>
                 <div className="bg-black/60 border border-white/5 px-2.5 py-1 rounded-full flex items-center gap-1">
                   <Star size={12} className="text-yellow-500 fill-yellow-500" />
-                  <span className="text-xs font-bold text-white">{game.rating}</span>
+                  <span className="text-xs font-bold text-white tabular-nums">{Number(game.rating).toFixed(1)}</span>
                 </div>
               </div>
 
@@ -482,27 +481,27 @@ const GameDetailPage = () => {
                   user?.is_premium ? (
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <p className="text-3xl font-black text-amber-400">
-                          {Math.round(Number(game.price) * 0.8).toLocaleString()} UZS
+                        <p className="text-3xl font-black text-amber-400 font-display tabular-nums">
+                          {Math.round(Number(game.price) * 0.8).toLocaleString()} <span className="text-lg">UZS</span>
                         </p>
                         <span className="bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-0.5 shadow-sm">
                           <Crown size={10} className="fill-current" />
                           -20% PRO
                         </span>
                       </div>
-                      <p className="text-xs text-secondary line-through font-semibold">
+                      <p className="text-xs text-secondary line-through font-semibold tabular-nums">
                         {Number(game.price).toLocaleString()} UZS (Asl narxi)
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      <p className="text-3xl font-black text-white font-display">
-                        {Number(game.price).toLocaleString()} UZS
+                      <p className="text-3xl font-black text-white font-display tabular-nums">
+                        {Number(game.price).toLocaleString()} <span className="text-lg text-secondary">UZS</span>
                       </p>
                       <div className="bg-gradient-to-r from-amber-500/5 to-transparent border border-amber-500/15 p-2.5 rounded-xl flex items-center gap-2">
-                        <Crown size={12} className="text-amber-400 fill-current animate-pulse shrink-0" />
+                        <Crown size={12} className="text-amber-400 fill-current shrink-0" />
                         <p className="text-[10px] text-amber-400 font-bold leading-normal">
-                          Premium bilan: <span className="underline">{Math.round(Number(game.price) * 0.8).toLocaleString()} UZS</span>
+                          Premium bilan: <span className="underline tabular-nums">{Math.round(Number(game.price) * 0.8).toLocaleString()} UZS</span>
                         </p>
                       </div>
                     </div>
@@ -521,9 +520,20 @@ const GameDetailPage = () => {
 
                   {existingCdKey && (
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-2">
-                      <p className="text-[9px] text-secondary uppercase font-bold tracking-widest">Sizning CD-KEYingiz</p>
-                      <div className="flex items-center justify-between bg-black/40 px-3 py-2.5 rounded-lg border border-white/5">
-                        <code className="text-xs text-white font-mono">{existingCdKey}</code>
+                      <p className="text-[9px] text-secondary uppercase font-bold tracking-widest">Sizning CD-keyingiz</p>
+                      <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2.5 rounded-lg border border-white/5">
+                        <code className="text-xs text-white font-mono select-all truncate">{existingCdKey}</code>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(existingCdKey);
+                            alert("CD-key nusxalandi!");
+                          }}
+                          className="text-secondary hover:text-primary transition-colors shrink-0"
+                          title="Nusxalash"
+                        >
+                          <Key size={14} />
+                        </button>
                       </div>
                     </div>
                   )}
@@ -674,10 +684,10 @@ const GameDetailPage = () => {
                 </div>
 
                 <div className="flex justify-between items-center text-xs border-t border-white/5 pt-3">
-                  <span className="text-secondary">To'lov Summasi:</span>
-                  <span className="font-black text-amber-400 text-sm">
-                    {user?.is_premium 
-                      ? `${Math.round(Number(game.price) * 0.8).toLocaleString()} UZS (Premium -20% discount)`
+                  <span className="text-secondary">To'lov summasi:</span>
+                  <span className="font-black text-amber-400 text-sm tabular-nums">
+                    {user?.is_premium
+                      ? `${Math.round(Number(game.price) * 0.8).toLocaleString()} UZS (Premium -20%)`
                       : `${Number(game.price).toLocaleString()} UZS`
                     }
                   </span>
@@ -685,7 +695,7 @@ const GameDetailPage = () => {
               </div>
 
               <div className="text-xs text-secondary leading-relaxed bg-primary/5 border border-primary/10 p-4 rounded-xl">
-                💡 **Yo'riqnoma:** Istalgan to'lov ilovasi (Click, Payme, Uzum va hk.) orqali yuqoridagi kartaga ko'rsatilgan summani o'tqazing va to'lov muvaffaqiyatli bo'lganligi to'g'risidagi **chek skrinshotini (rasmini)** pastda yuklang.
+                <span className="font-bold text-white">Yo'riqnoma.</span> Istalgan to'lov ilovasi (Click, Payme, Uzum va hokazo) orqali yuqoridagi kartaga ko'rsatilgan summani o'tkazing va to'lov muvaffaqiyatli bo'lgani haqidagi <span className="font-bold text-white">chek skrinshotini</span> pastda yuklang.
               </div>
 
               <div className="space-y-2">

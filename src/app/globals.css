@@ -3,46 +3,97 @@
 @tailwind utilities;
 
 :root {
-  --background: #09090b;
+  --background: #050507;
   --foreground: #ffffff;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: 'Inter', sans-serif;
+  /* Nozik aurora fon — butun saytga chuqurlik beradi */
+  background-image:
+    radial-gradient(60rem 60rem at 80% -10%, rgba(139, 92, 246, 0.08), transparent 60%),
+    radial-gradient(50rem 50rem at -10% 10%, rgba(255, 51, 85, 0.08), transparent 55%);
+  background-attachment: fixed;
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card/60 backdrop-blur-md border border-white/5 rounded-2xl;
+    @apply bg-card/60 backdrop-blur-xl border border-white/10 rounded-3xl shadow-card;
   }
-  
+
+  /* Ustiga kelганda ko'tariladigan interaktiv karta */
+  .card-interactive {
+    @apply glass-card transition-all duration-300 hover:border-white/20 hover:shadow-card-hover hover:-translate-y-1;
+  }
+
   .btn-primary {
-    @apply bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-95;
+    @apply relative inline-flex items-center justify-center bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-glow hover:shadow-[0_0_50px_-8px_rgba(255,51,85,0.6)] active:scale-95;
+  }
+
+  .btn-gradient {
+    @apply relative inline-flex items-center justify-center bg-brand-gradient bg-[length:200%_200%] animate-gradient-move text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 shadow-glow-violet active:scale-95;
   }
 
   .btn-outline {
-    @apply border border-white/10 hover:bg-white/5 text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 active:scale-95;
+    @apply inline-flex items-center justify-center border border-white/15 hover:bg-white/5 hover:border-white/25 text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 active:scale-95;
+  }
+
+  /* Brend gradient matn (sarlavhalar uchun) */
+  .text-gradient {
+    @apply bg-brand-gradient bg-clip-text text-transparent;
+  }
+
+  /* Bo'lim yorlig'i (chip) */
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-secondary;
+  }
+
+  /* Skeleton yuklanish holati */
+  .skeleton {
+    @apply relative overflow-hidden bg-white/5 rounded-xl;
+  }
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.06), transparent);
+    animation: shimmer 1.6s infinite;
   }
 }
 
-/* Custom scrollbar for gaming feel */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Custom scrollbar (gaming his) */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #09090b;
+  background: #050507;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #1e1e20;
+  background: #1e1e26;
   border-radius: 10px;
+  border: 2px solid #050507;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FF3355;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #ff2d55;
+/* Klaviatura bilan navigatsiya uchun ko'rinadigan fokus (accessibility) */
+:focus-visible {
+  outline: 2px solid rgba(255, 51, 85, 0.7);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 @layer utilities {
@@ -58,5 +109,21 @@ body {
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+  /* Konteyner kengligi — ulkan ekranlarda ham chiroyli */
+  .container-app {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+}
+
+/* Harakatni kamaytirish sozlamasi yoqilgan foydalanuvchilar uchun (accessibility) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

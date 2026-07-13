@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = getSupabaseAdmin();
 
-const TELEGRAM_BOT_TOKEN = process.env.KIBERSPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8691594274:AAFuehA_27DpYZM_Fd2XZQyrURIjWA6Qddo';
-const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '-1003901938291';
+// Sirlar KODDA emas, faqat muhit o'zgaruvchilarida (.env.local)
+const TELEGRAM_BOT_TOKEN = process.env.KIBERSPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
+const PAYMENT_CARD_NUMBER = process.env.PAYMENT_CARD_NUMBER || '';
+const PAYMENT_CARD_HOLDER = process.env.PAYMENT_CARD_HOLDER || '';
 const CHANNEL_USERNAME = '@maroqliku';
 
 // Helper: Telegram API so'rovlari
@@ -64,8 +66,23 @@ async function showMainMenu(chatId: string | number) {
 
 export async function POST(req: Request) {
   try {
+    // XAVFSIZLIK: so'rov haqiqatan Telegram'dan kelganini tekshirish.
+    // setWebhook da secret_token bergan bo'lsak, har so'rovda shu sarlavha keladi.
+    if (TELEGRAM_WEBHOOK_SECRET) {
+      const got = req.headers.get('x-telegram-bot-api-secret-token');
+      if (got !== TELEGRAM_WEBHOOK_SECRET) {
+        console.warn('Bot webhook: noto\'g\'ri yoki yo\'q secret token — rad etildi');
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+      }
+    }
+
+    if (!TELEGRAM_BOT_TOKEN) {
+      console.error('TELEGRAM_BOT_TOKEN sozlanmagan (.env.local)');
+      return NextResponse.json({ error: 'bot not configured' }, { status: 503 });
+    }
+
     const body = await req.json();
-    
+
     // 1. Message yoki Callback Query ekanini aniqlash
     const message = body.message;
     const callbackQuery = body.callback_query;
@@ -132,8 +149,8 @@ export async function POST(req: Request) {
           chat_id: chatId,
           text: `💳 *CHIPTA XARID QILISH*\n\n` +
             `Turnir chiptasini olish uchun quyidagi kartaga to'lovni amalga oshiring:\n\n` +
-            `💳 *Karta raqami:* \`9860010137992664\`\n` +
-            `👤 *Karta egasi:* Zokirjonov Isfandiyor\n` +
+            `💳 *Karta raqami:* \`${PAYMENT_CARD_NUMBER}\`\n` +
+            `👤 *Karta egasi:* ${PAYMENT_CARD_HOLDER}\n` +
             `💰 *Summa:* 10 000 UZS\n\n` +
             `To'lovni amalga oshirgach, to'lov chekining (skrinshotini) rasmini ushbu botga yuboring.`,
           parse_mode: 'Markdown'
@@ -387,7 +404,7 @@ export async function POST(req: Request) {
                      `📍 *Hudud:* ${userRegion}\n` +
                      `🆔 *Telegram ID:* ${userId}\n` +
                      `💰 *Summa:* 10 000 UZS\n\n` +
-                     `Karta: Isfandiyor Zokirjonov (\`9860010137992664\`)`,
+                     `Karta: ${PAYMENT_CARD_HOLDER} (\`${PAYMENT_CARD_NUMBER}\`)`,
             parse_mode: 'Markdown',
             reply_markup: {
               inline_keyboard: [

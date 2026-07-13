@@ -1,13 +1,22 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = getSupabaseAdmin();
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
+const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
 
 export async function POST(req: Request) {
   try {
+    // XAVFSIZLIK 1: so'rov haqiqatan Telegram'dan kelganini tekshirish.
+    if (TELEGRAM_WEBHOOK_SECRET) {
+      const got = req.headers.get('x-telegram-bot-api-secret-token');
+      if (got !== TELEGRAM_WEBHOOK_SECRET) {
+        console.warn('Payment webhook: secret token noto\'g\'ri — rad etildi');
+        return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+      }
+    }
+
     const payload = await req.json();
 
     // Verify it has callback_query
@@ -17,8 +26,17 @@ export async function POST(req: Request) {
 
     const callbackQuery = payload.callback_query;
     const { data: callbackData, message, from } = callbackQuery;
-    
+
     if (!callbackData || !callbackData.includes(':')) {
+      return NextResponse.json({ ok: true });
+    }
+
+    // XAVFSIZLIK 2: tasdiqlash tugmasi FAQAT admin guruhida ko'rinadi.
+    // Shu sabab callback ayni admin chatidan kelganini talab qilamiz —
+    // aks holda begona odam soxta tasdiq yubora olmaydi.
+    if (TELEGRAM_ADMIN_CHAT_ID && String(message?.chat?.id) !== String(TELEGRAM_ADMIN_CHAT_ID)) {
+      console.warn('Payment webhook: admin bo\'lmagan chatdan tasdiq urinishi — rad etildi');
+      await answerCallbackQuery(callbackQuery.id, "Sizda bu amalni bajarish huquqi yo'q.");
       return NextResponse.json({ ok: true });
     }
 
@@ -58,17 +76,28 @@ export async function POST(req: Request) {
     let finalMessage = "";
 
     if (action === 'approve') {
-      // Update payment_request status
-      const { error: updateError } = await supabase
+      // ATOMIK yangilash: faqat hali PENDING bo'lsa APPROVED qilamiz.
+      // Bu bir arizani ikki marta tasdiqlash (qo'sh CD-key/premium) oldini oladi.
+      const { data: approvedRows, error: updateError } = await supabase
         .from('payment_requests')
         .update({ status: 'APPROVED' })
-        .eq('id', requestId);
+        .eq('id', requestId)
+        .eq('status', 'PENDING')
+        .select('id');
 
       if (updateError) throw updateError;
+      if (!approvedRows || approvedRows.length === 0) {
+        // Boshqa admin allaqachon ko'rib chiqqan
+        await answerCallbackQuery(callbackQuery.id, "Ushbu ariza allaqachon ko'rib chiqilgan.");
+        return NextResponse.json({ ok: true });
+      }
 
       if (requestData.item_type === 'GAME') {
-        // Generate CD Key
-        const segment = () => Math.random().toString(36).substring(2, 6).toUpperCase();
+        // Xavfsiz CD-Key (crypto — bashorat qilib bo'lmaydi)
+        const segment = () => {
+          const bytes = crypto.getRandomValues(new Uint8Array(3));
+          return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').substring(0, 4).toUpperCase();
+        };
         const cdKey = `PN-${segment()}-${segment()}-${segment()}`;
 
         // Insert into bought_games table

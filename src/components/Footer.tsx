@@ -2,79 +2,177 @@
 
 import React from "react";
 import Link from "next/link";
-import { Shield, BookOpen, Send, Phone, Mail } from "lucide-react";
+import { Shield, BookOpen, Send, Phone, Mail, Youtube, Instagram } from "lucide-react";
 import { useTranslation } from "@/lib/store";
 
 const Footer = () => {
   const { t } = useTranslation();
 
+  const sections = [
+    {
+      title: t("footer_platform", "Platforma"),
+      links: [
+        { label: t("tournaments", "Turnirlar"), href: "/tournaments" },
+        { label: t("games", "O'yinlar"), href: "/games" },
+        { label: t("streamers", "Streamerlar"), href: "/streamers" },
+        { label: t("premium", "Premium"), href: "/premium" },
+        { label: t("leaderboard", "Reyting"), href: "/leaderboard" },
+      ],
+    },
+    {
+      title: t("footer_community", "Hamjamiyat"),
+      links: [
+        { label: t("forum", "Forum"), href: "/forum" },
+        { label: t("darslar", "Videodarslar"), href: "/darslar" },
+        { label: t("gamedev", "GameDev"), href: "/gamedev" },
+        { label: t("news", "Yangiliklar"), href: "/news" },
+      ],
+    },
+    {
+      title: t("footer_company", "Kompaniya"),
+      links: [
+        { label: t("terms_of_use", "Foydalanish shartlari"), href: "/terms", icon: BookOpen },
+        { label: t("privacy_policy", "Maxfiylik siyosati"), href: "/privacy", icon: Shield },
+      ],
+    },
+  ];
+
+  const socials = [
+    { label: "Telegram", href: "https://t.me/maroqliuz", icon: Send },
+    { label: "YouTube", href: "https://youtube.com/@maroqliuz", icon: Youtube },
+    { label: "Instagram", href: "https://instagram.com/maroqliuz", icon: Instagram },
+  ];
+
   return (
-    <footer className="w-full bg-background border-t border-white/5 py-12 pb-24 lg:pb-12 mt-auto relative z-10 overflow-hidden">
-      <div className="absolute bottom-0 left-[50%] translate-x-[-50%] w-[80%] h-[150px] bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-      
-      <div className="container mx-auto px-4 md:px-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
-          {/* Brand */}
-          <div className="space-y-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <img src="/logo.jpg.png" alt="Maroqli.uz Logo" className="h-12 w-auto" />
+    <footer className="relative z-10 mt-auto w-full overflow-hidden border-t border-white/5 bg-background pb-28 pt-16 lg:pb-16">
+      {/* Ambient brand glow */}
+      <div className="pointer-events-none absolute bottom-0 left-1/2 h-[180px] w-[80%] -translate-x-1/2 rounded-full bg-primary/5 blur-[110px]" />
+
+      <div className="container-app relative">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-12">
+          {/* Brand column */}
+          <div className="col-span-2 space-y-5 md:col-span-5">
+            <Link href="/" className="group flex items-center gap-3">
+              <div className="relative">
+                <span className="absolute inset-0 rounded-xl bg-brand-gradient opacity-40 blur-md transition-opacity duration-300 group-hover:opacity-70" />
+                <img
+                  src="/logo.jpg.png"
+                  alt="Maroqli.uz"
+                  className="relative h-11 w-11 rounded-xl object-cover ring-1 ring-white/10"
+                />
+              </div>
+              <span className="font-display text-xl font-black uppercase tracking-[0.15em]">
+                <span className="text-white">MAR</span>
+                <span className="text-gradient">OQLI</span>
+              </span>
             </Link>
-            <p className="text-secondary text-sm leading-relaxed max-w-sm">
-              {t("footer_desc", "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi, game developerlar va streamerlarni qo'llab-quvvatlovchi zamonaviy ekotizim platformasi.")}
+            <p className="max-w-sm text-sm leading-relaxed text-secondary">
+              {t(
+                "footer_desc",
+                "O'zbekiston va Markaziy Osiyoda gaming hamjamiyatini birlashtiruvchi, game developerlar va streamerlarni qo'llab-quvvatlovchi zamonaviy ekotizim platformasi."
+              )}
             </p>
+
+            {/* Socials */}
+            <div className="flex items-center gap-3 pt-1">
+              {socials.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-secondary transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                  >
+                    <Icon size={17} />
+                  </a>
+                );
+              })}
+            </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="space-y-4">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider">
-              {t("documents_rules", "Hujjatlar va Qoidalar")}
-            </h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link href="/terms" className="text-secondary hover:text-primary transition-colors flex items-center gap-2">
-                  <BookOpen size={14} />
-                  <span>{t("terms_of_use", "Foydalanish shartlari (Oferta)")}</span>
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-secondary hover:text-primary transition-colors flex items-center gap-2">
-                  <Shield size={14} />
-                  <span>{t("privacy_policy", "Maxfiylik siyosati")}</span>
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {/* Link sections */}
+          {sections.map((section) => (
+            <div key={section.title} className="md:col-span-2 lg:col-span-2">
+              <h4 className="mb-4 font-display text-xs font-black uppercase tracking-widest text-white">
+                {section.title}
+              </h4>
+              <ul className="space-y-3 text-sm">
+                {section.links.map((link) => {
+                  const Icon = (link as { icon?: React.ElementType }).icon;
+                  return (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        className="group inline-flex items-center gap-2 text-secondary transition-colors hover:text-primary"
+                      >
+                        {Icon && <Icon size={14} className="opacity-70" />}
+                        <span className="transition-transform duration-200 group-hover:translate-x-0.5">
+                          {link.label}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
 
-          {/* Contact / Socials */}
-          <div className="space-y-4">
-            <h4 className="text-white font-bold text-sm uppercase tracking-wider">
-              {t("contact_support", "Aloqa va Qo'llab-quvvatlash")}
+          {/* Contact column */}
+          <div className="col-span-2 md:col-span-1 lg:col-span-1">
+            <h4 className="mb-4 font-display text-xs font-black uppercase tracking-widest text-white">
+              {t("contact_support", "Aloqa")}
             </h4>
             <ul className="space-y-3 text-sm text-secondary">
-              <li className="flex items-center gap-2">
-                <Phone size={14} className="text-primary" />
-                <span>+998 93-823-7773</span>
+              <li>
+                <a
+                  href="tel:+998938237773"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Phone size={14} className="text-primary" />
+                  <span>+998 93-823-7773</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Mail size={14} className="text-primary" />
-                <span>info@maroqli.uz</span>
+              <li>
+                <a
+                  href="mailto:info@maroqli.uz"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Mail size={14} className="text-primary" />
+                  <span>info@maroqli.uz</span>
+                </a>
               </li>
-              <li className="flex items-center gap-2">
-                <Send size={14} className="text-primary" />
-                <a href="https://t.me/maroqliuz" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">
-                  Telegram: @maroqliuz
+              <li>
+                <a
+                  href="https://t.me/maroqliuz"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
+                >
+                  <Send size={14} className="text-primary" />
+                  <span>@maroqliuz</span>
                 </a>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom copyright line */}
-        <div className="border-t border-white/5 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-secondary">
-          <p>&copy; {new Date().getFullYear()} Maroqli.uz. {t("rights_reserved", "Barcha huquqlar himoyalangan.")}</p>
-          <div className="flex space-x-6">
-            <Link href="/terms" className="hover:text-primary transition-colors">{t("terms_short", "Oferta")}</Link>
-            <Link href="/privacy" className="hover:text-primary transition-colors">{t("privacy_short", "Maxfiylik")}</Link>
+        {/* Bottom bar */}
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/5 pt-8 text-xs text-secondary md:flex-row">
+          <p>
+            &copy; {new Date().getFullYear()} Maroqli.uz.{" "}
+            {t("rights_reserved", "Barcha huquqlar himoyalangan.")}
+          </p>
+
+          <div className="flex gap-6">
+            <Link href="/terms" className="transition-colors hover:text-primary">
+              {t("terms_short", "Oferta")}
+            </Link>
+            <Link href="/privacy" className="transition-colors hover:text-primary">
+              {t("privacy_short", "Maxfiylik")}
+            </Link>
           </div>
         </div>
       </div>

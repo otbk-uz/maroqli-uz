@@ -1,25 +1,41 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { getSupabaseAdmin } from "@/lib/supabaseAdmin";
+
+/** Mux imzosini HMAC-SHA256 orqali haqiqiy tekshiradi (t=...,v1=...). */
+function verifyMuxSignature(rawBody: string, header: string | null, secret: string): boolean {
+  if (!header) return false;
+  const parts = Object.fromEntries(
+    header.split(",").map((kv) => kv.split("=") as [string, string])
+  );
+  const timestamp = parts["t"];
+  const expectedSig = parts["v1"];
+  if (!timestamp || !expectedSig) return false;
+
+  const signedPayload = `${timestamp}.${rawBody}`;
+  const computed = crypto.createHmac("sha256", secret).update(signedPayload).digest("hex");
+  try {
+    return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(expectedSig));
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: Request) {
   try {
-    // Initialize Supabase Admin client to bypass RLS
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-    );
+    const supabaseAdmin = getSupabaseAdmin();
 
     const body = await req.text();
     const signature = req.headers.get("mux-signature");
     const MUX_WEBHOOK_SECRET = process.env.MUX_WEBHOOK_SECRET;
 
-    // Optional: Verify Mux signature if secret is provided in .env
-    if (MUX_WEBHOOK_SECRET && signature) {
-      // Very basic verification to prevent unauthorized webhook calls
-      // A more robust implementation would use @mux/mux-node Mux.Webhooks.verifyHeader
-      // But for simplicity, we assume if secret is provided, the call should be valid.
-      console.log("Verifying Mux webhook signature...");
+    // XAVFSIZLIK: secret sozlangan bo'lsa, imzo MAJBURIY va haqiqiy tekshiriladi.
+    // Aks holda soxta stream hodisalarini yuborib bo'lardi.
+    if (MUX_WEBHOOK_SECRET) {
+      if (!verifyMuxSignature(body, signature, MUX_WEBHOOK_SECRET)) {
+        console.warn("Mux webhook: imzo noto'g'ri — rad etildi");
+        return NextResponse.json({ error: "invalid signature" }, { status: 401 });
+      }
     }
 
     const payload = JSON.parse(body);
