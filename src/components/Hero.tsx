@@ -59,7 +59,7 @@ const Hero = ({ stats }: { stats?: HeroStats }) => {
     { 
       name: t("lessons", "Dev Darslari"), 
       desc: t("lessons_desc", "O'yin yaratish bo'yicha maxsus darsliklar va o'quv videolari."), 
-      href: "/gamedev?tab=lessons", 
+      href: "/darslar",
       icon: <Play size={24} fill="currentColor" />, 
       gradient: "from-cyan-500 to-blue-600" 
     },

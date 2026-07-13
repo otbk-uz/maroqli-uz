@@ -50,11 +50,18 @@ export default function TournamentLive() {
     setBusy(true);
     setErr("");
     try {
+      // Yangi (avtomatik yangilangan) sessiya tokenini olamiz — eskisi tugagan bo'lishi mumkin
+      const { data: sessionData } = await supabase.auth.getSession();
+      const freshToken = sessionData.session?.access_token || useAuthStore.getState().token || "";
+      if (!freshToken) {
+        setErr("Iltimos, avval tizimga kiring (admin hisobi bilan).");
+        return;
+      }
       const res = await fetch("/api/streams/live", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${useAuthStore.getState().token || ""}`,
+          Authorization: `Bearer ${freshToken}`,
         },
       });
       const data = await res.json();

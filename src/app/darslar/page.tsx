@@ -27,7 +27,7 @@ export default function DarslarPage() {
       const { data, error } = await supabase
         .from("gamedev_lessons")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
       setLessons(data || []);
@@ -122,16 +122,16 @@ export default function DarslarPage() {
           </motion.div>
         )}
 
-        {/* Lessons Grid */}
+        {/* Lessons Playlist */}
         {loadingLessons ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[0, 1, 2, 3, 4, 5].map((n) => (
-              <div key={n} className="glass-card overflow-hidden flex flex-col h-full">
-                <div className="skeleton aspect-video rounded-none" />
-                <div className="p-5 space-y-4">
-                  <div className="skeleton h-5 w-3/4" />
-                  <div className="skeleton h-3 w-1/2" />
-                  <div className="skeleton h-10 w-full rounded-xl" />
+          <div className="glass-card divide-y divide-white/5 overflow-hidden">
+            {[0, 1, 2, 3, 4].map((n) => (
+              <div key={n} className="flex items-center gap-4 p-3 md:p-4">
+                <div className="skeleton h-5 w-6 shrink-0" />
+                <div className="skeleton aspect-video w-28 md:w-40 shrink-0 rounded-xl" />
+                <div className="flex-1 space-y-2">
+                  <div className="skeleton h-4 w-2/3" />
+                  <div className="skeleton h-3 w-1/3" />
                 </div>
               </div>
             ))}
@@ -156,81 +156,73 @@ export default function DarslarPage() {
             </p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredLessons.map((lesson, i) => {
-              const hasAccess = true; // Barcha uchun bepul
-              return (
-                <motion.div
-                  key={lesson.id}
-                  initial={{ opacity: 0, y: 24 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
-                  className="card-interactive overflow-hidden group hover:border-primary/40 cursor-pointer flex flex-col h-full"
-                  onClick={() => hasAccess && router.push(`/gamedev/lessons/${lesson.id}`)}
-                >
-                  <div className="aspect-video relative overflow-hidden bg-white/5">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass-card divide-y divide-white/5 overflow-hidden"
+          >
+            {filteredLessons.map((lesson, i) => (
+              <button
+                key={lesson.id}
+                onClick={() => router.push(`/gamedev/lessons/${lesson.id}`)}
+                className="group flex w-full items-center gap-3 p-3 text-left transition-colors hover:bg-white/5 md:gap-4 md:p-4"
+              >
+                {/* Tartib raqami */}
+                <span className="w-7 shrink-0 text-center font-display text-sm font-black tabular-nums text-secondary group-hover:text-primary md:w-9 md:text-base">
+                  {i + 1}
+                </span>
+
+                {/* Miniatyura */}
+                <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-xl bg-white/5 md:w-40">
+                  {lesson.img ? (
                     <img
                       src={lesson.img}
                       alt={lesson.title}
-                      className="w-full h-full object-cover opacity-70 group-hover:scale-110 group-hover:opacity-90 transition-all duration-700"
+                      className="h-full w-full object-cover opacity-80 transition-all duration-500 group-hover:scale-105 group-hover:opacity-100"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-14 h-14 rounded-full bg-primary/90 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-glow scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300">
-                        <Play size={22} className="text-white fill-current ml-0.5" />
-                      </div>
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-brand-gradient-soft">
+                      <Play size={18} className="text-white/70" />
                     </div>
-
-                    <span className="absolute top-4 left-4 chip !bg-black/50 !border-white/10 backdrop-blur-md text-white font-display uppercase tracking-widest text-[9px]">
-                      {lesson.level}
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary shadow-glow">
+                      <Play size={15} className="ml-0.5 fill-current text-white" />
+                    </div>
+                  </div>
+                  {lesson.duration && (
+                    <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                      {lesson.duration}
                     </span>
+                  )}
+                </div>
 
-                    {lesson.duration && (
-                      <span className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-full flex items-center gap-1 text-white text-[11px] font-bold">
-                        <Clock size={11} className="text-cyan" />
-                        {lesson.duration}
+                {/* Ma'lumot */}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate font-display text-sm font-bold tracking-tight text-white transition-colors group-hover:text-primary md:text-base">
+                    {lesson.title}
+                  </h3>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-secondary">
+                    {lesson.level && (
+                      <span className="inline-flex items-center gap-1 font-display uppercase tracking-wider text-violet">
+                        <GraduationCap size={12} />
+                        {lesson.level}
                       </span>
                     )}
+                    <span className="truncate">
+                      Muallif: <span className="text-white/90">{lesson.author || "Maroqli.uz"}</span>
+                    </span>
                   </div>
+                </div>
 
-                  <div className="p-5 flex-1 flex flex-col">
-                    <h3 className="font-display font-bold text-lg text-white mb-2 leading-snug tracking-tight group-hover:text-primary transition-colors line-clamp-2">
-                      {lesson.title}
-                    </h3>
-                    <p className="text-xs text-secondary mb-5">
-                      Muallif: <span className="text-white font-semibold">{lesson.author || "Maroqli.uz"}</span>
-                    </p>
-
-                    {hasAccess ? (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push(`/gamedev/lessons/${lesson.id}`);
-                        }}
-                        className="mt-auto w-full py-3 bg-white/5 hover:bg-primary text-white border border-white/10 hover:border-primary hover:shadow-glow rounded-xl font-display font-bold uppercase tracking-widest text-[11px] transition-all flex items-center justify-center gap-2 active:scale-95"
-                      >
-                        <Play size={14} className="fill-current" />
-                        Darsni ko'rish
-                      </button>
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          router.push("/premium");
-                        }}
-                        className="mt-auto w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-display font-black uppercase tracking-widest text-[11px] rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/10 active:scale-95"
-                      >
-                        <Crown size={13} />
-                        <span>Premium bilan ochish</span>
-                      </button>
-                    )}
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                {/* O'ng ko'rsatkich */}
+                <div className="hidden shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-bold text-secondary transition-all group-hover:border-primary group-hover:text-primary sm:flex">
+                  <Play size={12} className="fill-current" />
+                  Ko'rish
+                </div>
+              </button>
+            ))}
+          </motion.div>
         )}
       </div>
     </main>

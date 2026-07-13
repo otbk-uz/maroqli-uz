@@ -125,36 +125,28 @@ const Footer = () => {
             <h4 className="mb-4 font-display text-xs font-black uppercase tracking-widest text-white">
               {t("contact_support", "Aloqa")}
             </h4>
-            <ul className="space-y-3 text-sm text-secondary">
-              <li>
-                <a
-                  href="tel:+998938237773"
-                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <Phone size={14} className="text-primary" />
-                  <span>+998 93-823-7773</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="mailto:info@maroqli.uz"
-                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <Mail size={14} className="text-primary" />
-                  <span>info@maroqli.uz</span>
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://t.me/maroqliuz"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 transition-colors hover:text-primary"
-                >
-                  <Send size={14} className="text-primary" />
-                  <span>@maroqliuz</span>
-                </a>
-              </li>
+            <ul className="space-y-2.5 text-sm">
+              {[
+                { href: "tel:+998938237773", icon: Phone, label: "+998 93 823 77 73" },
+                { href: "mailto:info@maroqli.uz", icon: Mail, label: "info@maroqli.uz" },
+                { href: "https://t.me/maroqliuz", icon: Send, label: "@maroqliuz", ext: true },
+              ].map((c) => {
+                const Icon = c.icon;
+                return (
+                  <li key={c.href}>
+                    <a
+                      href={c.href}
+                      {...(c.ext ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                      className="group flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5 text-secondary transition-all hover:border-primary/30 hover:text-white"
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Icon size={14} />
+                      </span>
+                      <span className="truncate tracking-wide">{c.label}</span>
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
