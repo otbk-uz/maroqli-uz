@@ -115,6 +115,37 @@ export default function StreamDashboardPage() {
       setIsLive(!newStatus); // revert on error
     }
   };
+  const [regenerating, setRegenerating] = useState(false);
+
+  const handleRegenerate = async () => {
+    if (!confirm("Efir kalitini yangilamoqchimisiz? Eskisi bekor qilinadi va OBS-ga yangi kalitni kiritishingiz kerak bo'ladi.")) return;
+    if (!user) return;
+    try {
+      setRegenerating(true);
+      const res = await fetch("/api/streams/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, forceRegenerate: true }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to setup stream");
+
+      if (data.stream) {
+        setSettings(data.stream);
+        setTitle(data.stream.title || "");
+        setGame(data.stream.game_name || "");
+        setDonationUrl(data.stream.donation_url || "");
+        setIsLive(data.stream.is_live || false);
+        alert("Yangi efir kaliti yaratildi! Iltimos OBS sozlamalarini yangilang.");
+      }
+    } catch (err: any) {
+      console.error("Error regenerating stream:", err);
+      alert(err.message || "Xatolik yuz berdi");
+    } finally {
+      setRegenerating(false);
+    }
+  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -409,6 +440,15 @@ export default function StreamDashboardPage() {
                     </div>
                   </div>
                   <p className="text-[9px] text-red-400 mt-2 font-semibold">Hech qachon bu kalitni boshqalarga ko'rsatmang!</p>
+                  
+                  <button
+                    type="button"
+                    onClick={handleRegenerate}
+                    disabled={regenerating}
+                    className="w-full py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold border border-white/10 transition-colors mt-4"
+                  >
+                    {regenerating ? "Yangilanmoqda..." : "Efir kalitini yangilash (Regenerate)"}
+                  </button>
                 </div>
               </div>
             </div>
