@@ -33,6 +33,46 @@ const TournamentsPage = () => {
   const { user } = useAuthStore();
   const isOrganizer = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
+  // Yangi turnir formasi
+  const emptyForm = { title: "", game: "CS2", prize1: "", prize2: "", prize3: "", maxTeams: "16", startDate: "", description: "" };
+  const [form, setForm] = useState(emptyForm);
+  const [creating, setCreating] = useState(false);
+  const [createErr, setCreateErr] = useState("");
+  const uzs = (n: string) => (Number(n) || 0).toLocaleString("ru-RU");
+
+  const handleCreateTournament = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateErr("");
+    if (!form.title.trim()) { setCreateErr("Turnir nomini kiriting."); return; }
+    const p1 = Number(form.prize1) || 0, p2 = Number(form.prize2) || 0, p3 = Number(form.prize3) || 0;
+    const total = p1 + p2 + p3;
+    setCreating(true);
+    try {
+      const prizeLine =
+        `\n\n🏆 Mukofot jamg'armasi (${total.toLocaleString("ru-RU")} so'm):` +
+        `\n🥇 1-o'rin: ${p1.toLocaleString("ru-RU")} so'm` +
+        `\n🥈 2-o'rin: ${p2.toLocaleString("ru-RU")} so'm` +
+        `\n🥉 3-o'rin: ${p3.toLocaleString("ru-RU")} so'm`;
+      const { error } = await supabase.from("tournaments").insert({
+        title: form.title.trim(),
+        game: form.game,
+        prize_pool: total,
+        max_teams: Number(form.maxTeams) || 16,
+        start_date: form.startDate || new Date().toISOString(),
+        description: (form.description || "") + prizeLine,
+        status: "UPCOMING",
+      });
+      if (error) { setCreateErr("Xatolik: " + error.message); return; }
+      setShowCreateModal(false);
+      setForm(emptyForm);
+      window.location.reload();
+    } catch {
+      setCreateErr("Server bilan bog'lanishда xatolik.");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -339,7 +379,7 @@ const TournamentsPage = () => {
                               <span className="text-[10px] font-black uppercase tracking-widest">{t("prize_label", "Sovrin")}</span>
                             </div>
                             <p className="font-display text-xl font-black text-gradient">
-                              {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : t("free", "Bepul")}
+                              {Number(tItem.prize_pool) > 0 ? `${Number(tItem.prize_pool).toLocaleString("ru-RU")} so'm` : t("free", "Bepul")}
                             </p>
                           </div>
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
@@ -412,16 +452,19 @@ const TournamentsPage = () => {
             >
               <h2 className="font-display text-2xl font-black mb-6 text-white uppercase tracking-tight">Yangi Turnir Tashkil Qilish</h2>
 
-              <form className="space-y-6">
+              <form className="space-y-6" onSubmit={handleCreateTournament}>
+                {createErr && (
+                  <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">{createErr}</div>
+                )}
                 <div>
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Turnir Nomi</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
+                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin turi</label>
-                    <select className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors">
+                    <select value={form.game} onChange={(e) => setForm({ ...form, game: e.target.value })} className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors">
                       <option value="CS2">Counter-Strike 2</option>
                       <option value="DOTA2">Dota 2</option>
                       <option value="PUBG">PUBG Mobile</option>
@@ -429,33 +472,56 @@ const TournamentsPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Mukofot jamg'armasi ($)</label>
-                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="1000" />
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Jamoalar soni (Max)</label>
+                    <input type="number" value={form.maxTeams} onChange={(e) => setForm({ ...form, maxTeams: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="16" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Jamoalar soni (Max)</label>
-                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="16" />
+                {/* Mukofot jamg'armasi — so'mда, 1/2/3-o'rin */}
+                <div>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Mukofot jamg'armasi (so'm)</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {([
+                      { key: "prize1", medal: "🥇", label: "1-o'rin" },
+                      { key: "prize2", medal: "🥈", label: "2-o'rin" },
+                      { key: "prize3", medal: "🥉", label: "3-o'rin" },
+                    ] as const).map((pl) => (
+                      <div key={pl.key}>
+                        <div className="mb-1 text-[11px] font-semibold text-secondary">{pl.medal} {pl.label}</div>
+                        <div className="relative">
+                          <input
+                            type="number"
+                            value={form[pl.key]}
+                            onChange={(e) => setForm({ ...form, [pl.key]: e.target.value })}
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-14 text-white tabular-nums focus:outline-none focus:border-primary transition-colors"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-secondary">so'm</span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Boshlanish sanasi</label>
-                    <input type="datetime-local" className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" />
-                  </div>
+                  <p className="mt-2 text-xs text-secondary">
+                    Jami: <span className="text-white font-semibold tabular-nums">{uzs(String((Number(form.prize1) || 0) + (Number(form.prize2) || 0) + (Number(form.prize3) || 0)))}</span> so'm
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Boshlanish sanasi</label>
+                  <input type="datetime-local" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Qo'shimcha Ma'lumot / Qoidalar</label>
-                  <textarea rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Turnir qoidalari va batafsil ma'lumotlar..."></textarea>
+                  <textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Turnir qoidalari va batafsil ma'lumotlar..."></textarea>
                 </div>
 
                 <div className="flex gap-4 pt-4 border-t border-white/10">
                   <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors">
                     Bekor Qilish
                   </button>
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-                    E'lon Qilish
+                  <button type="submit" disabled={creating} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 disabled:opacity-50">
+                    {creating ? "Saqlanmoqda..." : "E'lon Qilish"}
                   </button>
                 </div>
               </form>

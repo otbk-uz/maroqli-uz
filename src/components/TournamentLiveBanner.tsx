@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Radio, Maximize2 } from "lucide-react";
+import LiveChat from "@/components/LiveChat";
 
 /**
  * Turnirlar sahifasi tepasidagi KATTA jonli efir pleyeri.
@@ -34,37 +35,45 @@ export default function TournamentLiveBanner() {
 
   return (
     <section className="container-app mb-10">
-      <div className="overflow-hidden rounded-3xl border border-primary/25 bg-black shadow-glow">
-        <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
-          <span className="inline-flex items-center gap-2.5 font-display text-sm font-black uppercase tracking-wide text-white">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+      <div className="grid gap-4 lg:grid-cols-3">
+        {/* Katta video */}
+        <div className="overflow-hidden rounded-3xl border border-primary/25 bg-black shadow-glow lg:col-span-2">
+          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
+            <span className="inline-flex items-center gap-2.5 font-display text-sm font-black uppercase tracking-wide text-white">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
+              </span>
+              Hozir jonli efirда
             </span>
-            Hozir jonli efirда
-          </span>
-          <div className="flex items-center gap-2">
-            <span className="chip">
-              <Radio size={13} className="text-primary" /> MAROQLI TV
-            </span>
-            <Link
-              href="/tournaments/live"
-              aria-label="To'liq ekran"
-              className="hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-secondary transition-colors hover:text-white sm:flex"
-            >
-              <Maximize2 size={14} />
-            </Link>
+            <div className="flex items-center gap-2">
+              <span className="chip">
+                <Radio size={13} className="text-primary" /> MAROQLI TV
+              </span>
+              <Link
+                href="/tournaments/live"
+                aria-label="To'liq ekran"
+                className="hidden h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-secondary transition-colors hover:text-white sm:flex"
+              >
+                <Maximize2 size={14} />
+              </Link>
+            </div>
+          </div>
+          <div className="relative aspect-video w-full overflow-hidden bg-black">
+            <iframe
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&color=white`}
+              title="Turnir jonli efiri"
+              className="absolute left-0 w-full"
+              style={{ top: "-52px", height: "calc(100% + 52px)" }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
           </div>
         </div>
-        <div className="relative aspect-video w-full overflow-hidden bg-black">
-          <iframe
-            src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&color=white`}
-            title="Turnir jonli efiri"
-            className="absolute left-0 w-full"
-            style={{ top: "-52px", height: "calc(100% + 52px)" }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
+
+        {/* Yonida: jonli chat + tomoshabinlar soni */}
+        <div className="lg:col-span-1">
+          <LiveChat />
         </div>
       </div>
     </section>
