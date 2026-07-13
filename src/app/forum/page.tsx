@@ -78,7 +78,7 @@ const ForumPage = () => {
   const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supportForm.name.trim() || !supportForm.contactInfo.trim() || !supportForm.message.trim()) {
-      alert("Iltimos, barcha maydonlarni to'ldiring!");
+      alert(t("fill_name_username", "Iltimos, barcha maydonlarni to'ldiring!"));
       return;
     }
 
@@ -99,7 +99,7 @@ const ForumPage = () => {
       setSupportForm((prev) => ({ ...prev, message: "" }));
     } catch (err: any) {
       console.error("Support request insert error:", err);
-      alert(err.message || "Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+      alert(err.message || t("stream_settings_error", "Xatolik yuz berdi. Iltimos qayta urinib ko'ring."));
     } finally {
       setSubmittingSupport(false);
     }
@@ -259,7 +259,7 @@ const ForumPage = () => {
                     activeTab === "topics" ? "bg-primary text-white shadow-glow" : "text-secondary hover:text-white"
                   }`}
                 >
-                  Mavzular
+                  {t("topics_tab", "Mavzular")}
                 </button>
                 <button
                   onClick={() => setActiveTab("chat")}
@@ -268,7 +268,7 @@ const ForumPage = () => {
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  Ochiq Chat
+                  {t("open_chat_tab", "Ochiq Chat")}
                 </button>
               </div>
 
@@ -280,13 +280,13 @@ const ForumPage = () => {
                 className="btn-outline !py-3 !px-5 text-xs uppercase tracking-wider gap-2 hidden md:inline-flex"
               >
                 <LifeBuoy size={16} />
-                Adminga Murojaat
+                {t("contact_admin_btn", "Adminga Murojaat")}
               </button>
 
               {isAuthenticated && activeTab === "topics" && (
                 <Link href="/forum/new-topic" className="btn-primary !py-3 !px-6 text-xs uppercase tracking-wider gap-2">
                   <PlusCircle size={16} />
-                  <span>Yangi mavzu</span>
+                  <span>{t("new_topic_btn", "Yangi mavzu")}</span>
                 </Link>
               )}
             </div>
@@ -301,7 +301,7 @@ const ForumPage = () => {
             <div className="relative w-full md:max-w-md">
               <input
                 type="text"
-                placeholder="Mavzularni qidirish..."
+                placeholder={t("search_topics_placeholder", "Mavzularni qidirish...")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 rounded-2xl pl-11 pr-4 py-3.5 outline-none focus:border-primary/50 text-sm text-white transition-colors"
@@ -318,7 +318,7 @@ const ForumPage = () => {
                 activeTab === "topics" ? "bg-primary text-white" : "text-secondary"
               }`}
             >
-              Mavzular
+              {t("topics_tab", "Mavzular")}
             </button>
             <button
               onClick={() => setActiveTab("chat")}
@@ -327,7 +327,7 @@ const ForumPage = () => {
               }`}
             >
               <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-              Ochiq Chat
+              {t("open_chat_tab", "Ochiq Chat")}
             </button>
           </div>
 
@@ -339,7 +339,7 @@ const ForumPage = () => {
             className="btn-outline !py-3 text-xs uppercase tracking-wider gap-2 md:hidden w-full"
           >
             <LifeBuoy size={16} />
-            Adminga Murojaat
+            {t("contact_admin_btn", "Adminga Murojaat")}
           </button>
         </div>
 
@@ -349,7 +349,7 @@ const ForumPage = () => {
             <div className="lg:col-span-3 space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold text-secondary uppercase tracking-widest ml-1 mb-3">
                 <Layers size={14} />
-                Bo'limlar
+                {t("sections_header", "Bo'limlar")}
               </div>
               <button
                 onClick={() => setSelectedSection(null)}
@@ -362,7 +362,7 @@ const ForumPage = () => {
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${selectedSection === null ? "bg-primary text-white" : "bg-white/5 text-secondary"}`}>
                   <MessageSquare size={16} />
                 </div>
-                <span className="font-bold text-sm">Barcha bo'limlar</span>
+                <span className="font-bold text-sm">{t("all_sections_btn", "Barcha bo'limlar")}</span>
               </button>
 
               {sections.map((section, idx) => {

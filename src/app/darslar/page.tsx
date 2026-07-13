@@ -65,7 +65,7 @@ export default function DarslarPage() {
             >
               <GraduationCap size={14} />
               <span className="font-display uppercase tracking-[0.2em] text-[11px]">
-                Bilim markazi
+                {t("knowledge_center_badge", "Bilim markazi")}
               </span>
             </motion.div>
             <motion.h1
@@ -81,7 +81,7 @@ export default function DarslarPage() {
               transition={{ delay: 0.1 }}
               className="text-secondary text-base md:text-lg mt-4 leading-relaxed"
             >
-              O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Barcha uchun bepul).
+              {t("darslar_subtitle", "O'yin yaratish bo'yicha maxsus video darsliklar va o'quv qo'llanmalari (Barcha uchun bepul).")}
             </motion.p>
           </div>
 
@@ -93,7 +93,7 @@ export default function DarslarPage() {
               onClick={() => router.push("/admin")}
               className="btn-primary py-3 px-6 text-sm gap-2 shrink-0"
             >
-              <Plus size={16} /> Yangi dars qo'shish
+              <Plus size={16} /> {t("add_new_lesson_btn", "Yangi dars qo'shish")}
             </motion.button>
           )}
         </div>
@@ -151,10 +151,10 @@ export default function DarslarPage() {
               </div>
             </div>
             <h3 className="font-display text-2xl md:text-3xl font-black text-white mb-3 uppercase tracking-tight">
-              Darsliklar mavjud emas
+              {t("no_lessons_found_title", "Darsliklar mavjud emas")}
             </h3>
             <p className="text-secondary max-w-md">
-              Bu kategoriyada hozircha darsliklar mavjud emas.
+              {t("no_lessons_found_desc", "Bu kategoriyada hozircha darsliklar mavjud emas.")}
             </p>
           </motion.div>
         ) : (

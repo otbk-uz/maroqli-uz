@@ -164,7 +164,7 @@ export default function Home() {
             <div>
               <div className="flex items-center space-x-2 text-primary font-display font-black text-xs uppercase tracking-widest mb-3">
                 <Activity size={14} className="animate-pulse" />
-                <span>MATCH CENTER</span>
+                <span>{t("match_center", "MATCH CENTER")}</span>
               </div>
               <h2 className="text-3xl md:text-5xl font-display font-black text-white uppercase tracking-tight">
                 {t("active_tournaments", "Jonli & Bo'lajak O'yinlar")}
@@ -219,7 +219,7 @@ export default function Home() {
                       {tItem.status === 'LIVE' && (
                         <div className="absolute top-6 right-6 flex items-center space-x-2 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
                           <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-ping" />
-                          <span className="text-[10px] font-display font-black text-white uppercase tracking-widest">LIVE SCORE</span>
+                          <span className="text-[10px] font-display font-black text-white uppercase tracking-widest">{t("live_score", "LIVE SCORE")}</span>
                         </div>
                       )}
                     </div>
@@ -234,19 +234,19 @@ export default function Home() {
                       
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-8">
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors">
-                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">SOVRIN</p>
+                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">{t("prize_label", "SOVRIN").toUpperCase()}</p>
                           <p className="text-xl font-display font-black text-white">
-                            {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : "Bepul"}
+                            {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : t("free", "Bepul")}
                           </p>
                         </div>
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors">
-                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">ISHTIROKCHILAR</p>
+                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">{t("teams_label", "ISHTIROKCHILAR").toUpperCase()}</p>
                           <p className="text-xl font-display font-black text-white">{tItem.participant_count} / {tItem.max_participants}</p>
                         </div>
                         <div className="bg-white/5 p-4 rounded-2xl border border-white/5 hover:bg-white/[0.08] transition-colors col-span-2 sm:col-span-1">
-                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">KIRISH</p>
+                          <p className="text-[10px] font-display font-bold text-secondary uppercase tracking-widest mb-1">{t("entry_label", "KIRISH")}</p>
                           <p className="text-xl font-display font-black text-primary">
-                            {Number(tItem.entry_fee) > 0 ? `$${Number(tItem.entry_fee).toLocaleString()}` : "FREE"}
+                            {Number(tItem.entry_fee) > 0 ? `$${Number(tItem.entry_fee).toLocaleString()}` : t("free", "FREE").toUpperCase()}
                           </p>
                         </div>
                       </div>
@@ -258,12 +258,12 @@ export default function Home() {
                         {tItem.status === 'LIVE' ? (
                           <>
                             <Play size={16} fill="white" />
-                            <span>TOMOSHA QILISH</span>
+                            <span>{t("watch", "TOMOSHA QILISH").toUpperCase()}</span>
                           </>
                         ) : (
                           <>
                             <Gamepad2 size={16} />
-                            <span>ISHTIROK ETISH</span>
+                            <span>{t("participate_btn", "ISHTIROK ETISH").toUpperCase()}</span>
                           </>
                         )}
                       </Link>
@@ -274,7 +274,7 @@ export default function Home() {
               
               {/* Right Side: List of Upcoming Matches (No boxy grids, sleek rows) */}
               <div className="lg:col-span-5 xl:col-span-4 space-y-4">
-                <p className="text-xs font-display font-black text-secondary uppercase tracking-widest pl-2 mb-2">BO'LAJAK TURNIRLAR</p>
+                <p className="text-xs font-display font-black text-secondary uppercase tracking-widest pl-2 mb-2">{t("upcoming_tournaments", "BO'LAJAK TURNIRLAR").toUpperCase()}</p>
                 {tournaments.slice(1).map((tItem) => (
                   <Link 
                     key={tItem.id} 
@@ -302,7 +302,7 @@ export default function Home() {
                         <p className="text-xs font-display font-black text-white">
                           {Number(tItem.prize_pool) > 0 ? `$${Number(tItem.prize_pool).toLocaleString()}` : "FREE"}
                         </p>
-                        <p className="text-[9px] text-secondary uppercase font-bold tracking-wider">PRIZE</p>
+                        <p className="text-[9px] text-secondary uppercase font-bold tracking-wider">{t("prize", "PRIZE")}</p>
                       </div>
                       <ChevronRight size={16} className="text-secondary group-hover:text-primary transition-colors" />
                     </div>
@@ -323,9 +323,9 @@ export default function Home() {
             {/* News Stream (Sleek List Feed) */}
             <div className="lg:col-span-8">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-display font-black text-white uppercase tracking-wider">YANGILIKLAR OQIMI</h3>
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-wider">{t("news_stream", "YANGILIKLAR OQIMI")}</h3>
                 <Link href="/news" className="text-xs font-display font-bold text-secondary hover:text-primary uppercase tracking-wider flex items-center gap-1">
-                  Hammasi <ChevronRight size={14} />
+                  {t("all_news_btn", "Hammasi")} <ChevronRight size={14} />
                 </Link>
               </div>
               
@@ -334,7 +334,7 @@ export default function Home() {
                   <div className="w-6 h-6 border border-primary border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : news.length === 0 ? (
-                <p className="text-secondary text-sm">Yangiliklar topilmadi.</p>
+                <p className="text-secondary text-sm">{t("no_news", "Yangiliklar topilmadi.")}</p>
               ) : (
                 <div className="space-y-4">
                   {news.map((item) => (
@@ -365,15 +365,15 @@ export default function Home() {
             {/* Global Activity Panel */}
             <div className="lg:col-span-4">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-display font-black text-white uppercase tracking-wider">TIZIM STATISTIKASI</h3>
+                <h3 className="text-xl font-display font-black text-white uppercase tracking-wider">{t("system_statistics", "TIZIM STATISTIKASI")}</h3>
               </div>
               
               <div className="bg-card border border-white/5 rounded-3xl p-6 space-y-5">
                 {[
-                  { icon: <Users size={20} />, tint: "bg-blue-500/10 text-blue-400", label: "Foydalanuvchilar", value: stats.users_count },
-                  { icon: <Trophy size={20} />, tint: "bg-primary/10 text-primary", label: "Turnirlar", value: stats.tournaments_count },
-                  { icon: <Gamepad2 size={20} />, tint: "bg-white/5 text-white", label: "O'yinlar", value: stats.games_count },
-                  { icon: <Activity size={20} />, tint: "bg-violet/10 text-violet", label: "Streamerlar", value: stats.streamers_count },
+                  { icon: <Users size={20} />, tint: "bg-blue-500/10 text-blue-400", label: t("registered_users", "Foydalanuvchilar"), value: stats.users_count },
+                  { icon: <Trophy size={20} />, tint: "bg-primary/10 text-primary", label: t("registered_tournaments", "Turnirlar"), value: stats.tournaments_count },
+                  { icon: <Gamepad2 size={20} />, tint: "bg-white/5 text-white", label: t("registered_games", "O'yinlar"), value: stats.games_count },
+                  { icon: <Activity size={20} />, tint: "bg-violet/10 text-violet", label: t("registered_streamers", "Streamerlar"), value: stats.streamers_count },
                 ].map((row, i, arr) => (
                   <div key={row.label} className={`flex items-center justify-between ${i < arr.length - 1 ? "border-b border-white/5 pb-5" : ""}`}>
                     <div className="flex items-center space-x-3">

@@ -37,7 +37,7 @@ export default function LessonDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [mounted, setMounted] = useState(false);
 
   const [lesson, setLesson] = useState<Lesson | null>(null);
@@ -129,7 +129,7 @@ export default function LessonDetailsPage() {
         setPlaylistLessons(dbLessons as Lesson[]);
         setCachedData(`lesson_playlist_${lessonId}`, dbLessons as Lesson[]);
       } catch (err) {
-        console.error("Dars ma'lumotlarini yuklashda xatolik:", err);
+        console.error(t("dars_load_error", "Dars ma'lumotlarini yuklashda xatolik:"), err);
       } finally {
         setLoading(false);
       }
@@ -163,14 +163,14 @@ export default function LessonDetailsPage() {
       setNewComment("");
     } catch (err: any) {
       console.error("Post comment error:", err);
-      alert(err.message || "Izoh qoldirishda xatolik yuz berdi");
+      alert(err.message || t("comment_post_error", "Izoh qoldirishda xatolik yuz berdi"));
     } finally {
       setSubmittingComment(false);
     }
   };
 
   const handleDeleteComment = async (commentId: string) => {
-    if (!confirm("Haqiqatan ham ushbu izohni o'chirmoqchimisiz?")) return;
+    if (!confirm(t("confirm_delete_comment", "Haqiqatan ham ushbu izohni o'chirmoqchimisiz?"))) return;
     try {
       const { error } = await supabase
         .from("gamedev_lesson_comments")
@@ -181,7 +181,7 @@ export default function LessonDetailsPage() {
       setComments(prev => prev.filter(c => c.id !== commentId));
     } catch (err: any) {
       console.error("Delete comment error:", err);
-      alert(err.message || "Izohni o'chirishda xatolik yuz berdi");
+      alert(err.message || t("comment_delete_error", "Izohni o'chirishda xatolik yuz berdi"));
     }
   };
 
@@ -189,7 +189,7 @@ export default function LessonDetailsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-background text-white">
         <RefreshCw className="animate-spin text-primary mb-4" size={40} />
-        <p className="text-secondary text-sm">Darslik yuklanmoqda...</p>
+        <p className="text-secondary text-sm">{t("lesson_loading", "Darslik yuklanmoqda...")}</p>
       </div>
     );
   }
@@ -227,24 +227,24 @@ export default function LessonDetailsPage() {
                 </div>
                 <div className="flex items-center space-x-1.5 text-amber-400 bg-amber-500/10 border border-amber-500/20 px-3.5 py-1.5 rounded-full text-xs font-bold shadow-sm self-start sm:self-auto">
                   <Crown size={14} />
-                  <span>PREMIUM DARS</span>
+                  <span>{t("premium_lesson_badge", "PREMIUM DARS")}</span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <p className="text-secondary text-xs uppercase font-bold tracking-wider">Darslik Muallifi</p>
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider">{t("lesson_author_label", "Darslik Muallifi")}</p>
                   <p className="font-bold text-white mt-1">{lesson.author}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-secondary text-xs uppercase font-bold tracking-wider">Platforma</p>
+                  <p className="text-secondary text-xs uppercase font-bold tracking-wider">{t("platform_label_caps", "Platforma")}</p>
                   <p className="font-bold text-primary mt-1">MAROQLI.uz</p>
                 </div>
               </div>
 
               <div className="pt-2 text-secondary text-sm leading-relaxed space-y-2">
-                <p>Ushbu video darslik orqali o'yin yaratish sohasidagi ko'nikmalarni bosqichma-bosqich o'rganishingiz mumkin.</p>
-                <p>O'yinlar yaratish va ularni platformamiz do'koniga joylashtirib daromad olishni bugundanoq boshlang!</p>
+                <p>{t("lesson_desc_p1", "Ushbu video darslik orqali o'yin yaratish sohasidagi ko'nikmalarni bosqichma-bosqich o'rganishingiz mumkin.")}</p>
+                <p>{t("lesson_desc_p2", "O'yinlar yaratish va ularni platformamiz do'koniga joylashtirib daromad olishni bugundanoq boshlang!")}</p>
               </div>
             </div>
 
@@ -252,7 +252,7 @@ export default function LessonDetailsPage() {
             <div className="glass-card p-4 sm:p-6 md:p-8 border border-white/5 space-y-6">
               <h3 className="font-bold text-lg flex items-center gap-2 border-b border-white/5 pb-3">
                 <MessageSquare size={18} className="text-primary" />
-                <span>Izohlar ({comments.length})</span>
+                <span>{t("comments_header", "Izohlar")} ({comments.length})</span>
               </h3>
 
               {/* Add Comment Form */}
@@ -263,7 +263,7 @@ export default function LessonDetailsPage() {
                   </div>
                   <div className="flex-1 space-y-3">
                     <textarea
-                      placeholder="Izoh qoldiring..."
+                      placeholder={t("post_comment_placeholder", "Izoh qoldiring...")}
                       rows={3}
                       value={newComment}
                       onChange={(e) => setNewComment(e.target.value)}
@@ -280,7 +280,7 @@ export default function LessonDetailsPage() {
                       ) : (
                         <>
                           <Send size={12} />
-                          <span>Yuborish</span>
+                          <span>{t("send_btn", "Yuborish")}</span>
                         </>
                       )}
                     </button>
@@ -289,11 +289,13 @@ export default function LessonDetailsPage() {
               ) : (
                 <div className="text-center py-4 bg-white/5 border border-white/10 rounded-2xl">
                   <p className="text-secondary text-sm">
-                    Izoh qoldirish uchun{" "}
-                    <Link href="/login" className="text-primary font-bold hover:underline">
-                      tizimga kiring
-                    </Link>
-                    .
+                    {locale === 'ru' ? (
+                      <>Для добавления комментария пожалуйста, <Link href="/login" className="text-primary font-bold hover:underline">войдите в систему</Link>.</>
+                    ) : locale === 'en' ? (
+                      <>To leave a comment, please <Link href="/login" className="text-primary font-bold hover:underline">log in</Link>.</>
+                    ) : (
+                      <>Izoh qoldirish uchun <Link href="/login" className="text-primary font-bold hover:underline">tizimga kiring</Link>.</>
+                    )}
                   </p>
                 </div>
               )}
@@ -305,7 +307,7 @@ export default function LessonDetailsPage() {
                     <RefreshCw className="animate-spin text-primary" size={24} />
                   </div>
                 ) : comments.length === 0 ? (
-                  <p className="text-center text-secondary text-xs py-8">Birinchi bo'lib izoh qoldiring!</p>
+                  <p className="text-center text-secondary text-xs py-8">{t("first_comment_prompt", "Birinchi bo'lib izoh qoldiring!")}</p>
                 ) : (
                   <div className="divide-y divide-white/5 space-y-4">
                     {comments.map((comment) => (
@@ -321,7 +323,7 @@ export default function LessonDetailsPage() {
                           <div className="flex items-center justify-between">
                             <div>
                               <span className="font-bold text-sm text-white mr-2">
-                                {comment.profiles?.full_name || comment.profiles?.username || "Foydalanuvchi"}
+                                {comment.profiles?.full_name || comment.profiles?.username || t("anonymous_user_label", "Foydalanuvchi")}
                               </span>
                               <span className="text-[10px] text-secondary">
                                 @{comment.profiles?.username}
@@ -335,7 +337,7 @@ export default function LessonDetailsPage() {
                                 <button
                                   onClick={() => handleDeleteComment(comment.id)}
                                   className="text-secondary hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                  title="O'chirish"
+                                  title={t("delete_btn", "O'chirish")}
                                 >
                                   <Trash2 size={12} />
                                 </button>
@@ -357,12 +359,12 @@ export default function LessonDetailsPage() {
             <div className="glass-card p-0 border border-white/5 overflow-hidden shadow-2xl">
               {/* Playlist Header */}
               <div className="p-5 bg-white/[0.02] border-b border-white/5">
-                <span className="text-[10px] text-primary font-bold uppercase tracking-widest block mb-1">KURS PLEYLISTI</span>
+                <span className="text-[10px] text-primary font-bold uppercase tracking-widest block mb-1">{t("playlist_header", "KURS PLEYLISTI")}</span>
                 <h3 className="font-display font-black text-base text-white tracking-tight uppercase line-clamp-1">
-                  {lesson.level} daraja
+                  {locale === 'ru' ? `${lesson.level} уровень` : locale === 'en' ? `${lesson.level} level` : `${lesson.level} daraja`}
                 </h3>
                 <span className="text-[11px] text-secondary font-medium block mt-1.5">
-                  {currentLessonIndex !== -1 ? currentLessonIndex + 1 : 1} / {playlistLessons.length} darslik
+                  {currentLessonIndex !== -1 ? currentLessonIndex + 1 : 1} / {playlistLessons.length} {t("lessons_count_label", "darslik")}
                 </span>
               </div>
 
@@ -408,7 +410,7 @@ export default function LessonDetailsPage() {
                         }`}>
                           {item.title}
                         </h4>
-                        <span className="text-[9px] text-secondary mt-1 block">Muallif: {item.author}</span>
+                        <span className="text-[9px] text-secondary mt-1 block">{t("lesson_author_label", "Muallif")}: {item.author}</span>
                       </div>
                     </Link>
                   );
@@ -419,9 +421,9 @@ export default function LessonDetailsPage() {
             {/* Barcha uchun bepul banner */}
             <div className="glass-card p-6 border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent text-center space-y-4">
               <Award className="text-emerald-400 mx-auto" size={32} />
-              <h4 className="font-bold text-sm text-white">Barcha uchun bepul!</h4>
+              <h4 className="font-bold text-sm text-white">{t("free_for_all_title", "Barcha uchun bepul!")}</h4>
               <p className="text-[11px] text-secondary leading-relaxed">
-                Ushbu darslik Maroqli.uz jamoasi tomonidan barcha foydalanuvchilarga bepul taqdim etilmoqda.
+                {t("free_for_all_desc", "Ushbu darslik Maroqli.uz jamoasi tomonidan barcha foydalanuvchilarga bepul taqdim etilmoqda.")}
               </p>
             </div>
           </div>

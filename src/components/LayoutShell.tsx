@@ -6,10 +6,12 @@ import FloatingConsoleHUD from "./FloatingConsoleHUD";
 import Footer from "./Footer";
 import MobileNav from "./MobileNav";
 import { WifiOff } from "lucide-react";
+import { useTranslation } from "@/lib/store";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
+  const { t } = useTranslation();
   const pathname = usePathname();
 
   useEffect(() => {
@@ -42,8 +44,8 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
               <WifiOff size={18} />
             </div>
             <div className="min-w-0">
-              <h5 className="font-display font-black text-[10px] uppercase tracking-widest text-red-400">Offline Rejim Faol</h5>
-              <p className="text-[9px] text-secondary leading-normal mt-0.5">Internet ulanishi uzildi. Keshdan olingan ma'lumotlar ko'rsatilmoqda.</p>
+              <h5 className="font-display font-black text-[10px] uppercase tracking-widest text-red-400">{t("offline_mode_title", "Offline Rejim Faol")}</h5>
+              <p className="text-[9px] text-secondary leading-normal mt-0.5">{t("offline_mode_desc", "Internet ulanishi uzildi. Keshdan olingan ma'lumotlar ko'rsatilmoqda.")}</p>
             </div>
           </div>
         </div>

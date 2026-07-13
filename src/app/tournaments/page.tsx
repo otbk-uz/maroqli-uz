@@ -43,7 +43,7 @@ const TournamentsPage = () => {
   const handleCreateTournament = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateErr("");
-    if (!form.title.trim()) { setCreateErr("Turnir nomini kiriting."); return; }
+    if (!form.title.trim()) { setCreateErr(t("error_enter_tournament_name", "Turnir nomini kiriting.")); return; }
     const p1 = Number(form.prize1) || 0, p2 = Number(form.prize2) || 0, p3 = Number(form.prize3) || 0;
     const total = p1 + p2 + p3;
     setCreating(true);
@@ -62,12 +62,12 @@ const TournamentsPage = () => {
         description: (form.description || "") + prizeLine,
         status: "UPCOMING",
       });
-      if (error) { setCreateErr("Xatolik: " + error.message); return; }
+      if (error) { setCreateErr(t("profile_save_error", "Xatolik yuz berdi.") + " " + error.message); return; }
       setShowCreateModal(false);
       setForm(emptyForm);
       window.location.reload();
     } catch {
-      setCreateErr("Server bilan bog'lanishда xatolik.");
+      setCreateErr(t("error_server_connection", "Server bilan bog'lanishda xatolik."));
     } finally {
       setCreating(false);
     }
@@ -450,20 +450,20 @@ const TournamentsPage = () => {
               exit={{ scale: 0.95, opacity: 0 }}
               className="glass-card max-w-2xl w-full p-8 rounded-3xl border border-white/10 max-h-[90vh] overflow-y-auto"
             >
-              <h2 className="font-display text-2xl font-black mb-6 text-white uppercase tracking-tight">Yangi Turnir Tashkil Qilish</h2>
+              <h2 className="font-display text-2xl font-black mb-6 text-white uppercase tracking-tight">{t("create_tournament_title", "Yangi Turnir Tashkil Qilish")}</h2>
 
               <form className="space-y-6" onSubmit={handleCreateTournament}>
                 {createErr && (
                   <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">{createErr}</div>
                 )}
                 <div>
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Turnir Nomi</label>
-                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("tournament_name_label", "Turnir Nomi")}</label>
+                  <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder={t("tournament_name_placeholder", "Masalan: Maroqli Summer Cup")} />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin turi</label>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("game_type_label", "O'yin turi")}</label>
                     <select value={form.game} onChange={(e) => setForm({ ...form, game: e.target.value })} className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors">
                       <option value="CS2">Counter-Strike 2</option>
                       <option value="DOTA2">Dota 2</option>
@@ -472,14 +472,14 @@ const TournamentsPage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Jamoalar soni (Max)</label>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("max_teams_label", "Jamoalar soni (Max)")}</label>
                     <input type="number" value={form.maxTeams} onChange={(e) => setForm({ ...form, maxTeams: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="16" />
                   </div>
                 </div>
 
-                {/* Mukofot jamg'armasi — so'mда, 1/2/3-o'rin */}
+                {/* Mukofot jamg'armasi — so'mda, 1/2/3-o'rin */}
                 <div>
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Mukofot jamg'armasi (so'm)</label>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("prize_pool_currency_label", "Mukofot jamg'armasi (so'm)")}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {([
                       { key: "prize1", medal: "🥇", label: "1-o'rin" },
@@ -507,21 +507,21 @@ const TournamentsPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Boshlanish sanasi</label>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("start_date_label", "Boshlanish sanasi")}</label>
                   <input type="datetime-local" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" />
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Qo'shimcha Ma'lumot / Qoidalar</label>
-                  <textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Turnir qoidalari va batafsil ma'lumotlar..."></textarea>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">{t("description_rules_label", "Qo'shimcha Ma'lumot / Qoidalar")}</label>
+                  <textarea rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder={t("description_rules_placeholder", "Turnir qoidalari va batafsil ma'lumotlar...")}></textarea>
                 </div>
 
                 <div className="flex gap-4 pt-4 border-t border-white/10">
                   <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors">
-                    Bekor Qilish
+                    {t("cancel", "Bekor Qilish")}
                   </button>
                   <button type="submit" disabled={creating} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 disabled:opacity-50">
-                    {creating ? "Saqlanmoqda..." : "E'lon Qilish"}
+                    {creating ? t("saving_profile", "Saqlanmoqda...") : t("publish_btn", "E'lon Qilish")}
                   </button>
                 </div>
               </form>

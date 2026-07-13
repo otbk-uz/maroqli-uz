@@ -78,7 +78,7 @@ export default function NewsPage() {
               className="chip mb-5 border-primary/25 bg-primary/10 text-primary"
             >
               <Newspaper size={14} />
-              <span className="font-display uppercase tracking-[0.2em] text-[11px]">Maroqli.uz OAV</span>
+              <span className="font-display uppercase tracking-[0.2em] text-[11px]">{t("news_oav", "Maroqli.uz OAV")}</span>
             </motion.div>
 
             <motion.h1
