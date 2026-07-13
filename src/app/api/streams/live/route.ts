@@ -54,8 +54,18 @@ export async function POST(req: Request) {
     );
     const cfJson = await cfRes.json();
     if (!cfRes.ok || !cfJson.success) {
+      const cfMsg = cfJson?.errors?.[0]?.message || "noma'lum sabab";
+      const cfCode = cfJson?.errors?.[0]?.code;
       console.error("Cloudflare Stream xatosi:", cfJson.errors || cfJson);
-      return NextResponse.json({ error: "Cloudflare efir yaratishda xatolik" }, { status: 502 });
+      // Haqiqiy sababni adminga ko'rsatamiz (masalan: token yaroqsiz, Stream yoqilmagan)
+      let hint = "";
+      if (cfCode === 1000 || cfCode === 10000) {
+        hint = " — Token yaroqsiz yoki 'Stream: Edit' ruxsati yo'q. Cloudflare'да yangi token yarating.";
+      }
+      return NextResponse.json(
+        { error: `Cloudflare: ${cfMsg}${hint}` },
+        { status: 502 }
+      );
     }
     const r = cfJson.result;
     return NextResponse.json({
