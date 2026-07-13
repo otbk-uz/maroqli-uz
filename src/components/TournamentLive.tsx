@@ -81,6 +81,7 @@ export default function TournamentLive() {
           title: "Turnir jonli efiri",
           game_name: TURNIR_MARKER,
           stream_url: videoId,
+          stream_key: `youtube:${videoId}`,
           is_live: true,
         })
         .select("id, stream_url, is_live")
