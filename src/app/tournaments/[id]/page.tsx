@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown, GitBranch } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "../../../components/ui/BackButton";
 import TournamentBracket from "@/components/TournamentBracket";
@@ -29,6 +29,7 @@ const TournamentDetail = () => {
   const router = useRouter();
   const id = params.id as string;
   const { user, isAuthenticated } = useAuthStore();
+  const { t } = useTranslation();
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
@@ -36,6 +37,7 @@ const TournamentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ISHTIROKCHILAR");
+  const [teamForm, setTeamForm] = useState({ name: "", in_game_id: "" });
 
   useEffect(() => {
     if (!id) return;
@@ -99,7 +101,7 @@ const TournamentDetail = () => {
     }
 
     if (!userTeam) {
-      alert("Sizda jamoa yo'q! Oldin profil sahifasidan jamoa yarating.");
+      alert("Sizda jamoa yo'q!");
       return;
     }
 
@@ -146,6 +148,75 @@ const TournamentDetail = () => {
     } catch (err: any) {
       console.error(err);
       alert("Xatolik yuz berdi");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCreateTeamAndJoin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+    if (!teamForm.name.trim() || !teamForm.in_game_id.trim()) {
+      alert("Iltimos, jamoa nomi va o'yin ID'sini kiriting!");
+      return;
+    }
+    setActionLoading(true);
+    try {
+      // 1. Create team
+      const { data: newTeam, error: teamError } = await supabase
+        .from("teams")
+        .insert({ 
+          name: teamForm.name.trim(), 
+          captain_id: user.id 
+        })
+        .select()
+        .single();
+
+      if (teamError) {
+        if (teamError.code === "23505") {
+          throw new Error("Ushbu jamoa nomi band. Boshqa nom tanlang.");
+        }
+        throw teamError;
+      }
+
+      // 2. Add captain
+      const { error: memberError } = await supabase
+        .from("team_members")
+        .insert({
+          team_id: newTeam.id,
+          user_id: user.id,
+          in_game_id: teamForm.in_game_id.trim(),
+          role: 'CAPTAIN'
+        });
+
+      if (memberError) throw memberError;
+
+      // 3. Join tournament
+      const { error: joinError } = await supabase
+        .from("tournament_participants")
+        .insert({
+          tournament_id: id,
+          team_id: newTeam.id
+        });
+
+      if (joinError) throw joinError;
+
+      // 4. Update local state
+      setUserTeam({ ...newTeam, currentUserRole: 'CAPTAIN', currentUserInGameId: teamForm.in_game_id.trim() });
+      
+      const { data: pData } = await supabase
+        .from("tournament_participants")
+        .select("*, teams(id, name, logo_url, captain_id)")
+        .eq("tournament_id", id);
+      if (pData) setParticipants(pData);
+
+      alert("Jamoangiz muvaffaqiyatli tuzildi va turnirga a'zo bo'ldingiz!");
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Xatolik yuz berdi");
     } finally {
       setActionLoading(false);
     }
@@ -299,47 +370,115 @@ const TournamentDetail = () => {
                 <Shield size={18} className="mr-2 text-primary" />
                 Ro'yxatdan o'tish
               </h3>
-              <p className="text-sm text-secondary mb-6 leading-relaxed">
-                Ushbu turnirda qatnashish uchun ro'yxatdan o'tish tugmasini bosing. Ro'yxatdan faqat jamoa sardori o'tkaza oladi.
-              </p>
-              
-              <div className="space-y-4 mb-8">
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Kirish to'lovi:</span>
-                  <span className="font-bold text-green-500">
-                    BEPUL
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Sizning Jamoangiz:</span>
-                  <span className="font-bold text-primary">
-                    {userTeam ? userTeam.name : "Mavjud emas"}
-                  </span>
-                </div>
-              </div>
 
-              {tournament.status === "FINISHED" ? (
-                <button disabled className="w-full py-4 bg-white/5 border border-white/5 text-secondary font-bold rounded-2xl cursor-not-allowed">
-                  Turnir yakunlangan
-                </button>
+              {!isAuthenticated ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-secondary leading-relaxed">
+                    Turnirda qatnashish va jamoa tuzish uchun profilingizga kiring.
+                  </p>
+                  <button
+                    onClick={() => router.push("/login")}
+                    className="w-full py-3.5 font-bold rounded-2xl btn-primary active:scale-95 transition-all text-xs uppercase tracking-wider"
+                  >
+                    Tizimga kirish
+                  </button>
+                </div>
+              ) : !userTeam ? (
+                <form onSubmit={handleCreateTeamAndJoin} className="space-y-4">
+                  <p className="text-xs text-secondary leading-relaxed">
+                    Sizda hali jamoa yo'q. Ushbu turnirda qatnashish uchun jamoangizni shu yerning o'zida yarating:
+                  </p>
+                  
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase tracking-wider mb-1 block">Jamoa Nomi</label>
+                    <input
+                      type="text"
+                      required
+                      value={teamForm.name}
+                      onChange={(e) => setTeamForm({ ...teamForm, name: e.target.value })}
+                      placeholder="Masalan: Falcons"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-secondary uppercase tracking-wider mb-1 block">Sizning o'yindagi ID (In-game ID)</label>
+                    <input
+                      type="text"
+                      required
+                      value={teamForm.in_game_id}
+                      onChange={(e) => setTeamForm({ ...teamForm, in_game_id: e.target.value })}
+                      placeholder="Masalan: Player#1234"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="w-full py-3.5 font-bold rounded-xl btn-primary active:scale-95 transition-all text-xs uppercase tracking-wider disabled:opacity-50"
+                  >
+                    {actionLoading ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                    ) : (
+                      "Jamoa tuzish va ro'yxatdan o'tish"
+                    )}
+                  </button>
+                </form>
               ) : (
-                <button 
-                  onClick={handleJoinLeave}
-                  disabled={actionLoading}
-                  className={`w-full py-4 font-bold rounded-2xl active:scale-95 transition-all ${
-                    isUserJoined 
-                      ? "bg-red-500 hover:bg-red-600 text-white" 
-                      : "btn-primary"
-                  }`}
-                >
-                  {actionLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
-                  ) : isUserJoined ? (
-                    "Turnirdan chiqish"
+                <div className="space-y-6">
+                  <p className="text-xs text-secondary leading-relaxed">
+                    Siz ushbu turnirga jamoangizni ro'yxatdan o'tkazishingiz yoki undan chiqishingiz mumkin.
+                  </p>
+
+                  <div className="space-y-3.5 border-y border-white/5 py-4">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-secondary">Kirish to'lovi:</span>
+                      <span className="font-bold text-green-500">BEPUL</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-secondary">Jamoangiz:</span>
+                      <span className="font-bold text-primary truncate max-w-[150px]">{userTeam.name}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-secondary">Rolingiz:</span>
+                      <span className="font-bold text-white uppercase tracking-wider">
+                        {userTeam.currentUserRole === 'CAPTAIN' ? "SARDOR" : "O'YINCHI"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {tournament.status === "FINISHED" ? (
+                    <button disabled className="w-full py-4 bg-white/5 border border-white/5 text-secondary font-bold rounded-2xl cursor-not-allowed text-xs uppercase tracking-wider">
+                      Turnir yakunlangan
+                    </button>
                   ) : (
-                    "Jamoani ro'yxatdan o'tkazish"
+                    <div className="space-y-3">
+                      {userTeam.currentUserRole !== 'CAPTAIN' && !isUserJoined && (
+                        <p className="text-[10px] text-red-400 text-center font-medium">
+                          Ro'yxatdan o'tish uchun faqat jamoa sardori ruxsatga ega.
+                        </p>
+                      )}
+                      <button
+                        onClick={handleJoinLeave}
+                        disabled={actionLoading || (userTeam.currentUserRole !== 'CAPTAIN' && !isUserJoined)}
+                        className={`w-full py-4 font-bold rounded-2xl active:scale-95 transition-all text-xs uppercase tracking-wider disabled:opacity-30 disabled:cursor-not-allowed ${
+                          isUserJoined
+                            ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/10"
+                            : "btn-primary"
+                        }`}
+                      >
+                        {actionLoading ? (
+                          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto" />
+                        ) : isUserJoined ? (
+                          "Turnirdan chiqish"
+                        ) : (
+                          "Jamoani ro'yxatdan o'tkazish"
+                        )}
+                      </button>
+                    </div>
                   )}
-                </button>
+                </div>
               )}
             </div>
           </div>
