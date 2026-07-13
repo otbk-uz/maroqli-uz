@@ -42,10 +42,8 @@ const TournamentDetail = () => {
   const isRefereeOrAdmin = user?.role === "ADMIN" || user?.role === "ORGANIZER" || user?.role === "MODERATOR";
 
   useEffect(() => {
-    if (tournament && tournament.status === "LIVE") {
-      fetchLiveStream();
-    }
     if (tournament) {
+      fetchLiveStream();
       checkHasMatches();
     }
   }, [tournament]);
