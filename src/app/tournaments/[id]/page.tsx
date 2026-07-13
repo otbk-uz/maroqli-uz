@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import TournamentBracket from "../../../components/TournamentBracket";
+import MuxPlayer from "@mux/mux-player-react";
 import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
@@ -35,6 +36,133 @@ const TournamentDetail = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ISHTIROKCHILAR");
+  
+  const [liveStreamUrl, setLiveStreamUrl] = useState<string | null>(null);
+  const [hasMatches, setHasMatches] = useState(false);
+  const isRefereeOrAdmin = user?.role === "ADMIN" || user?.role === "ORGANIZER" || user?.role === "MODERATOR";
+
+  useEffect(() => {
+    if (tournament && tournament.status === "LIVE") {
+      fetchLiveStream();
+    }
+    if (tournament) {
+      checkHasMatches();
+    }
+  }, [tournament]);
+
+  const checkHasMatches = async () => {
+    try {
+      const { count, error } = await supabase
+        .from("tournament_matches")
+        .select("id", { count: "exact", head: true })
+        .eq("tournament_id", tournament!.id);
+      if (!error && count && count > 0) {
+        setHasMatches(true);
+      } else {
+        setHasMatches(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchLiveStream = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("live_streams")
+        .select("stream_url")
+        .eq("is_live", true)
+        .limit(1)
+        .maybeSingle();
+
+      if (data && data.stream_url) {
+        setLiveStreamUrl(data.stream_url);
+      }
+    } catch (err) {
+      console.error("Live stream yuklashda xatolik:", err);
+    }
+  };
+  const handleGenerateMatches = async () => {
+    if (!confirm("Haqiqatan ham turnir o'yinlarini yaratmoqchimisiz? Bu ro'yxatdan o'tgan jamoalarni o'yin setkasiga ajratadi.")) return;
+    setActionLoading(true);
+    try {
+      const teamCount = participants.length;
+      if (teamCount < 2) {
+        alert("O'yinlarni yaratish uchun kamida 2 ta jamoa ro'yxatdan o'tgan bo'lishi kerak!");
+        setActionLoading(false);
+        return;
+      }
+
+      let startRound = 1;
+      if (teamCount > 8) startRound = 4;
+      else if (teamCount > 4) startRound = 3;
+      else if (teamCount > 2) startRound = 2;
+
+      const matchInserts = [];
+      for (let i = 0; i < teamCount; i += 2) {
+        const team1 = participants[i];
+        const team2 = participants[i + 1] || null;
+        
+        matchInserts.push({
+          tournament_id: tournament!.id,
+          round_number: startRound,
+          match_order: Math.floor(i / 2) + 1,
+          team1_id: team1.team_id,
+          team2_id: team2 ? team2.team_id : null,
+          status: "PENDING",
+          team1_score: 0,
+          team2_score: 0
+        });
+      }
+
+      const { error: matchesErr } = await supabase
+        .from("tournament_matches")
+        .insert(matchInserts);
+
+      if (matchesErr) throw matchesErr;
+
+      const { error: statusErr } = await supabase
+        .from("tournaments")
+        .update({ status: "LIVE" })
+        .eq("id", tournament!.id);
+
+      if (statusErr) throw statusErr;
+
+      alert("Matchlar muvaffaqiyatli yaratildi va turnir holati LIVE ga o'tkazildi!");
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Matchlarni yaratishda xatolik:", err);
+      alert(err.message || "Xatolik yuz berdi.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleResetMatches = async () => {
+    if (!confirm("Haqiqatan ham turnir o'yinlarini va natijalarini butunlay o'chirib tashlamoqchimisiz?")) return;
+    setActionLoading(true);
+    try {
+      const { error: deleteErr } = await supabase
+        .from("tournament_matches")
+        .delete()
+        .eq("tournament_id", tournament!.id);
+      if (deleteErr) throw deleteErr;
+
+      const { error: statusErr } = await supabase
+        .from("tournaments")
+        .update({ status: "UPCOMING" })
+        .eq("id", tournament!.id);
+      if (statusErr) throw statusErr;
+
+      alert("Turnir muvaffaqiyatli tozalandi!");
+      window.location.reload();
+    } catch (err: any) {
+      console.error(err);
+      alert("Tozalashda xatolik yuz berdi.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -229,6 +357,28 @@ const TournamentDetail = () => {
               </div>
             </div>
 
+            {/* Live Stream Streamer Player */}
+            {liveStreamUrl && (
+              <div className="glass-card p-6 mb-8">
+                <h3 className="font-bold text-white mb-4 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                  Turnirning Jonli Efiri (Maroqli.uz Oqimi)
+                </h3>
+                <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/5 bg-black">
+                  <MuxPlayer
+                    streamType="live"
+                    playbackId={liveStreamUrl}
+                    autoPlay="muted"
+                    className="w-full h-full"
+                    metadata={{
+                      video_title: tournament.title,
+                      viewer_user_id: user?.id,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Tabs */}
             <div className="flex space-x-8 border-b border-white/5 mb-8 overflow-x-auto no-scrollbar">
               {["ISHTIROKCHILAR", "BRACKET", "QOIDALAR"].map((tab) => (
@@ -251,7 +401,7 @@ const TournamentDetail = () => {
             <div className="min-h-[400px]">
               {activeTab === "BRACKET" && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                  <TournamentBracket />
+                  <TournamentBracket tournamentId={id} />
                 </motion.div>
               )}
               {activeTab === "ISHTIROKCHILAR" && (
@@ -287,8 +437,39 @@ const TournamentDetail = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="lg:w-80">
-            <div className="glass-card p-6 sticky top-32">
+          <div className="lg:w-80 space-y-6 lg:sticky lg:top-32 h-fit">
+            {isRefereeOrAdmin && (
+              <div className="glass-card p-6">
+                <h3 className="font-bold mb-4 flex items-center text-white">
+                  <Shield className="mr-2 text-primary" size={18} />
+                  Admin Boshqaruvi
+                </h3>
+                <p className="text-xs text-secondary mb-4 leading-relaxed">
+                  Turnir o'yinlarini va statusini boshqarish paneli.
+                </p>
+                <div className="space-y-3">
+                  {!hasMatches ? (
+                    <button
+                      onClick={handleGenerateMatches}
+                      disabled={actionLoading}
+                      className="w-full py-3 bg-primary hover:bg-primary/95 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                    >
+                      {actionLoading ? "Yaratilmoqda..." : "Matchlarni Yaratish"}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleResetMatches}
+                      disabled={actionLoading}
+                      className="w-full py-3 bg-red-600/10 text-red-500 border border-red-500/20 hover:bg-red-600/25 font-bold rounded-xl text-xs uppercase tracking-wider transition-all disabled:opacity-50"
+                    >
+                      {actionLoading ? "O'chirilmoqda..." : "O'yinlarni Tozalash"}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="glass-card p-6">
               <h3 className="font-bold mb-6 flex items-center text-white">
                 <Shield size={18} className="mr-2 text-primary" />
                 Ro'yxatdan o'tish

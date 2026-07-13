@@ -29,6 +29,63 @@ const TournamentsPage = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    game: "CS2",
+    format: "5v5",
+    prize_pool: "1000",
+    max_teams: "16",
+    start_date: "",
+    description: "",
+    is_premium: false
+  });
+  const [creating, setCreating] = useState(false);
+
+  const handleCreateTournament = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.title || !formData.start_date) {
+      alert("Iltimos, sarlavha va boshlanish sanasini kiriting!");
+      return;
+    }
+    setCreating(true);
+    try {
+      const { error } = await supabase.from("tournaments").insert({
+        title: formData.title,
+        game: formData.game,
+        format: formData.format,
+        prize_pool: formData.prize_pool + " $",
+        max_teams: parseInt(formData.max_teams) || 16,
+        start_date: new Date(formData.start_date).toISOString(),
+        description: formData.description,
+        is_premium: formData.is_premium,
+        status: "UPCOMING"
+      });
+
+      if (error) throw error;
+      
+      alert("Turnir muvaffaqiyatli yaratildi!");
+      setShowCreateModal(false);
+      
+      // Reset form
+      setFormData({
+        title: "",
+        game: "CS2",
+        format: "5v5",
+        prize_pool: "1000",
+        max_teams: "16",
+        start_date: "",
+        description: "",
+        is_premium: false
+      });
+
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Turnir yaratishda xatolik:", err);
+      alert(err.message || "Xatolik yuz berdi.");
+    } finally {
+      setCreating(false);
+    }
+  };
   const { user } = useAuthStore();
   const isOrganizer = user?.role === "ADMIN" || user?.role === "ORGANIZER";
 
@@ -330,16 +387,27 @@ const TournamentsPage = () => {
             >
               <h2 className="text-2xl font-black mb-6 text-white">Yangi Turnir Tashkil Qilish</h2>
               
-              <form className="space-y-6">
+              <form onSubmit={handleCreateTournament} className="space-y-6">
                 <div>
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Turnir Nomi</label>
-                  <input type="text" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Masalan: Maroqli Summer Cup" />
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                    placeholder="Masalan: Maroqli Summer Cup"
+                  />
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">O'yin turi</label>
-                    <select className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors">
+                    <select
+                      value={formData.game}
+                      onChange={(e) => setFormData({ ...formData, game: e.target.value })}
+                      className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                    >
                       <option value="CS2">Counter-Strike 2</option>
                       <option value="DOTA2">Dota 2</option>
                       <option value="PUBG">PUBG Mobile</option>
@@ -347,33 +415,92 @@ const TournamentsPage = () => {
                     </select>
                   </div>
                   <div>
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Format</label>
+                    <select
+                      value={formData.format}
+                      onChange={(e) => setFormData({ ...formData, format: e.target.value })}
+                      className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                    >
+                      <option value="5v5">5v5 (Jamoaviy)</option>
+                      <option value="1v1">1v1 (Yakkalik)</option>
+                      <option value="2v2">2v2</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Mukofot jamg'armasi ($)</label>
-                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="1000" />
+                    <input
+                      type="number"
+                      required
+                      value={formData.prize_pool}
+                      onChange={(e) => setFormData({ ...formData, prize_pool: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      placeholder="1000"
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Jamoalar soni (Max)</label>
-                    <input type="number" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="16" />
+                    <input
+                      type="number"
+                      required
+                      value={formData.max_teams}
+                      onChange={(e) => setFormData({ ...formData, max_teams: e.target.value })}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                      placeholder="16"
+                    />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Boshlanish sanasi</label>
-                    <input type="datetime-local" className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" />
+                    <input
+                      type="datetime-local"
+                      required
+                      value={formData.start_date}
+                      onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                      className="w-full bg-[#18181c] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                    />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Qo'shimcha Ma'lumot / Qoidalar</label>
-                  <textarea rows={4} className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors" placeholder="Turnir qoidalari va batafsil ma'lumotlar..."></textarea>
+                  <textarea
+                    rows={4}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                    placeholder="Turnir qoidalari va batafsil ma'lumotlar..."
+                  />
+                </div>
+
+                <div className="flex items-center space-x-2 bg-white/5 p-4 rounded-xl border border-white/5">
+                  <input
+                    type="checkbox"
+                    id="is_premium_t"
+                    checked={formData.is_premium}
+                    onChange={(e) => setFormData({ ...formData, is_premium: e.target.checked })}
+                    className="w-4 h-4 rounded border-white/10 bg-white/5 text-[#FF4655] focus:ring-0 focus:ring-offset-0"
+                  />
+                  <label htmlFor="is_premium_t" className="text-xs font-bold text-secondary uppercase tracking-wider cursor-pointer select-none">
+                    Faqat Premium (PRO) A'zolar uchun
+                  </label>
                 </div>
 
                 <div className="flex gap-4 pt-4 border-t border-white/10">
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors">
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateModal(false)}
+                    className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-white/10 hover:bg-white/20 transition-colors"
+                  >
                     Bekor Qilish
                   </button>
-                  <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20">
-                    E'lon Qilish
+                  <button
+                    type="submit"
+                    disabled={creating}
+                    className="flex-1 py-3 px-6 rounded-xl font-bold text-white bg-primary hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20 flex items-center justify-center"
+                  >
+                    {creating ? "Yaratilmoqda..." : "E'lon Qilish"}
                   </button>
                 </div>
               </form>
