@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/store";
-import { Radio, Play, Square, Tv, Youtube, Loader2, Link2 } from "lucide-react";
+import { Radio, Play, Square, Tv, Loader2, Link2 } from "lucide-react";
 
 interface LiveRow {
   id: string;
@@ -127,14 +127,16 @@ export default function TournamentLive() {
               JONLI EFIR
             </span>
             <span className="chip">
-              <Youtube size={13} className="text-primary" /> YouTube
+              <Radio size={13} className="text-primary" /> MAROQLI TV
             </span>
           </div>
-          <div className="relative aspect-video w-full bg-black">
+          <div className="relative aspect-video w-full overflow-hidden bg-black">
+            {/* Yuqoridagi manba sarlavha paneli kesib tashlanadi (brend ko'rinmasin) */}
             <iframe
-              src={`https://www.youtube.com/embed/${stream.stream_url}?autoplay=1&rel=0`}
+              src={`https://www.youtube-nocookie.com/embed/${stream.stream_url}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&color=white`}
               title="Turnir jonli efiri"
-              className="absolute inset-0 h-full w-full"
+              className="absolute left-0 w-full"
+              style={{ top: "-52px", height: "calc(100% + 52px)" }}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
