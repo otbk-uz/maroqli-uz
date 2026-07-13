@@ -320,7 +320,7 @@ const TournamentsPage = () => {
                         <div className="flex items-center space-x-3 text-secondary text-xs font-bold mb-8 bg-white/5 p-3 rounded-xl border border-white/5">
                           <Calendar size={14} className="text-primary" />
                           <span className="uppercase tracking-widest">
-                            {new Date(tItem.start_date).toLocaleDateString(
+                            {new Date(tItem.start_date).toLocaleString(
                               locale === "ru" ? "ru-RU" : locale === "en" ? "en-US" : "uz-UZ",
                               {
                                 day: "numeric",

@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import TournamentBracket from "../../../components/TournamentBracket";
 import MuxPlayer from "@mux/mux-player-react";
-import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown } from "lucide-react";
+import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown, Copy, Check, Eye, EyeOff, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -161,6 +161,65 @@ const TournamentDetail = () => {
       alert("Tozalashda xatolik yuz berdi.");
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const [adminStream, setAdminStream] = useState<any | null>(null);
+  const [adminLive, setAdminLive] = useState(false);
+  const [adminLiveLoading, setAdminLiveLoading] = useState(false);
+  const [showAdminKey, setShowAdminKey] = useState(false);
+  const [adminKeyCopied, setAdminKeyCopied] = useState(false);
+
+  useEffect(() => {
+    if (isRefereeOrAdmin && user) {
+      fetchAdminStream();
+    }
+  }, [isRefereeOrAdmin, user]);
+
+  const fetchAdminStream = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch("/api/streams/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      const data = await res.json();
+      if (res.ok && data.stream) {
+        setAdminStream(data.stream);
+        setAdminLive(data.stream.is_live || false);
+      }
+    } catch (err) {
+      console.error("Admin stream setup error:", err);
+    }
+  };
+
+  const toggleAdminLive = async () => {
+    if (!adminStream) return;
+    setAdminLiveLoading(true);
+    const newStatus = !adminLive;
+    try {
+      setAdminLive(newStatus);
+      const { error } = await supabase
+        .from("live_streams")
+        .update({ is_live: newStatus })
+        .eq("id", adminStream.id);
+      if (error) throw error;
+      
+      if (newStatus && tournament) {
+        await supabase
+          .from("tournaments")
+          .update({ status: "LIVE" })
+          .eq("id", tournament.id);
+      }
+      
+      alert(newStatus ? "Jonli efir holati yoqildi!" : "Jonli efir holati o'chirildi!");
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      setAdminLive(!newStatus);
+    } finally {
+      setAdminLiveLoading(false);
     }
   };
 
@@ -345,7 +404,12 @@ const TournamentDetail = () => {
                 <div className="text-center md:text-left">
                   <p className="text-xs text-secondary uppercase tracking-widest mb-1">Boshlanish</p>
                   <p className="text-2xl font-bold text-white">
-                    {new Date(tournament.start_date).toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(tournament.start_date).toLocaleString("uz-UZ", {
+                      day: "numeric",
+                      month: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </div>
               </div>
@@ -464,6 +528,88 @@ const TournamentDetail = () => {
                     >
                       {actionLoading ? "O'chirilmoqda..." : "O'yinlarni Tozalash"}
                     </button>
+                  )}
+
+                  {/* Streaming tools */}
+                  {adminStream && (
+                    <div className="pt-4 mt-4 border-t border-white/5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-1.5">
+                          <Radio size={12} className={adminLive ? "text-green-500 animate-pulse" : "text-secondary"} />
+                          Jonli Efir (OBS)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={toggleAdminLive}
+                          disabled={adminLiveLoading}
+                          className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors ${
+                            adminLive ? "bg-green-500" : "bg-white/10"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                              adminLive ? "translate-x-5" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Server URL */}
+                      <div>
+                        <label className="text-[9px] font-bold text-secondary uppercase tracking-wider mb-1 block">Server URL</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            readOnly
+                            value="rtmps://global-live.mux.com:5222/app"
+                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-2.5 pr-8 py-1.5 text-[10px] font-mono text-white/90"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText("rtmps://global-live.mux.com:5222/app");
+                              alert("URL nusxalandi!");
+                            }}
+                            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-white"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Stream Key */}
+                      <div>
+                        <label className="text-[9px] font-bold text-secondary uppercase tracking-wider mb-1 block">Efir Kaliti (Stream Key)</label>
+                        <div className="relative">
+                          <input
+                            type={showAdminKey ? "text" : "password"}
+                            readOnly
+                            value={adminStream.stream_key || ""}
+                            className="w-full bg-black/40 border border-white/10 rounded-lg pl-2.5 pr-14 py-1.5 text-[10px] font-mono text-white/90"
+                          />
+                          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                            <button
+                              type="button"
+                              onClick={() => setShowAdminKey(!showAdminKey)}
+                              className="p-1 text-secondary hover:text-white"
+                            >
+                              {showAdminKey ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(adminStream.stream_key);
+                                setAdminKeyCopied(true);
+                                setTimeout(() => setAdminKeyCopied(false), 2000);
+                              }}
+                              className="p-1 text-secondary hover:text-white"
+                            >
+                              {adminKeyCopied ? <Check size={12} className="text-green-500" /> : <Copy size={12} />}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
