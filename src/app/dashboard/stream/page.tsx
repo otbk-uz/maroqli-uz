@@ -12,8 +12,11 @@ interface StreamSettings {
   title: string;
   game_name: string;
   stream_key: string;
+  stream_url: string;
+  rtmp_url: string;
   donation_url: string;
   is_live: boolean;
+  cf_live_input_id?: string;
 }
 
 export default function StreamDashboardPage() {
@@ -34,11 +37,9 @@ export default function StreamDashboardPage() {
   const [game, setGame] = useState("");
   const [donationUrl, setDonationUrl] = useState("");
   const [streamUrl, setStreamUrl] = useState("");
-  const [muxError, setMuxError] = useState<string | null>(null);
+  const [rtmpUrl, setRtmpUrl] = useState("rtmps://live.cloudflare.com:443/live/");
+  const [cfError, setCfError] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
-
-  // Dummy Server URL for MUX / OBS
-  const SERVER_URL = "rtmps://global-live.mux.com:5222/app";
 
   useEffect(() => {
     setHasHydrated(true);
@@ -77,8 +78,9 @@ export default function StreamDashboardPage() {
         setGame(data.stream.game_name || "");
         setDonationUrl(data.stream.donation_url || "");
         setStreamUrl(data.stream.stream_url || "");
+        setRtmpUrl(data.stream.rtmp_url || "rtmps://live.cloudflare.com:443/live/");
         setIsLive(data.stream.is_live || false);
-        setMuxError(data.muxError || null);
+        setCfError(data.cfError || null);
       }
     } catch (err: any) {
       console.error("Error fetching stream settings:", err);
@@ -154,8 +156,9 @@ export default function StreamDashboardPage() {
         setGame(data.stream.game_name || "");
         setDonationUrl(data.stream.donation_url || "");
         setStreamUrl(data.stream.stream_url || "");
+        setRtmpUrl(data.stream.rtmp_url || "rtmps://live.cloudflare.com:443/live/");
         setIsLive(data.stream.is_live || false);
-        setMuxError(data.muxError || null);
+        setCfError(data.cfError || null);
         alert("Yangi efir kaliti yaratildi! Iltimos OBS sozlamalarini yangilang.");
       }
     } catch (err: any) {
@@ -244,7 +247,7 @@ export default function StreamDashboardPage() {
                 </div>
               </div>
 
-              {muxError && (
+              {cfError && (
                 <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 p-5 rounded-2xl text-xs space-y-2 leading-relaxed">
                   <div className="flex items-center gap-2 font-black uppercase text-amber-400">
                     <AlertCircle size={14} />
@@ -445,12 +448,12 @@ export default function StreamDashboardPage() {
                     <input
                       type="text"
                       readOnly
-                      value={SERVER_URL}
+                      value={rtmpUrl}
                       className="w-full bg-black/40 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-xs font-mono text-white/90"
                     />
                     <button
                       type="button"
-                      onClick={() => copyToClipboard(SERVER_URL)}
+                      onClick={() => copyToClipboard(rtmpUrl)}
                       className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-white transition-colors"
                       title="Nusxa olish"
                     >

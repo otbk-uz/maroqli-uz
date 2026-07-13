@@ -1,18 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import Mux from "@mux/mux-node";
 
-// MUX SDK Configuration
-// We expect MUX_TOKEN_ID and MUX_TOKEN_SECRET in environment variables.
-// If they are missing, the endpoint will return dummy credentials so the UI still works.
-const isMuxConfigured = !!(process.env.MUX_TOKEN_ID && process.env.MUX_TOKEN_SECRET);
+// Cloudflare Stream Configuration
+const CF_ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID || "";
+const CF_API_TOKEN = process.env.CLOUDFLARE_STREAM_API_TOKEN || "";
+const isCFConfigured = !!(CF_ACCOUNT_ID && CF_API_TOKEN);
 
-const mux = isMuxConfigured 
-  ? new Mux({
-      tokenId: process.env.MUX_TOKEN_ID,
-      tokenSecret: process.env.MUX_TOKEN_SECRET,
-    }) 
-  : null;
+// Cloudflare Stream API base URL
+const CF_API_BASE = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/stream/live_inputs`;
 
 export async function POST(req: Request) {
   try {
@@ -37,26 +32,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Foydalanuvchi ID si (userId) taqdim etilmadi" }, { status: 400 });
     }
 
-    // 0. CHECK ROLE / PERMISSION: Only tournament participants, GameDevs, and Admins can stream
+    // 0. CHECK ROLE / PERMISSION
     let isAllowed = false;
 
-    // First check user role from profiles
     const { data: profileData } = await supabaseAdmin
       .from("profiles")
       .select("role")
       .eq("id", userId)
       .single();
 
-    if (profileData && (profileData.role === "GAMEDEV" || profileData.role === "ADMIN" || profileData.role === "STREAMER")) {
+    if (profileData && (profileData.role === "GAMEDEV" || profileData.role === "ADMIN" || profileData.role === "STREAMER" || profileData.role === "ORGANIZER" || profileData.role === "MODERATOR")) {
       isAllowed = true;
     } else {
-      // If not gamedev/admin, check if they are in a tournament
       const { data: participantData } = await supabaseAdmin
         .from("tournament_participants")
         .select("id")
         .eq("user_id", userId)
         .limit(1);
-        
+
       if (participantData && participantData.length > 0) {
         isAllowed = true;
       }
@@ -64,12 +57,34 @@ export async function POST(req: Request) {
 
     if (!isAllowed) {
       return NextResponse.json(
-        { error: "Faqatgina turnir ishtirokchilari yoki GameDev (dasturchilar) jonli efir qila oladi." },
+        { error: "Faqatgina turnir ishtirokchilari yoki admin/streamerlar jonli efir qila oladi." },
         { status: 403 }
       );
     }
 
+    // Delete existing stream record if forceRegenerate
     if (forceRegenerate) {
+      // First get existing stream to delete from Cloudflare too
+      const { data: oldStream } = await supabaseAdmin
+        .from("live_streams")
+        .select("cf_live_input_id")
+        .eq("user_id", userId)
+        .single();
+
+      // Delete from Cloudflare if we have the live input ID
+      if (oldStream?.cf_live_input_id && isCFConfigured) {
+        try {
+          await fetch(`${CF_API_BASE}/${oldStream.cf_live_input_id}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${CF_API_TOKEN}`,
+            },
+          });
+        } catch (e) {
+          console.warn("Cloudflare live input delete failed:", e);
+        }
+      }
+
       await supabaseAdmin
         .from("live_streams")
         .delete()
@@ -92,54 +107,74 @@ export async function POST(req: Request) {
       return NextResponse.json({ stream: existingStream });
     }
 
-    // 2. No stream found, create one.
+    // 2. No stream found — create via Cloudflare Stream
     let streamKey = "";
+    let rtmpUrl = "rtmps://live.cloudflare.com:443/live/";
     let playbackId = "";
-    let muxStreamId = "";
+    let cfLiveInputId = "";
+    let cfError = null;
 
-    let muxErrorMsg = null;
-
-    if (isMuxConfigured && mux) {
+    if (isCFConfigured) {
       try {
-        // Create actual Mux Live Stream
-        const liveStream = await mux.video.liveStreams.create({
-          playback_policy: ["public"],
-          new_asset_settings: { playback_policy: ["public"] },
+        const cfRes = await fetch(CF_API_BASE, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${CF_API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            meta: { name: `maroqli-stream-${userId}` },
+            recording: { mode: "automatic" },
+          }),
         });
-        streamKey = liveStream.stream_key;
-        playbackId = liveStream.playback_ids?.[0]?.id || "";
-        muxStreamId = liveStream.id;
-      } catch (muxErr: any) {
-        console.warn("Mux creation failed, falling back to dummy:", muxErr.message);
-        muxErrorMsg = muxErr.message || "Mux error";
-        // Fallback: Create dummy keys for testing if Mux is not configured or fails
-        streamKey = "live_" + Math.random().toString(36).substring(2, 15);
-        playbackId = "dummy_playback_" + Math.random().toString(36).substring(2, 15);
-        muxStreamId = "dummy_mux_id";
+
+        const cfData = await cfRes.json();
+
+        if (!cfRes.ok || !cfData.success) {
+          throw new Error(cfData.errors?.[0]?.message || "Cloudflare xatoligi");
+        }
+
+        const liveInput = cfData.result;
+        streamKey = liveInput.rtmps?.streamKey || "";
+        rtmpUrl = liveInput.rtmps?.url || rtmpUrl;
+        playbackId = liveInput.uid || "";
+        cfLiveInputId = liveInput.uid || "";
+      } catch (err: any) {
+        console.warn("Cloudflare Stream creation failed:", err.message);
+        cfError = err.message;
+        // Fallback to random keys
+        streamKey = "cf_live_" + Math.random().toString(36).substring(2, 15);
+        playbackId = "dummy_" + Math.random().toString(36).substring(2, 15);
       }
     } else {
-      // Fallback: Create dummy keys for testing if Mux is not configured
-      streamKey = "live_" + Math.random().toString(36).substring(2, 15);
-      playbackId = "dummy_playback_" + Math.random().toString(36).substring(2, 15);
-      muxStreamId = "dummy_mux_id";
+      // Cloudflare not configured — use dummy keys
+      streamKey = "cf_live_" + Math.random().toString(36).substring(2, 15);
+      playbackId = "dummy_" + Math.random().toString(36).substring(2, 15);
     }
 
     // 3. Save to Supabase
+    const insertData: any = {
+      user_id: userId,
+      stream_key: streamKey,
+      stream_url: playbackId,
+      rtmp_url: rtmpUrl,
+      title: "Maroqli.uz da yangi efir",
+      is_live: false,
+    };
+
+    if (cfLiveInputId) {
+      insertData.cf_live_input_id = cfLiveInputId;
+    }
+
     const { data: newStream, error: insertError } = await supabaseAdmin
       .from("live_streams")
-      .insert({
-        user_id: userId,
-        stream_key: streamKey,
-        stream_url: playbackId, // Store MUX Playback ID here
-        title: "Maroqli.uz da yangi efir",
-        is_live: false,
-      })
+      .insert(insertData)
       .select()
       .single();
 
     if (insertError) throw insertError;
 
-    return NextResponse.json({ stream: newStream, muxStreamId, muxError: muxErrorMsg });
+    return NextResponse.json({ stream: newStream, cfError });
   } catch (error: any) {
     console.error("Stream setup error:", error);
     return NextResponse.json({ error: error.message || "Efir kalitini yaratishda xatolik" }, { status: 500 });
