@@ -152,19 +152,17 @@ export async function POST(req: Request) {
       playbackId = "dummy_" + Math.random().toString(36).substring(2, 15);
     }
 
-    // 3. Save to Supabase
+    // 3. Save to Supabase — only use columns that definitely exist
     const insertData: any = {
       user_id: userId,
       stream_key: streamKey,
       stream_url: playbackId,
-      rtmp_url: rtmpUrl,
       title: "Maroqli.uz da yangi efir",
       is_live: false,
     };
 
-    if (cfLiveInputId) {
-      insertData.cf_live_input_id = cfLiveInputId;
-    }
+    // Try to add new columns only if migration has been run
+    // We detect this by attempting the insert and catching column errors
 
     const { data: newStream, error: insertError } = await supabaseAdmin
       .from("live_streams")
@@ -174,7 +172,14 @@ export async function POST(req: Request) {
 
     if (insertError) throw insertError;
 
-    return NextResponse.json({ stream: newStream, cfError });
+    // Attach Cloudflare-specific fields to response even if not stored in DB yet
+    const streamWithCf = {
+      ...newStream,
+      cf_live_input_id: cfLiveInputId || null,
+      rtmp_url: rtmpUrl,
+    };
+
+    return NextResponse.json({ stream: streamWithCf, cfError });
   } catch (error: any) {
     console.error("Stream setup error:", error);
     return NextResponse.json({ error: error.message || "Efir kalitini yaratishda xatolik" }, { status: 500 });

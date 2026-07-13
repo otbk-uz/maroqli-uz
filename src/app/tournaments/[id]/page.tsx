@@ -597,13 +597,13 @@ const TournamentDetail = () => {
                           <input
                             type="text"
                             readOnly
-                            value="rtmps://global-live.mux.com:5222/app"
+                            value={adminStream.rtmp_url || "rtmps://live.cloudflare.com:443/live/"}
                             className="w-full bg-black/40 border border-white/10 rounded-lg pl-2.5 pr-8 py-1.5 text-[10px] font-mono text-white/90"
                           />
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard.writeText("rtmps://global-live.mux.com:5222/app");
+                              navigator.clipboard.writeText(adminStream.rtmp_url || "rtmps://live.cloudflare.com:443/live/");
                               alert("URL nusxalandi!");
                             }}
                             className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 text-secondary hover:text-white"
@@ -655,6 +655,22 @@ const TournamentDetail = () => {
                       >
                         {adminLiveLoading ? "Yangilanmoqda..." : "Efir kalitini yangilash (Regenerate)"}
                       </button>
+
+                      {/* Admin Live Preview */}
+                      {adminStream.cf_live_input_id && (
+                        <div className="mt-3">
+                          <label className="text-[9px] font-bold text-secondary uppercase tracking-wider mb-1 block">Admin Ko'rinish (Preview)</label>
+                          <div className="w-full aspect-video rounded-lg overflow-hidden bg-black border border-white/10">
+                            <iframe
+                              src={`https://iframe.videodelivery.net/${adminStream.cf_live_input_id}?autoplay=true&muted=true`}
+                              className="w-full h-full"
+                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                              allowFullScreen
+                            />
+                          </div>
+                          <p className="text-[9px] text-secondary mt-1">OBS dan efir yuborilsa shu yerda ko'rinadi</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
