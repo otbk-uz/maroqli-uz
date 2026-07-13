@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Chrome, Send, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { loginSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
@@ -14,6 +14,7 @@ import Script from "next/script";
 const LoginPage = () => {
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     email: "", // can be email, phone or username
@@ -95,9 +96,9 @@ const LoginPage = () => {
     } catch (err: any) {
       console.error(err);
       if (err.message.includes("Invalid login credentials")) {
-        setErrorMsg("Email yoki parol noto'g'ri.");
+        setErrorMsg(t("invalid_credentials", "Email yoki parol noto'g'ri."));
       } else {
-        setErrorMsg(err.message || "Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.");
+        setErrorMsg(err.message || t("login_error_generic", "Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring."));
       }
     } finally {
       setIsLoading(false);
@@ -119,8 +120,8 @@ const LoginPage = () => {
           <Link href="/" className="text-3xl font-black tracking-tighter inline-block mb-6">
             MAR<span className="text-primary">OQLI</span>
           </Link>
-          <h1 className="text-2xl font-bold mb-2">Xush kelibsiz!</h1>
-          <p className="text-secondary text-sm">Davom etish uchun hisobingizga kiring</p>
+          <h1 className="text-2xl font-bold mb-2">{t("welcome_back", "Xush kelibsiz!")}</h1>
+          <p className="text-secondary text-sm">{t("login_subtitle", "Davom etish uchun hisobingizga kiring")}</p>
         </div>
 
         {errorMsg && (
@@ -132,13 +133,13 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary ml-1">Email manzilingiz</label>
+            <label className="text-sm font-medium text-secondary ml-1">{t("email_label", "Email manzilingiz")}</label>
             <input
               type="text"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="Emailingizni kiriting"
+              placeholder={t("email_placeholder", "Emailingizni kiriting")}
               className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
             />
             {errors.email && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.email}</p>}
@@ -146,9 +147,9 @@ const LoginPage = () => {
 
           <div className="space-y-2">
             <div className="flex justify-between items-center ml-1">
-              <label className="text-sm font-medium text-secondary">Parol</label>
+              <label className="text-sm font-medium text-secondary">{t("password_label", "Parol")}</label>
               <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-                Parolni unutdingizmi?
+                {t("forgot_password_question", "Parolni unutdingizmi?")}
               </Link>
             </div>
             <div className="relative">
@@ -181,7 +182,7 @@ const LoginPage = () => {
             ) : (
               <>
                 <LogIn size={16} />
-                <span>Kirish</span>
+                <span>{t("login", "Kirish")}</span>
               </>
             )}
           </button>
@@ -190,9 +191,9 @@ const LoginPage = () => {
 
 
         <p className="text-center mt-10 text-sm text-secondary">
-          Hisobingiz yo'qmi?{" "}
+          {t("no_account", "Hisobingiz yo'qmi?")}{" "}
           <Link href="/register" className="text-primary font-bold hover:underline">
-            Ro'yxatdan o'ting
+            {t("register_link", "Ro'yxatdan o'ting")}
           </Link>
         </p>
       </motion.div>

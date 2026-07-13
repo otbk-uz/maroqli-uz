@@ -8,6 +8,7 @@ import { Chrome, Send, ArrowLeft, ArrowRight, UserCheck, Upload, Check, AlertCir
 import { supabase } from "@/lib/supabase";
 import { registerSchema, registerBaseSchema } from "@/lib/validations";
 import { BackButton } from "../../../components/ui/BackButton";
+import { useTranslation } from "@/lib/store";
 
 const REGIONS = [
   { value: "TOSHKENT_S", label: "Toshkent shahri" },
@@ -26,37 +27,38 @@ const REGIONS = [
   { value: "QORAQALPOGISTON", label: "Qoraqalpogʻiston Respublikasi" },
 ];
 
-const ROLES = [
-  {
-    value: "VIEWER",
-    label: "Kuzatuvchi",
-    description: "Yangiliklar va forumlarni o'qish, bepul imkoniyatlar",
-  },
-  {
-    value: "GAMER",
-    label: "Gamer",
-    description: "Turnirlarda ishtirok etish, o'yinlar sotib olish, statistika",
-  },
-  {
-    value: "GAMEDEV",
-    label: "GameDev",
-    description: "O'yinlar yuklash va sotish, daromad paneli, portfolio",
-  },
-  {
-    value: "STREAMER",
-    label: "Strimer",
-    description: "Jonli efirlar, obunachilar yig'ish, strimlar sahifasida ko'rinish",
-  },
-  {
-    value: "INVESTOR",
-    label: "Investor",
-    description: "Loyiha taqdimotlari, Investor Hub va hamkorlik",
-  },
-];
-
 const RegisterPage = () => {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
+
+  const ROLES = [
+    {
+      value: "VIEWER",
+      label: t("role_viewer", "Kuzatuvchi"),
+      description: t("role_viewer_desc", "Yangiliklar va forumlarni o'qish, bepul imkoniyatlar"),
+    },
+    {
+      value: "GAMER",
+      label: t("role_gamer", "Gamer"),
+      description: t("role_gamer_desc", "Turnirlarda ishtirok etish, o'yinlar sotib olish, statistika"),
+    },
+    {
+      value: "GAMEDEV",
+      label: t("role_gamedev", "GameDev"),
+      description: t("role_gamedev_desc", "O'yinlar yuklash va sotish, daromad paneli, portfolio"),
+    },
+    {
+      value: "STREAMER",
+      label: t("role_streamer", "Strimer"),
+      description: t("role_streamer_desc", "Jonli efirlar, obunachilar yig'ish, strimlar sahifasida ko'rinish"),
+    },
+    {
+      value: "INVESTOR",
+      label: t("role_investor", "Investor"),
+      description: t("role_investor_desc", "Loyiha taqdimotlari, Investor Hub va hamkorlik"),
+    },
+  ];
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
@@ -286,12 +288,12 @@ const RegisterPage = () => {
               <Check size={40} className="stroke-[3]" />
             </div>
             
-            <h1 className="text-3xl font-black text-white mb-4">Tabriklaymiz!</h1>
+            <h1 className="text-3xl font-black text-white mb-4">{t("register_success_title", "Tabriklaymiz!")}</h1>
             <p className="text-secondary text-sm mb-6 leading-relaxed">
-              Ro'yxatdan o'tish muvaffaqiyatli yakunlandi. Elektron pochtangizga tasdiqlash xati yuboriladi.
+              {t("register_success_desc", "Ro'yxatdan o'tish muvaffaqiyatli yakunlandi. Elektron pochtangizga tasdiqlash xati yuboriladi.")}
             </p>
             <div className="text-xs text-primary font-bold animate-pulse">
-              Kirish sahifasiga yo'naltirilmoqda...
+              {t("redirect_to_login", "Kirish sahifasiga yo'naltirilmoqda...")}
             </div>
           </motion.div>
         ) : (
@@ -305,8 +307,8 @@ const RegisterPage = () => {
               <Link href="/" className="text-3xl font-black tracking-tighter inline-block mb-4">
                 MAR<span className="text-primary">OQLI</span>
               </Link>
-              <h1 className="text-2xl font-bold mb-1">Hisob ochish</h1>
-              <p className="text-secondary text-sm">Gaming hamjamiyatiga qo'shiling</p>
+              <h1 className="text-2xl font-bold mb-1">{t("create_account", "Hisob ochish")}</h1>
+              <p className="text-secondary text-sm">{t("register_subtitle", "Gaming hamjamiyatiga qo'shiling")}</p>
               
               {/* Step indicator */}
               <div className="flex items-center justify-center space-x-2 mt-6">
@@ -332,11 +334,11 @@ const RegisterPage = () => {
                   className="space-y-4"
                 >
                   <div className="text-sm font-bold text-white mb-2 uppercase tracking-wider text-center md:text-left">
-                    1-qadam: Shaxsiy ma'lumotlar
+                    {t("step_1_personal", "1-qadam: Shaxsiy ma'lumotlar")}
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-secondary ml-1">To'liq ism (Ism, Familiya)</label>
+                    <label className="text-xs font-medium text-secondary ml-1">{t("fullname_label", "To'liq ism (Ism, Familiya)")}</label>
                     <input
                       type="text"
                       name="full_name"
@@ -350,7 +352,7 @@ const RegisterPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">Yoshingiz</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("age_label", "Yoshingiz")}</label>
                       <input
                         type="number"
                         name="age"
@@ -365,14 +367,14 @@ const RegisterPage = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">Hududingiz (Viloyat)</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("region_label", "Hududingiz (Viloyat)")}</label>
                       <select
                         name="region"
                         value={formData.region}
                         onChange={handleChange}
                         className={`w-full bg-[#121214] border ${errors.region ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
                       >
-                        <option value="">Tanlang...</option>
+                        <option value="">{t("select_region", "Tanlang...")}</option>
                         {REGIONS.map((reg) => (
                           <option key={reg.value} value={reg.value}>
                             {reg.label}
@@ -384,7 +386,7 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-secondary ml-1">Telefon raqamingiz</label>
+                    <label className="text-xs font-medium text-secondary ml-1">{t("phone_label", "Telefon raqamingiz")}</label>
                     <input
                       type="text"
                       name="phone_number"
@@ -401,7 +403,7 @@ const RegisterPage = () => {
                     onClick={handleNext}
                     className="btn-primary w-full py-4 text-sm mt-6 flex items-center justify-center space-x-2"
                   >
-                    <span>Davom etish</span>
+                    <span>{t("continue_button", "Davom etish")}</span>
                     <ArrowRight size={16} />
                   </button>
                 </motion.div>
@@ -413,20 +415,20 @@ const RegisterPage = () => {
                   className="space-y-4"
                 >
                   <div className="text-sm font-bold text-white mb-2 uppercase tracking-wider text-center md:text-left flex items-center justify-between">
-                    <span>2-qadam: Rol va Xavfsizlik</span>
+                    <span>{t("step_2_role_security", "2-qadam: Rol va Xavfsizlik")}</span>
                     <button
                       type="button"
                       onClick={handleBack}
                       className="text-xs text-primary font-bold hover:underline flex items-center space-x-1"
                     >
                       <ArrowLeft size={12} />
-                      <span>Orqaga</span>
+                      <span>{t("back_link", "Orqaga")}</span>
                     </button>
                   </div>
 
                   {/* Role Selection Grid */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-secondary ml-1">Sizning platformadagi toifangiz</label>
+                    <label className="text-xs font-medium text-secondary ml-1">{t("category_label", "Sizning platformadagi toifangiz")}</label>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {ROLES.map((role) => (
                         <div
@@ -454,7 +456,7 @@ const RegisterPage = () => {
 
                   {/* Profile Avatar Upload */}
                   <div className="space-y-2">
-                    <label className="text-xs font-medium text-secondary ml-1">Profil rasmi (Ixtiyoriy)</label>
+                    <label className="text-xs font-medium text-secondary ml-1">{t("avatar_label", "Profil rasmi (Ixtiyoriy)")}</label>
                     <div className="flex items-center space-x-4 bg-white/5 border border-white/15 p-4 rounded-2xl">
                       <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 overflow-hidden flex items-center justify-center relative shrink-0">
                         {avatarPreview ? (
@@ -464,13 +466,13 @@ const RegisterPage = () => {
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-[10px] text-secondary mb-2">JPG, PNG yoki WEBP formatida, maks 2MB</p>
+                        <p className="text-[10px] text-secondary mb-2">{t("avatar_hint", "JPG, PNG yoki WEBP formatida, maks 2MB")}</p>
                         <button
                           type="button"
                           onClick={() => fileInputRef.current?.click()}
                           className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-xl border border-white/10 transition-colors"
                         >
-                          Rasm tanlash
+                          {t("choose_image", "Rasm tanlash")}
                         </button>
                         <input
                           type="file"
@@ -486,7 +488,7 @@ const RegisterPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">Foydalanuvchi nomi (@username)</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("username_label", "Foydalanuvchi nomi (@username)")}</label>
                       <input
                         type="text"
                         name="username"
@@ -499,7 +501,7 @@ const RegisterPage = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">E-pochta</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("email_label_reg", "E-pochta")}</label>
                       <input
                         type="email"
                         name="email"
@@ -514,7 +516,7 @@ const RegisterPage = () => {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">Parol</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("password_label", "Parol")}</label>
                       <div className="relative">
                         <input
                           type={showPassword ? "text" : "password"}
@@ -536,7 +538,7 @@ const RegisterPage = () => {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-medium text-secondary ml-1">Parolni tasdiqlash</label>
+                      <label className="text-xs font-medium text-secondary ml-1">{t("confirm_password_label", "Parolni tasdiqlash")}</label>
                       <div className="relative">
                         <input
                           type={showConfirmPassword ? "text" : "password"}
@@ -561,7 +563,15 @@ const RegisterPage = () => {
                   <div className="flex items-start space-x-2 py-2">
                     <input type="checkbox" className="mt-1 accent-primary shrink-0" id="terms" required />
                     <label htmlFor="terms" className="text-[11px] text-secondary leading-normal">
-                      Men <Link href="/terms" className="text-primary hover:underline font-bold">Foydalanish shartlari</Link> va <Link href="/privacy" className="text-primary hover:underline font-bold">Maxfiylik siyosati</Link> bilan tanishdim va roziman.
+                      {t("terms_accept_1", "Men ")}
+                      <Link href="/terms" className="text-primary hover:underline font-bold">
+                        {t("terms_accept_2", "Foydalanish shartlari")}
+                      </Link>
+                      {t("terms_accept_3", " va ")}
+                      <Link href="/privacy" className="text-primary hover:underline font-bold">
+                        {t("terms_accept_4", "Maxfiylik siyosati")}
+                      </Link>
+                      {t("terms_accept_5", " bilan tanishdim va roziman.")}
                     </label>
                   </div>
 
@@ -575,7 +585,7 @@ const RegisterPage = () => {
                     ) : (
                       <>
                         <UserCheck size={16} />
-                        <span>Ro'yxatdan o'tish</span>
+                        <span>{t("register", "Ro'yxatdan o'tish")}</span>
                       </>
                     )}
                   </button>
@@ -586,9 +596,9 @@ const RegisterPage = () => {
 
 
             <p className="text-center mt-8 text-sm text-secondary">
-              Hisobingiz bormi?{" "}
+              {t("has_account", "Hisobingiz bormi?")}{" "}
               <Link href="/login" className="text-primary font-bold hover:underline">
-                Kirish
+                {t("login", "Kirish")}
               </Link>
             </p>
           </motion.div>

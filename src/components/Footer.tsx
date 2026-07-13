@@ -51,7 +51,7 @@ const Footer = () => {
       <div className="container-app relative">
         <div className="grid grid-cols-2 gap-x-8 gap-y-10 md:grid-cols-12">
           {/* Brand column */}
-          <div className="col-span-2 space-y-5 md:col-span-5">
+          <div className="col-span-2 space-y-5 md:col-span-3">
             <Link href="/" className="group flex items-center gap-3">
               <div className="relative">
                 <span className="absolute inset-0 rounded-xl bg-brand-gradient opacity-40 blur-md transition-opacity duration-300 group-hover:opacity-70" />
@@ -95,7 +95,7 @@ const Footer = () => {
 
           {/* Link sections */}
           {sections.map((section) => (
-            <div key={section.title} className="md:col-span-2 lg:col-span-2">
+            <div key={section.title} className="col-span-1 md:col-span-2 lg:col-span-2">
               <h4 className="mb-4 font-display text-xs font-black uppercase tracking-widest text-white">
                 {section.title}
               </h4>
@@ -121,7 +121,7 @@ const Footer = () => {
           ))}
 
           {/* Contact column */}
-          <div className="col-span-2 md:col-span-1 lg:col-span-1">
+          <div className="col-span-2 md:col-span-3 lg:col-span-3">
             <h4 className="mb-4 font-display text-xs font-black uppercase tracking-widest text-white">
               {t("contact_support", "Aloqa")}
             </h4>

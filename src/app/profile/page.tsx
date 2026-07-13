@@ -6,14 +6,16 @@ import Link from "next/link";
 import Navbar from "../../components/Navbar";
 import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useAuthStore } from "@/lib/store";
+import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "../../components/ui/BackButton";
 
 const ProfilePage = () => {
   const router = useRouter();
   const { user, isAuthenticated, logout, setAuth, token } = useAuthStore();
+  const { t, locale } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const localeStr = locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US';
 
   const [loading, setLoading] = useState(true);
   const [profileData, setProfileData] = useState<any>(null);
@@ -51,7 +53,7 @@ const ProfilePage = () => {
   const [loadingLibrary, setLoadingLibrary] = useState(false);
 
   useEffect(() => {
-    if (activeSetting === "Mening Kutubxonam" && libraryGames.length === 0) {
+    if (activeSetting === "my_library" && libraryGames.length === 0) {
       if (profileData?.role !== "GAMER" && profileData?.role !== "ADMIN") {
         setActiveSetting(null);
         return;
@@ -165,7 +167,7 @@ const ProfilePage = () => {
 
   const handleSaveProfile = async () => {
     if (!editForm.full_name.trim() || !editForm.username.trim()) {
-      alert("Ism va taxallusni to'ldiring!");
+      alert(t("fill_name_username", "Ism va taxallusni to'ldiring!"));
       return;
     }
 
@@ -195,7 +197,7 @@ const ProfilePage = () => {
       setIsEditing(false);
     } catch (err) {
       console.error("Profilni saqlashda xatolik:", err);
-      alert("Xatolik yuz berdi. Bu taxallus band bo'lishi mumkin.");
+      alert(t("profile_save_error", "Xatolik yuz berdi. Bu taxallus band bo'lishi mumkin."));
     } finally {
       setSaving(false);
     }
@@ -206,7 +208,7 @@ const ProfilePage = () => {
     if (!file || !user) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      alert("Rasm hajmi 2MB dan oshmasligi kerak!");
+      alert(t("image_size_limit", "Rasm hajmi 2MB dan oshmasligi kerak!"));
       return;
     }
 
@@ -235,9 +237,9 @@ const ProfilePage = () => {
       setProfileData((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
       setAuth({ ...user, avatar: newAvatarUrl }, token || "");
 
-    } catch (err) {
+    } catch (err: any) {
       console.error("Avatar yuklash xatosi:", err);
-      alert("Rasm yuklashda xatolik yuz berdi.");
+      alert(t("image_upload_error", "Rasm yuklashda xatolik yuz berdi.") + " (" + (err.message || err) + ")");
     } finally {
       setUploadingAvatar(false);
     }
@@ -245,7 +247,7 @@ const ProfilePage = () => {
 
   const handleSaveStreamer = async () => {
     if (!streamForm.stream_url || !streamForm.platform) {
-      alert("Havola va platformani kiriting!");
+      alert(t("fill_stream_fields", "Havola va platformani kiriting!"));
       return;
     }
 
@@ -274,11 +276,11 @@ const ProfilePage = () => {
       }
 
       if (resultError) throw resultError;
-      alert("Strim sozlamalari saqlandi!");
+      alert(t("stream_settings_saved", "Strim sozlamalari saqlandi!"));
       setActiveSetting(null);
     } catch (err) {
       console.error("Strim sozlamalarini saqlashda xatolik:", err);
-      alert("Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+      alert(t("stream_settings_error", "Xatolik yuz berdi. Iltimos qayta urinib ko'ring."));
     } finally {
       setSavingStream(false);
     }
@@ -286,7 +288,7 @@ const ProfilePage = () => {
 
   const handleCreateTeam = async () => {
     if (!teamForm.name || !teamForm.in_game_id) {
-      alert("Jamoa nomi va o'yin ID'sini kiriting!");
+      alert(t("fill_team_fields", "Jamoa nomi va o'yin ID'sini kiriting!"));
       return;
     }
     setSavingTeam(true);
@@ -310,11 +312,11 @@ const ProfilePage = () => {
         });
       if (memberError) throw memberError;
 
-      alert("Jamoa yaratildi!");
+      alert(t("team_created", "Jamoa yaratildi!"));
       window.location.reload(); // Refresh to load team data
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "Xatolik yuz berdi");
+      alert(err.message || t("stream_settings_error", "Xatolik yuz berdi"));
     } finally {
       setSavingTeam(false);
     }
@@ -332,7 +334,7 @@ const ProfilePage = () => {
         .single();
 
       if (userError || !userData) {
-        alert("Bunday foydalanuvchi topilmadi!");
+        alert(t("user_not_found", "Bunday foydalanuvchi topilmadi!"));
         return;
       }
 
@@ -347,11 +349,11 @@ const ProfilePage = () => {
         });
 
       if (insertError) throw insertError;
-      alert("A'zo qo'shildi!");
+      alert(t("member_added", "A'zo qo'shildi!"));
       window.location.reload();
     } catch (err: any) {
       console.error(err);
-      alert("Xatolik yuz berdi: " + err.message);
+      alert(t("stream_settings_error", "Xatolik yuz berdi: ") + err.message);
     } finally {
       setSavingTeam(false);
     }
@@ -414,7 +416,7 @@ const ProfilePage = () => {
                   ) : (
                     <>
                       <Camera size={22} className="text-white mb-1" />
-                      <span className="text-[9px] font-bold text-white uppercase">O'zgartirish</span>
+                      <span className="text-[9px] font-bold text-white uppercase">{t("change_avatar", "O'zgartirish")}</span>
                     </>
                   )}
                 </button>
@@ -432,7 +434,7 @@ const ProfilePage = () => {
                 <div className="flex-1 w-full space-y-4 pt-2">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">To'liq ism</label>
+                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">{t("fullname_label_profile", "To'liq ism")}</label>
                       <input
                         type="text"
                         value={editForm.full_name}
@@ -441,7 +443,7 @@ const ProfilePage = () => {
                       />
                     </div>
                     <div>
-                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">Taxallus (@username)</label>
+                      <label className="text-[10px] text-secondary font-bold uppercase tracking-wider block mb-1.5 ml-1">{t("username_label_profile", "Taxallus (@username)")}</label>
                       <input
                         type="text"
                         value={editForm.username}
@@ -456,7 +458,7 @@ const ProfilePage = () => {
                       disabled={saving}
                       className="btn-primary !py-2.5 !px-6 text-sm gap-1.5"
                     >
-                      {saving ? "Saqlanmoqda..." : <><Check size={16} /> Saqlash</>}
+                      {saving ? t("saving_profile", "Saqlanmoqda...") : <><Check size={16} /> {t("save_profile", "Saqlash")}</>}
                     </button>
                     <button
                       onClick={() => {
@@ -488,7 +490,7 @@ const ProfilePage = () => {
                       </span>
                     </div>
                     <p className="text-secondary text-xs mt-2">
-                      A'zo bo'ldi: {new Date(profileData.created_at).toLocaleDateString('uz-UZ', { month: 'long', year: 'numeric' })}
+                      {t("joined_date", "A'zo bo'ldi: ")}{new Date(profileData.created_at).toLocaleDateString(localeStr, { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
 
@@ -498,14 +500,14 @@ const ProfilePage = () => {
                       className="btn-primary !py-2.5 !px-5 text-sm gap-2"
                     >
                       <Edit3 size={16} />
-                      <span>Tahrirlash</span>
+                      <span>{t("edit", "Tahrirlash")}</span>
                     </button>
                     <button
                       onClick={handleLogout}
                       className="flex items-center gap-2 py-2.5 px-4 text-primary hover:bg-primary/10 border border-white/10 hover:border-primary/30 rounded-full transition-colors font-bold text-sm"
                     >
                       <LogOut size={16} />
-                      <span className="hidden sm:inline">Chiqish</span>
+                      <span className="hidden sm:inline">{t("logout", "Chiqish")}</span>
                     </button>
                   </div>
                 </div>
@@ -519,7 +521,7 @@ const ProfilePage = () => {
                   <TrendingUp size={16} />
                 </div>
                 <p className="font-display text-2xl md:text-3xl font-black text-white tabular-nums">{profileData.level || 1}</p>
-                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Daraja</p>
+                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("level_label", "Daraja")}</p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
                 <div className="w-9 h-9 rounded-xl bg-violet/10 text-violet flex items-center justify-center mx-auto mb-2">
@@ -533,7 +535,7 @@ const ProfilePage = () => {
                   <Shield size={16} />
                 </div>
                 <p className="font-display text-lg md:text-2xl font-black text-white truncate">{profileData.role}</p>
-                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Rolingiz</p>
+                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("your_role", "Rolingiz")}</p>
               </div>
             </div>
           </div>
@@ -550,21 +552,21 @@ const ProfilePage = () => {
           >
             <h3 className="text-lg font-bold mb-6 flex items-center">
               <Award size={20} className="mr-3 text-primary" />
-              Yutuqlar va Nishonlar
+              {t("achievements_title", "Yutuqlar va Nishonlar")}
             </h3>
             <div className="grid grid-cols-3 lg:grid-cols-2 gap-5">
               <div className="text-center group">
                 <div className="w-16 h-16 bg-white/5 border border-white/10 group-hover:border-warning/50 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center">
                   <Star size={24} className="text-warning" />
                 </div>
-                <p className="text-xs font-bold text-white">Yangi a'zo</p>
+                <p className="text-xs font-bold text-white">{t("new_member_achievement", "Yangi a'zo")}</p>
               </div>
               {profileData.is_premium && (
                 <div className="text-center group">
                   <div className="w-16 h-16 bg-white/5 border border-white/10 group-hover:border-amber-500/50 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center">
                     <Crown size={24} className="text-amber-400 fill-amber-400/20" />
                   </div>
-                  <p className="text-xs font-bold text-white">Premium</p>
+                  <p className="text-xs font-bold text-white">{t("premium_achievement", "Premium")}</p>
                 </div>
               )}
               {profileData.role === 'GAMEDEV' && (
@@ -572,7 +574,7 @@ const ProfilePage = () => {
                   <div className="w-16 h-16 bg-white/5 border border-white/10 group-hover:border-violet/50 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center">
                     <Shield size={24} className="text-violet" />
                   </div>
-                  <p className="text-xs font-bold text-white">Dasturchi</p>
+                  <p className="text-xs font-bold text-white">{t("developer_achievement", "Dasturchi")}</p>
                 </div>
               )}
               <div className="w-16 h-16 bg-white/2 rounded-2xl mx-auto flex items-center justify-center border-2 border-dashed border-white/10 hover:border-white/20 transition-colors cursor-pointer">
@@ -591,25 +593,25 @@ const ProfilePage = () => {
             <div className="p-8 border-b border-white/5">
               <h3 className="text-lg font-bold flex items-center">
                 <Settings size={20} className="mr-3 text-primary" />
-                Sozlamalar
+                {t("settings_title", "Sozlamalar")}
               </h3>
             </div>
             <div className="divide-y divide-white/5">
               {[
-                "Mening Jamoam",
-                ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? ["Mening Kutubxonam"] : []),
-                "Striming sozlamalari",
-                "Hisob xavfsizligi",
-                "Xabarnomalar sozlamalari",
-                "To'lov usullari",
-                "Maxfiylik va Xavfsizlik"
+                { key: "my_team", label: t("my_team", "Mening Jamoam") },
+                ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
+                { key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") },
+                { key: "account_security", label: t("account_security", "Hisob xavfsizligi") },
+                { key: "notification_settings", label: t("notification_settings", "Xabarnomalar sozlamalari") },
+                { key: "payment_methods", label: t("payment_methods", "To'lov usullari") },
+                { key: "privacy_and_security", label: t("privacy_and_security", "Maxfiylik va Xavfsizlik") }
               ].map((item) => (
                 <button
-                  key={item}
-                  onClick={() => setActiveSetting(item)}
+                  key={item.key}
+                  onClick={() => setActiveSetting(item.key)}
                   className="w-full p-5 md:p-6 flex items-center justify-between hover:bg-white/5 transition-colors group"
                 >
-                  <span className="font-medium text-sm text-secondary group-hover:text-white transition-colors">{item}</span>
+                  <span className="font-medium text-sm text-secondary group-hover:text-white transition-colors">{item.label}</span>
                   <ChevronRight size={18} className="text-secondary group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </button>
               ))}
@@ -644,12 +646,20 @@ const ProfilePage = () => {
 
               <div className="flex items-center space-x-3 mb-6">
                 <Settings size={24} className="text-primary" />
-                <h3 className="text-xl font-bold">{activeSetting}</h3>
+                <h3 className="text-xl font-bold">
+                  {activeSetting === "my_team" ? t("my_team", "Mening Jamoam") :
+                   activeSetting === "my_library" ? t("my_library", "Mening Kutubxonam") :
+                   activeSetting === "streaming_settings" ? t("streaming_settings", "Striming sozlamalari") :
+                   activeSetting === "account_security" ? t("account_security", "Hisob xavfsizligi") :
+                   activeSetting === "notification_settings" ? t("notification_settings", "Xabarnomalar sozlamalari") :
+                   activeSetting === "payment_methods" ? t("payment_methods", "To'lov usullari") :
+                   activeSetting === "privacy_and_security" ? t("privacy_and_security", "Maxfiylik va Xavfsizlik") : activeSetting}
+                </h3>
               </div>
 
-              {activeSetting === "Mening Kutubxonam" ? (
+              {activeSetting === "my_library" ? (
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                  <p className="text-secondary text-xs">Siz sotib olgan va faollashtirgan o'yinlar ro'yxati.</p>
+                  <p className="text-secondary text-xs">{t("my_library_desc", "Siz sotib olgan va faollashtirgan o'yinlar ro'yxati.")}</p>
 
                   {loadingLibrary ? (
                     <div className="py-12 flex items-center justify-center">
@@ -658,13 +668,13 @@ const ProfilePage = () => {
                   ) : libraryGames.length === 0 ? (
                     <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
                       <Gamepad2 size={40} className="text-white/20 mx-auto mb-4" />
-                      <p className="text-secondary text-sm">Sizda hali sotib olingan o'yinlar mavjud emas.</p>
+                      <p className="text-secondary text-sm">{t("no_games_in_library", "Sizda hali sotib olingan o'yinlar mavjud emas.")}</p>
                       <Link
                         href="/games"
                         onClick={() => setActiveSetting(null)}
                         className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
                       >
-                        Do'konga o'tish
+                        {t("go_to_store", "Do'konga o'tish")}
                       </Link>
                     </div>
                   ) : (
@@ -693,22 +703,22 @@ const ProfilePage = () => {
                             <div className="flex-1 min-w-0 flex flex-col justify-between">
                               <div>
                                 <h4 className="font-bold text-base text-white truncate mb-1">{gameDetails.title}</h4>
-                                <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">{gameDetails.platform} platformasi</p>
+                                <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">{gameDetails.platform} {t("platform_label", "platformasi")}</p>
                               </div>
 
                               {/* CD-Key Display */}
                               <div className="space-y-1">
-                                <p className="text-[8px] text-secondary font-bold uppercase tracking-widest">Sizning CD-KEY</p>
+                                <p className="text-[8px] text-secondary font-bold uppercase tracking-widest">{t("your_cd_key", "Sizning CD-KEY")}</p>
                                 <div className="flex items-center justify-between bg-black/40 px-3 py-1.5 rounded-lg border border-white/5 gap-2">
                                   <code className="text-[10px] text-warning font-mono select-all tracking-wider">{item.cd_key}</code>
                                   <button
                                     onClick={() => {
                                       navigator.clipboard.writeText(item.cd_key);
-                                      alert("CD-Key nusxalandi!");
+                                      alert(t("cd_key_copied", "CD-Key nusxalandi!"));
                                     }}
                                     className="text-[9px] text-primary hover:text-white font-bold hover:underline transition-colors shrink-0"
                                   >
-                                    Nusxalash
+                                    {t("copy", "Nusxalash")}
                                   </button>
                                 </div>
                               </div>
@@ -720,7 +730,7 @@ const ProfilePage = () => {
                                   className="mt-3 w-full py-2.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
                                 >
                                   <Download size={12} />
-                                  <span>O'yinni yuklab olish</span>
+                                  <span>{t("download_game", "O'yinni yuklab olish")}</span>
                                 </a>
                               )}
                             </div>
@@ -730,10 +740,10 @@ const ProfilePage = () => {
                     </div>
                   )}
                 </div>
-              ) : activeSetting === "Striming sozlamalari" ? (
+              ) : activeSetting === "streaming_settings" ? (
                 <div className="space-y-4">
                   <div>
-                    <label className="text-xs text-secondary font-bold block mb-1">Strim havolasi (URL)</label>
+                    <label className="text-xs text-secondary font-bold block mb-1">{t("stream_url", "Strim havolasi (URL)")}</label>
                     <input
                       type="text"
                       placeholder="https://twitch.tv/..."
@@ -743,7 +753,7 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-secondary font-bold block mb-1">Platforma</label>
+                    <label className="text-xs text-secondary font-bold block mb-1">{t("platform", "Platforma")}</label>
                     <select
                       value={streamForm.platform}
                       onChange={(e) => setStreamForm({...streamForm, platform: e.target.value})}
@@ -754,7 +764,7 @@ const ProfilePage = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-secondary font-bold block mb-1">O'yin nomi</label>
+                    <label className="text-xs text-secondary font-bold block mb-1">{t("game_name", "O'yin nomi")}</label>
                     <input
                       type="text"
                       placeholder="Dota 2, CS2..."
@@ -764,7 +774,7 @@ const ProfilePage = () => {
                     />
                   </div>
                   <div>
-                    <label className="text-xs text-secondary font-bold block mb-1">Strim sarlavhasi</label>
+                    <label className="text-xs text-secondary font-bold block mb-1">{t("stream_title", "Strim sarlavhasi")}</label>
                     <input
                       type="text"
                       placeholder="Bugun kuchli o'yin bo'ladi..."
@@ -775,8 +785,8 @@ const ProfilePage = () => {
                   </div>
                   <div className="flex items-center justify-between p-4 bg-white/5 border border-white/10 rounded-xl mt-4">
                     <div>
-                      <h4 className="font-bold text-sm">Jonli efirda</h4>
-                      <p className="text-[10px] text-secondary">Hozir strim qilyapsizmi?</p>
+                      <h4 className="font-bold text-sm">{t("live_now", "Jonli efirda")}</h4>
+                      <p className="text-[10px] text-secondary">{t("streaming_now_question", "Hozir strim qilyapsizmi?")}</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -794,19 +804,19 @@ const ProfilePage = () => {
                     disabled={savingStream}
                     className="btn-primary w-full mt-4 !py-3 text-sm"
                   >
-                    {savingStream ? "Saqlanmoqda..." : "Saqlash"}
+                    {savingStream ? t("saving_profile", "Saqlanmoqda...") : t("save", "Saqlash")}
                   </button>
                 </div>
-              ) : activeSetting === "Mening Jamoam" ? (
+              ) : activeSetting === "my_team" ? (
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                   {!teamData ? (
                     <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                      <h4 className="text-lg font-bold mb-2">Jamoa yaratish</h4>
-                      <p className="text-secondary text-xs mb-6">Turnirlarda qatnashish uchun o'z jamoangizni yarating.</p>
+                      <h4 className="text-lg font-bold mb-2">{t("create_team", "Jamoa yaratish")}</h4>
+                      <p className="text-secondary text-xs mb-6">{t("create_team_desc", "Turnirlarda qatnashish uchun o'z jamoangizni yarating.")}</p>
 
                       <div className="space-y-4">
                         <div>
-                          <label className="text-xs text-secondary font-bold block mb-1">Jamoa nomi</label>
+                          <label className="text-xs text-secondary font-bold block mb-1">{t("team_name", "Jamoa nomi")}</label>
                           <input
                             type="text"
                             placeholder="Masalan: NAVI Uzb"
@@ -816,7 +826,7 @@ const ProfilePage = () => {
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-secondary font-bold block mb-1">Sizning O'yin ID raqamingiz (PUBG/CS2)</label>
+                          <label className="text-xs text-secondary font-bold block mb-1">{t("your_game_id", "Sizning O'yin ID raqamingiz (PUBG/CS2)")}</label>
                           <input
                             type="text"
                             placeholder="5123456789"
@@ -830,7 +840,7 @@ const ProfilePage = () => {
                           disabled={savingTeam}
                           className="btn-primary w-full !py-3 text-sm mt-2"
                         >
-                          {savingTeam ? "Yaratilmoqda..." : "Jamoa yaratish"}
+                          {savingTeam ? t("creating", "Yaratilmoqda...") : t("create_team", "Jamoa yaratish")}
                         </button>
                       </div>
                     </div>
@@ -843,14 +853,14 @@ const ProfilePage = () => {
                         <div>
                           <h2 className="text-2xl font-black">{teamData.name}</h2>
                           <span className="text-xs font-bold text-primary bg-primary/20 px-2 py-1 rounded-md uppercase tracking-wider">
-                            {teamData.currentUserRole === 'CAPTAIN' ? 'Siz Sardorsiz' : 'A\'zo'}
+                            {teamData.currentUserRole === 'CAPTAIN' ? t("you_are_captain", "Siz Sardorsiz") : t("member", "A'zo")}
                           </span>
                         </div>
                       </div>
 
                       <div>
                         <h4 className="text-lg font-bold mb-4 flex items-center justify-between">
-                          <span>Jamoa a'zolari ({teamMembers.length}/5)</span>
+                          <span>{t("team_members_count", "Jamoa a'zolari")} ({teamMembers.length}/5)</span>
                         </h4>
                         <div className="space-y-3">
                           {teamMembers.map(m => (
@@ -880,18 +890,18 @@ const ProfilePage = () => {
 
                       {teamData.currentUserRole === 'CAPTAIN' && teamMembers.length < 5 && (
                         <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-4">
-                          <h4 className="font-bold text-sm mb-4">Yangi a'zo qo'shish</h4>
+                          <h4 className="font-bold text-sm mb-4">{t("add_new_member", "Yangi a'zo qo'shish")}</h4>
                           <div className="flex flex-col gap-3">
                             <input
                               type="text"
-                              placeholder="Foydalanuvchi nomi (@siz)"
+                              placeholder={t("member_username_placeholder", "Foydalanuvchi nomi (@siz)")}
                               value={addMemberForm.username}
                               onChange={(e) => setAddMemberForm({...addMemberForm, username: e.target.value.replace('@', '')})}
                               className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
                             />
                             <input
                               type="text"
-                              placeholder="Ularning O'yin ID si"
+                              placeholder={t("member_game_id_placeholder", "Ularning O'yin ID si")}
                               value={addMemberForm.in_game_id}
                               onChange={(e) => setAddMemberForm({...addMemberForm, in_game_id: e.target.value})}
                               className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
@@ -901,7 +911,7 @@ const ProfilePage = () => {
                               disabled={savingTeam}
                               className="btn-primary w-full !py-2 text-sm"
                             >
-                              Qo'shish
+                              {t("add", "Qo'shish")}
                             </button>
                           </div>
                         </div>
@@ -913,9 +923,9 @@ const ProfilePage = () => {
                 <>
                   <div className="text-center py-8">
                     <Shield size={48} className="text-white/20 mx-auto mb-4" />
-                    <h4 className="text-lg font-bold text-white mb-2">Tez orada!</h4>
+                    <h4 className="text-lg font-bold text-white mb-2">{t("soon_title", "Tez orada!")}</h4>
                     <p className="text-secondary text-sm leading-relaxed">
-                      Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada Maroqli.uz platformasida mavjud bo'ladi.
+                      {t("soon_desc", "Ushbu bo'lim ustida jadal ish olib borilmoqda. Yangi funksiyalar tez orada Maroqli.uz platformasida mavjud bo'ladi.")}
                     </p>
                   </div>
 
@@ -923,7 +933,7 @@ const ProfilePage = () => {
                     onClick={() => setActiveSetting(null)}
                     className="w-full mt-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold transition-all"
                   >
-                    Tushunarli
+                    {t("got_it", "Tushunarli")}
                   </button>
                 </>
               )}
