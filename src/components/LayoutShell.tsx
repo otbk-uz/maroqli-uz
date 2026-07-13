@@ -6,13 +6,34 @@ import FloatingConsoleHUD from "./FloatingConsoleHUD";
 import Footer from "./Footer";
 import MobileNav from "./MobileNav";
 import { WifiOff } from "lucide-react";
-import { useTranslation } from "@/lib/store";
+import { useTranslation, useAuthStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 export default function LayoutShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const { t } = useTranslation();
   const pathname = usePathname();
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const updateLastSeen = async () => {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ last_seen: new Date().toISOString() })
+          .eq("id", user.id);
+      } catch (err) {
+        console.error("Error updating last_seen:", err);
+      }
+    };
+
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 1000 * 60 * 3); // every 3 minutes
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user?.id]);
 
   useEffect(() => {
     setMounted(true);

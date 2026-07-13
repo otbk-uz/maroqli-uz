@@ -24,6 +24,7 @@ interface AdminUser {
   elo: number;
   is_premium?: boolean;
   premium_expires_at?: string;
+  last_seen?: string;
 }
 
 
@@ -168,7 +169,8 @@ export default function AdminPage() {
           level: p.level || 1,
           elo: p.elo || 1000,
           is_premium: p.is_premium || false,
-          premium_expires_at: p.premium_expires_at
+          premium_expires_at: p.premium_expires_at,
+          last_seen: p.last_seen
         }));
         setUsersList(mappedUsers as any);
         
@@ -395,6 +397,19 @@ export default function AdminPage() {
     );
   }
 
+  // Filter users active in the last 5 minutes
+  const onlineUsers = usersList.filter(u => {
+    if (!u.last_seen) return false;
+    const diffMs = Date.now() - new Date(u.last_seen).getTime();
+    return diffMs < 5 * 60 * 1000; // 5 minutes
+  });
+
+  // Sort users by last_seen DESC to get recent visits
+  const recentVisitors = [...usersList]
+    .filter(u => u.last_seen)
+    .sort((a, b) => new Date(b.last_seen!).getTime() - new Date(a.last_seen!).getTime())
+    .slice(0, 5);
+
   return (
     <main className="min-h-screen bg-background text-white">
       <Navbar />
@@ -525,15 +540,27 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {usersList.map((u) => (
-                <tr key={u.id} className="hover:bg-white/[0.01] transition-colors">
-                  {/* Name */}
-                  <td className="p-4 font-semibold">
-                    <div className="flex flex-col">
-                      <span className="text-white text-sm">{u.nickname || u.username}</span>
-                      <span className="text-[10px] text-secondary">@{u.username}</span>
-                    </div>
-                  </td>
+              {usersList.map((u) => {
+                const isOnline = u.last_seen ? (Date.now() - new Date(u.last_seen).getTime() < 5 * 60 * 1000) : false;
+                return (
+                  <tr key={u.id} className="hover:bg-white/[0.01] transition-colors">
+                    {/* Name */}
+                    <td className="p-4 font-semibold">
+                      <div className="flex items-center gap-3">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-xs text-white uppercase font-bold">
+                            {u.username?.[0]}
+                          </div>
+                          {isOnline && (
+                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background shadow-[0_0_8px_#10B981]" />
+                          )}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-white text-sm">{u.nickname || u.username}</span>
+                          <span className="text-[10px] text-secondary">@{u.username}</span>
+                        </div>
+                      </div>
+                    </td>
                   
                   {/* Email */}
                   <td className="p-4 text-secondary">{u.email}</td>
@@ -616,7 +643,8 @@ export default function AdminPage() {
                     </button>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
             </div>
@@ -631,14 +659,14 @@ export default function AdminPage() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
                 </span>
-                Hozirda Online ({usersList.filter((_, idx) => idx % 3 === 0 || idx === 0).length})
+                Hozirda Online ({onlineUsers.length})
               </h2>
               <div className="glass-card p-5 border border-white/5 rounded-2xl max-h-[220px] overflow-y-auto custom-scrollbar">
                 <div className="flex flex-col gap-3">
-                  {usersList.length === 0 ? (
+                  {onlineUsers.length === 0 ? (
                     <p className="text-secondary text-xs text-center py-4">Online foydalanuvchilar yo'q</p>
                   ) : (
-                    usersList.filter((_, idx) => idx % 3 === 0 || idx === 0).map((u) => (
+                    onlineUsers.map((u) => (
                       <div key={u.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
                         <div className="flex items-center gap-2.5">
                           <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-brand-gradient text-[10px] font-bold text-white uppercase">
@@ -664,25 +692,35 @@ export default function AdminPage() {
               </h2>
               <div className="glass-card p-5 border border-white/5 rounded-2xl max-h-[220px] overflow-y-auto custom-scrollbar">
                 <div className="flex flex-col gap-3">
-                  {usersList.length === 0 ? (
+                  {recentVisitors.length === 0 ? (
                     <p className="text-secondary text-xs text-center py-4">Tashriflar yo'q</p>
                   ) : (
-                    usersList.slice(0, 5).map((u) => (
-                      <div key={u.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                        <div className="flex items-center gap-2.5">
-                          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-[10px] font-bold text-blue-400 uppercase">
-                            {u.username?.[0]}
+                    recentVisitors.map((u) => {
+                      const lastSeenDate = new Date(u.last_seen!);
+                      const diffMins = Math.floor((Date.now() - lastSeenDate.getTime()) / 60000);
+                      const timeStr = diffMins === 0 
+                        ? "Hozir" 
+                        : diffMins < 60 
+                        ? `${diffMins} daq oldin` 
+                        : `${Math.floor(diffMins / 60)} soat oldin`;
+
+                      return (
+                        <div key={u.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                          <div className="flex items-center gap-2.5">
+                            <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-[10px] font-bold text-blue-400 uppercase">
+                              {u.username?.[0]}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-white">@{u.username}</p>
+                              <p className="text-[9px] text-secondary uppercase tracking-wider">{u.role}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold text-white">@{u.username}</p>
-                            <p className="text-[9px] text-secondary uppercase tracking-wider">{u.role}</p>
-                          </div>
+                          <span className="text-[9px] text-secondary font-mono">
+                            {timeStr}
+                          </span>
                         </div>
-                        <span className="text-[9px] text-secondary font-mono">
-                          Faol
-                        </span>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
               </div>
