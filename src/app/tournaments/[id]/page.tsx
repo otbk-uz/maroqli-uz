@@ -179,7 +179,10 @@ const TournamentDetail = () => {
     try {
       const res = await fetch("/api/streams/setup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${useAuthStore.getState().token || ""}`
+        },
         body: JSON.stringify({ userId: user.id }),
       });
       const data = await res.json();
@@ -226,7 +229,10 @@ const TournamentDetail = () => {
     try {
       const res = await fetch("/api/streams/setup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${useAuthStore.getState().token || ""}`
+        },
         body: JSON.stringify({ userId: user!.id, forceRegenerate: true }),
       });
       const data = await res.json();
