@@ -38,7 +38,7 @@ const Footer = () => {
   ];
 
   const socials = [
-    { label: "Telegram", href: "https://t.me/maroqliuz", icon: Send },
+    { label: "Telegram", href: "https://t.me/maroqliku", icon: Send },
     { label: "YouTube", href: "https://youtube.com/@maroqliuz", icon: Youtube },
     { label: "Instagram", href: "https://instagram.com/maroqliuz", icon: Instagram },
   ];
@@ -129,7 +129,7 @@ const Footer = () => {
               {[
                 { href: "tel:+998938237773", icon: Phone, label: "+998 93 823 77 73" },
                 { href: "mailto:info@maroqli.uz", icon: Mail, label: "info@maroqli.uz" },
-                { href: "https://t.me/maroqliuz", icon: Send, label: "@maroqliuz", ext: true },
+                { href: "https://t.me/maroqliku", icon: Send, label: "@maroqliku", ext: true },
               ].map((c) => {
                 const Icon = c.icon;
                 return (
