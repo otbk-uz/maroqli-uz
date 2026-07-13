@@ -3,34 +3,51 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/lib/store";
-import { Radio, Copy, Check, Play, Square, Tv, ShieldAlert, Loader2 } from "lucide-react";
+import { Radio, Play, Square, Tv, Youtube, Loader2, Link2 } from "lucide-react";
 
 interface LiveRow {
   id: string;
-  cf_live_input_id: string | null;
-  stream_url: string | null;
-  stream_key: string | null;
-  rtmp_url: string | null;
+  stream_url: string | null; // YouTube video ID
   is_live: boolean;
 }
 
 const TURNIR_MARKER = "TURNIR";
+
+/** YouTube havolasi (yoki ID) dan video ID ni ajratib oladi. */
+function parseYouTubeId(input: string): string | null {
+  if (!input) return null;
+  const s = input.trim();
+  if (/^[a-zA-Z0-9_-]{11}$/.test(s)) return s; // toza ID
+  try {
+    const url = new URL(s.startsWith("http") ? s : "https://" + s);
+    if (url.hostname.includes("youtu.be")) {
+      return url.pathname.split("/").filter(Boolean)[0] || null;
+    }
+    const v = url.searchParams.get("v");
+    if (v) return v;
+    const parts = url.pathname.split("/").filter(Boolean);
+    const idx = parts.findIndex((p) => ["live", "embed", "shorts", "v"].includes(p));
+    if (idx >= 0 && parts[idx + 1]) return parts[idx + 1];
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
 
 export default function TournamentLive() {
   const { user } = useAuthStore();
   const isAdmin = user?.role === "ADMIN";
 
   const [stream, setStream] = useState<LiveRow | null>(null);
-  const [creds, setCreds] = useState<{ rtmpUrl: string; streamKey: string; uid: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [linkInput, setLinkInput] = useState("");
   const [err, setErr] = useState("");
 
   const fetchLive = async () => {
     const { data } = await supabase
       .from("live_streams")
-      .select("*")
+      .select("id, stream_url, is_live")
       .eq("game_name", TURNIR_MARKER)
       .eq("is_live", true)
       .order("created_at", { ascending: false })
@@ -47,49 +64,35 @@ export default function TournamentLive() {
   }, []);
 
   const startLive = async () => {
-    setBusy(true);
     setErr("");
+    const videoId = parseYouTubeId(linkInput);
+    if (!videoId) {
+      setErr("To'g'ri YouTube havolasini kiriting (masalan: https://youtube.com/live/XXXX yoki youtu.be/XXXX).");
+      return;
+    }
+    setBusy(true);
     try {
-      // Yangi (avtomatik yangilangan) sessiya tokenini olamiz — eskisi tugagan bo'lishi mumkin
-      const { data: sessionData } = await supabase.auth.getSession();
-      const freshToken = sessionData.session?.access_token || useAuthStore.getState().token || "";
-      if (!freshToken) {
-        setErr("Iltimos, avval tizimga kiring (admin hisobi bilan).");
-        return;
-      }
-      const res = await fetch("/api/streams/live", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${freshToken}`,
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setErr(data.error || "Efir yaratishda xatolik");
-        return;
-      }
       // Avvalgi turnir efirlarini yopamiz
       await supabase.from("live_streams").update({ is_live: false }).eq("game_name", TURNIR_MARKER).eq("is_live", true);
-      // Yangi efir yozuvi
-      const { data: inserted } = await supabase
+      const { data: inserted, error } = await supabase
         .from("live_streams")
         .insert({
           user_id: user?.id,
           title: "Turnir jonli efiri",
           game_name: TURNIR_MARKER,
-          stream_key: data.streamKey,
-          rtmp_url: data.rtmpUrl,
-          stream_url: data.uid,
-          cf_live_input_id: data.uid,
+          stream_url: videoId,
           is_live: true,
         })
-        .select()
+        .select("id, stream_url, is_live")
         .single();
-      setCreds({ rtmpUrl: data.rtmpUrl, streamKey: data.streamKey, uid: data.uid });
+      if (error) {
+        setErr("Saqlashда xatolik: " + error.message);
+        return;
+      }
       setStream((inserted as LiveRow) || null);
-    } catch {
-      setErr("Serverga ulanishda xatolik");
+      setLinkInput("");
+    } catch (e: any) {
+      setErr("Xatolik yuz berdi.");
     } finally {
       setBusy(false);
     }
@@ -100,19 +103,10 @@ export default function TournamentLive() {
     try {
       if (stream) await supabase.from("live_streams").update({ is_live: false }).eq("id", stream.id);
       setStream(null);
-      setCreds(null);
     } finally {
       setBusy(false);
     }
   };
-
-  const copy = (label: string, val: string) => {
-    navigator.clipboard?.writeText(val);
-    setCopied(label);
-    setTimeout(() => setCopied(null), 1500);
-  };
-
-  const playbackUid = stream?.cf_live_input_id || stream?.stream_url;
 
   if (loading) {
     return <div className="skeleton h-72 w-full rounded-3xl" />;
@@ -121,7 +115,7 @@ export default function TournamentLive() {
   return (
     <div className="space-y-6">
       {/* Jonli pleyer — hamma ko'radi */}
-      {stream && playbackUid ? (
+      {stream && stream.stream_url ? (
         <div className="overflow-hidden rounded-3xl border border-white/10 bg-black shadow-card">
           <div className="flex items-center justify-between border-b border-white/10 px-5 py-3">
             <span className="inline-flex items-center gap-2 text-sm font-display font-bold text-white">
@@ -131,14 +125,16 @@ export default function TournamentLive() {
               </span>
               JONLI EFIR
             </span>
-            <span className="chip">Cloudflare Stream</span>
+            <span className="chip">
+              <Youtube size={13} className="text-primary" /> YouTube
+            </span>
           </div>
           <div className="relative aspect-video w-full bg-black">
             <iframe
-              src={`https://iframe.videodelivery.net/${playbackUid}`}
+              src={`https://www.youtube.com/embed/${stream.stream_url}?autoplay=1&rel=0`}
               title="Turnir jonli efiri"
               className="absolute inset-0 h-full w-full"
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
           </div>
@@ -180,44 +176,37 @@ export default function TournamentLive() {
               Efirni to'xtatish
             </button>
           ) : (
-            <button onClick={startLive} disabled={busy} className="btn-primary gap-2 disabled:opacity-50">
-              {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} fill="currentColor" />}
-              Efirni boshlash
-            </button>
-          )}
-
-          {/* Prism Live / OBS uchun ulanish ma'lumotlari */}
-          {creds && (
-            <div className="mt-6 space-y-4">
-              <p className="text-sm text-secondary">
-                Quyidagi manzil va kalitni <span className="font-semibold text-white">PRISM Live Studio</span> (yoki OBS) ga kiriting —
-                Settings → Stream → Custom/RTMP:
-              </p>
-              {[
-                { label: "Server (RTMP URL)", value: creds.rtmpUrl },
-                { label: "Stream kaliti (maxfiy!)", value: creds.streamKey },
-              ].map((f) => (
-                <div key={f.label}>
-                  <label className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-secondary">{f.label}</label>
-                  <div className="flex items-center gap-2">
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-secondary">
+                  YouTube jonli efir havolasi
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Link2 size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
                     <input
-                      readOnly
-                      value={f.value}
-                      className="w-full truncate rounded-xl border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none"
+                      value={linkInput}
+                      onChange={(e) => setLinkInput(e.target.value)}
+                      placeholder="https://youtube.com/live/XXXXXXXX"
+                      className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white outline-none transition-colors focus:border-primary/50"
                     />
-                    <button
-                      onClick={() => copy(f.label, f.value)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-secondary transition-colors hover:text-white"
-                      aria-label="Nusxa olish"
-                    >
-                      {copied === f.label ? <Check size={16} className="text-success" /> : <Copy size={16} />}
-                    </button>
                   </div>
+                  <button onClick={startLive} disabled={busy} className="btn-primary shrink-0 gap-2 disabled:opacity-50">
+                    {busy ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} fill="currentColor" />}
+                    Efirni boshlash
+                  </button>
                 </div>
-              ))}
-              <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs text-amber-300">
-                <ShieldAlert size={16} className="mt-0.5 shrink-0" />
-                <span>Stream kalitini hech kimga bermang — u bilan sizning nomingizdan efirga chiqish mumkin.</span>
+              </div>
+
+              {/* Qisqa qo'llanma */}
+              <div className="rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs leading-relaxed text-secondary">
+                <p className="mb-1.5 font-semibold text-white">Qanday efirga chiqiladi:</p>
+                <ol className="list-inside list-decimal space-y-1">
+                  <li>YouTube'да (telefon yoki OBS/Prism orqali) jonli efirni boshlang.</li>
+                  <li>Efir <span className="text-white">havolasini</span> nusxalang (youtube.com/live/... yoki youtu.be/...).</li>
+                  <li>Shu yerga qo'ying va <span className="text-white">«Efirni boshlash»</span> ni bosing.</li>
+                  <li>Efir sayt ichida hammaga jonli ko'rinadi.</li>
+                </ol>
               </div>
             </div>
           )}
