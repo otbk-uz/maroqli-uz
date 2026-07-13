@@ -30,3 +30,16 @@ export function getSupabaseAdmin(): SupabaseClient {
   });
   return cached;
 }
+
+/**
+ * Lazy proxy: haqiqiy klient FAQAT birinchi marta ishlatilganda (so'rov vaqtida)
+ * yaratiladi — modul yuklanganda emas. Shu sabab Vercel build vaqtida env yo'q
+ * bo'lsa ham build yiqilmaydi (xato faqat haqiqiy so'rovda beriladi).
+ */
+export const supabaseAdmin: SupabaseClient = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabaseAdmin();
+    const value = (client as any)[prop];
+    return typeof value === 'function' ? value.bind(client) : value;
+  },
+});

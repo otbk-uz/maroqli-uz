@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getUserFromRequest } from '@/lib/authServer';
 
-const supabase = getSupabaseAdmin();
+const supabase = supabaseAdmin;
 
 export async function POST(req: Request) {
   try {

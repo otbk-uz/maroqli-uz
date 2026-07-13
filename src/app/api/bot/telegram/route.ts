@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabaseAdmin';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-const supabase = getSupabaseAdmin();
+const supabase = supabaseAdmin;
 
 // Sirlar KODDA emas, faqat muhit o'zgaruvchilarida (.env.local)
 const TELEGRAM_BOT_TOKEN = process.env.KIBERSPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '';
