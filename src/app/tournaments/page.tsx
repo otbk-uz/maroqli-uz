@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Navbar from "../../components/Navbar";
-import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar, Crown } from "lucide-react";
+import { Search, Trophy, Users, Gamepad2, ArrowRight, Calendar, Crown, Radio } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
@@ -225,12 +225,21 @@ const TournamentsPage = () => {
                 />
               </div>
               {isOrganizer && (
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
-                >
-                  + Turnir tashkil qilish
-                </button>
+                <div className="flex gap-3">
+                  <Link
+                    href="/dashboard/stream"
+                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white px-6 py-3 rounded-2xl text-sm font-bold transition-all whitespace-nowrap flex items-center gap-2"
+                  >
+                    <Radio size={16} className="text-primary animate-pulse" />
+                    Jonli Efir Boshqaruvi
+                  </Link>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-primary/20 transition-all whitespace-nowrap"
+                  >
+                    + Turnir tashkil qilish
+                  </button>
+                </div>
               )}
             </div>
           </div>
