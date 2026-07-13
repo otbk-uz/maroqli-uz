@@ -220,6 +220,30 @@ const TournamentDetail = () => {
       setAdminLiveLoading(false);
     }
   };
+  const handleRegenerateStreamKey = async () => {
+    if (!confirm("Efir kalitini yangilamoqchimisiz? Eskisi bekor qilinadi va OBS-ga yangi kalitni kiritishingiz kerak bo'ladi.")) return;
+    setAdminLiveLoading(true);
+    try {
+      const res = await fetch("/api/streams/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user!.id, forceRegenerate: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.stream) {
+        setAdminStream(data.stream);
+        setAdminLive(data.stream.is_live || false);
+        alert("Yangi efir kaliti yaratildi! Iltimos OBS sozlamalarini yangilang.");
+      } else {
+        throw new Error(data.error || "Yangilashda xato yuz berdi");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Xatolik yuz berdi.");
+    } finally {
+      setAdminLiveLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -607,6 +631,16 @@ const TournamentDetail = () => {
                           </div>
                         </div>
                       </div>
+
+                      {/* Regenerate Key Button */}
+                      <button
+                        type="button"
+                        onClick={handleRegenerateStreamKey}
+                        disabled={adminLiveLoading}
+                        className="w-full py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-[10px] font-bold border border-white/5 transition-colors mt-2"
+                      >
+                        {adminLiveLoading ? "Yangilanmoqda..." : "Efir kalitini yangilash (Regenerate)"}
+                      </button>
                     </div>
                   )}
                 </div>

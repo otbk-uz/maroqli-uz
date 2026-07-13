@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
     );
 
-    const { userId } = await req.json();
+    const { userId, forceRegenerate } = await req.json();
 
     if (!userId) {
       return NextResponse.json({ error: "Foydalanuvchi ID si (userId) taqdim etilmadi" }, { status: 400 });
@@ -58,6 +58,13 @@ export async function POST(req: Request) {
         { error: "Faqatgina turnir ishtirokchilari yoki GameDev (dasturchilar) jonli efir qila oladi." },
         { status: 403 }
       );
+    }
+
+    if (forceRegenerate) {
+      await supabaseAdmin
+        .from("live_streams")
+        .delete()
+        .eq("user_id", userId);
     }
 
     // 1. Check if user already has a stream in the DB
