@@ -198,12 +198,24 @@ const TournamentsPage = () => {
                 />
               </div>
               {isOrganizer && (
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="btn-primary !py-3 !px-6 font-display uppercase tracking-widest text-xs whitespace-nowrap"
-                >
-                  + {t("create_tournament", "Turnir tashkil qilish")}
-                </button>
+                <>
+                  <Link
+                    href="/tournaments/live"
+                    className="btn-gradient !py-3 !px-6 font-display uppercase tracking-widest text-xs whitespace-nowrap inline-flex items-center gap-2"
+                  >
+                    <span className="relative flex h-2 w-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
+                    </span>
+                    {t("live_broadcast", "Jonli efir")}
+                  </Link>
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="btn-primary !py-3 !px-6 font-display uppercase tracking-widest text-xs whitespace-nowrap"
+                  >
+                    + {t("create_tournament", "Turnir tashkil qilish")}
+                  </button>
+                </>
               )}
             </div>
           </motion.div>
