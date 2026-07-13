@@ -7,7 +7,6 @@ import { supabase } from "@/lib/supabase";
 import { Users, Gift, Share2, AlertCircle, Heart, Send } from "lucide-react";
 import { motion } from "framer-motion";
 import { useParams } from "next/navigation";
-import MuxPlayer from "@mux/mux-player-react";
 
 interface StreamData {
   id: string;
@@ -17,6 +16,7 @@ interface StreamData {
   viewers_count: number;
   donation_url: string;
   stream_url: string;
+  cf_live_input_id?: string;
   user: {
     id: string;
     username: string;
@@ -214,17 +214,18 @@ export default function StreamViewPage() {
           {/* Video Player */}
           <div className="w-full aspect-video bg-black rounded-2xl border border-white/10 overflow-hidden relative group shadow-2xl">
             {stream.is_live ? (
-              stream.stream_url ? (
-                <MuxPlayer
-                  streamType="live"
-                  playbackId={stream.stream_url}
-                  metadata={{
-                    video_id: stream.id,
-                    video_title: stream.title,
-                    viewer_user_id: user?.id,
-                  }}
-                  autoPlay="muted"
+              stream.cf_live_input_id ? (
+                <iframe
+                  src={`https://iframe.videodelivery.net/${stream.cf_live_input_id}?autoplay=true&muted=true`}
                   className="w-full h-full"
+                  allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                  allowFullScreen
+                />
+              ) : stream.stream_url ? (
+                <iframe
+                  src={stream.stream_url}
+                  className="w-full h-full"
+                  allowFullScreen
                 />
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-[#111]">

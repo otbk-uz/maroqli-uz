@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "../../../components/Navbar";
 import TournamentBracket from "../../../components/TournamentBracket";
-import MuxPlayer from "@mux/mux-player-react";
 import { Calendar, Trophy, Users, Shield, Play, Info, ArrowLeft, User, Crown, Copy, Check, Eye, EyeOff, Radio } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
@@ -38,6 +37,7 @@ const TournamentDetail = () => {
   const [activeTab, setActiveTab] = useState("ISHTIROKCHILAR");
   
   const [liveStreamUrl, setLiveStreamUrl] = useState<string | null>(null);
+  const [liveCfInputId, setLiveCfInputId] = useState<string | null>(null);
   const [hasMatches, setHasMatches] = useState(false);
   const isRefereeOrAdmin = user?.role === "ADMIN" || user?.role === "ORGANIZER" || user?.role === "MODERATOR";
 
@@ -68,13 +68,17 @@ const TournamentDetail = () => {
     try {
       const { data, error } = await supabase
         .from("live_streams")
-        .select("stream_url")
+        .select("stream_url, cf_live_input_id")
         .eq("is_live", true)
         .limit(1)
         .maybeSingle();
 
-      if (data && data.stream_url) {
-        setLiveStreamUrl(data.stream_url);
+      if (data) {
+        if (data.cf_live_input_id) {
+          setLiveCfInputId(data.cf_live_input_id);
+        } else if (data.stream_url) {
+          setLiveStreamUrl(data.stream_url);
+        }
       }
     } catch (err) {
       console.error("Live stream yuklashda xatolik:", err);
@@ -449,24 +453,28 @@ const TournamentDetail = () => {
               </div>
             </div>
 
-            {/* Live Stream Streamer Player */}
-            {liveStreamUrl && (
+            {/* Live Stream Player */}
+            {(liveCfInputId || liveStreamUrl) && (
               <div className="glass-card p-6 mb-8">
                 <h3 className="font-bold text-white mb-4 flex items-center gap-2">
                   <span className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
                   Turnirning Jonli Efiri (Maroqli.uz Oqimi)
                 </h3>
                 <div className="w-full aspect-video rounded-2xl overflow-hidden border border-white/5 bg-black">
-                  <MuxPlayer
-                    streamType="live"
-                    playbackId={liveStreamUrl}
-                    autoPlay="muted"
-                    className="w-full h-full"
-                    metadata={{
-                      video_title: tournament.title,
-                      viewer_user_id: user?.id,
-                    }}
-                  />
+                  {liveCfInputId ? (
+                    <iframe
+                      src={`https://iframe.videodelivery.net/${liveCfInputId}?autoplay=true&muted=true`}
+                      className="w-full h-full"
+                      allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <iframe
+                      src={liveStreamUrl!}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  )}
                 </div>
               </div>
             )}
