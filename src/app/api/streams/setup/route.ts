@@ -40,15 +40,23 @@ export async function POST(req: Request) {
     if (profileData && (profileData.role === "GAMEDEV" || profileData.role === "ADMIN" || profileData.role === "STREAMER")) {
       isAllowed = true;
     } else {
-      // If not gamedev/admin, check if they are in a tournament
-      const { data: participantData } = await supabaseAdmin
-        .from("tournament_participants")
-        .select("id")
+      // If not gamedev/admin, check if they are in a team registered for a tournament
+      const { data: memberData } = await supabaseAdmin
+        .from("team_members")
+        .select("team_id")
         .eq("user_id", userId)
-        .limit(1);
-        
-      if (participantData && participantData.length > 0) {
-        isAllowed = true;
+        .maybeSingle();
+
+      if (memberData?.team_id) {
+        const { data: participantData } = await supabaseAdmin
+          .from("tournament_participants")
+          .select("id")
+          .eq("team_id", memberData.team_id)
+          .limit(1);
+          
+        if (participantData && participantData.length > 0) {
+          isAllowed = true;
+        }
       }
     }
 
