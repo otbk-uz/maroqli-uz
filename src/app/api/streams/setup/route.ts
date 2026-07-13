@@ -97,15 +97,26 @@ export async function POST(req: Request) {
     let playbackId = "";
     let muxStreamId = "";
 
+    let muxErrorMsg = null;
+
     if (isMuxConfigured && mux) {
-      // Create actual Mux Live Stream
-      const liveStream = await mux.video.liveStreams.create({
-        playback_policy: ["public"],
-        new_asset_settings: { playback_policy: ["public"] },
-      });
-      streamKey = liveStream.stream_key;
-      playbackId = liveStream.playback_ids?.[0]?.id || "";
-      muxStreamId = liveStream.id;
+      try {
+        // Create actual Mux Live Stream
+        const liveStream = await mux.video.liveStreams.create({
+          playback_policy: ["public"],
+          new_asset_settings: { playback_policy: ["public"] },
+        });
+        streamKey = liveStream.stream_key;
+        playbackId = liveStream.playback_ids?.[0]?.id || "";
+        muxStreamId = liveStream.id;
+      } catch (muxErr: any) {
+        console.warn("Mux creation failed, falling back to dummy:", muxErr.message);
+        muxErrorMsg = muxErr.message || "Mux error";
+        // Fallback: Create dummy keys for testing if Mux is not configured or fails
+        streamKey = "live_" + Math.random().toString(36).substring(2, 15);
+        playbackId = "dummy_playback_" + Math.random().toString(36).substring(2, 15);
+        muxStreamId = "dummy_mux_id";
+      }
     } else {
       // Fallback: Create dummy keys for testing if Mux is not configured
       streamKey = "live_" + Math.random().toString(36).substring(2, 15);
@@ -128,7 +139,7 @@ export async function POST(req: Request) {
 
     if (insertError) throw insertError;
 
-    return NextResponse.json({ stream: newStream, muxStreamId });
+    return NextResponse.json({ stream: newStream, muxStreamId, muxError: muxErrorMsg });
   } catch (error: any) {
     console.error("Stream setup error:", error);
     return NextResponse.json({ error: error.message || "Efir kalitini yaratishda xatolik" }, { status: 500 });

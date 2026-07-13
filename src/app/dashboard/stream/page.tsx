@@ -33,6 +33,8 @@ export default function StreamDashboardPage() {
   const [title, setTitle] = useState("");
   const [game, setGame] = useState("");
   const [donationUrl, setDonationUrl] = useState("");
+  const [streamUrl, setStreamUrl] = useState("");
+  const [muxError, setMuxError] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
 
   // Dummy Server URL for MUX / OBS
@@ -74,7 +76,9 @@ export default function StreamDashboardPage() {
         setTitle(data.stream.title || "");
         setGame(data.stream.game_name || "");
         setDonationUrl(data.stream.donation_url || "");
+        setStreamUrl(data.stream.stream_url || "");
         setIsLive(data.stream.is_live || false);
+        setMuxError(data.muxError || null);
       }
     } catch (err: any) {
       console.error("Error fetching stream settings:", err);
@@ -96,6 +100,7 @@ export default function StreamDashboardPage() {
           title,
           game_name: game,
           donation_url: donationUrl,
+          stream_url: streamUrl,
         })
         .eq("id", settings.id);
 
@@ -148,7 +153,9 @@ export default function StreamDashboardPage() {
         setTitle(data.stream.title || "");
         setGame(data.stream.game_name || "");
         setDonationUrl(data.stream.donation_url || "");
+        setStreamUrl(data.stream.stream_url || "");
         setIsLive(data.stream.is_live || false);
+        setMuxError(data.muxError || null);
         alert("Yangi efir kaliti yaratildi! Iltimos OBS sozlamalarini yangilang.");
       }
     } catch (err: any) {
@@ -237,6 +244,21 @@ export default function StreamDashboardPage() {
                 </div>
               </div>
 
+              {muxError && (
+                <div className="bg-amber-500/10 border border-amber-500/30 text-amber-200 p-5 rounded-2xl text-xs space-y-2 leading-relaxed">
+                  <div className="flex items-center gap-2 font-black uppercase text-amber-400">
+                    <AlertCircle size={14} />
+                    Mux Bepul Tarif Cheklovi (Billing Alert)
+                  </div>
+                  <p>
+                    Sizning Mux video hisobingiz bepul (Free plan) tarifda bo'lgani uchun Mux orqali jonli efir oqimi taqiqlangan.
+                  </p>
+                  <p className="font-semibold text-white">
+                    Muqobil variant: O'zingizning YouTube Live yoki Twitch strim havolangizni quyidagi "Translyatsiya Havolasi" maydoniga joylashtiring. U holda tomoshabinlar o'yinni Maroqli.uz sahifasida to'g'ridan-to'g'ri ko'rishadi!
+                  </p>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">Sarlavha</label>
                 <input
@@ -268,6 +290,19 @@ export default function StreamDashboardPage() {
                   onChange={(e) => setDonationUrl(e.target.value)}
                   className="w-full bg-[#18181c] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
                   placeholder="https://donat.uz/..."
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-secondary uppercase tracking-wider mb-2 block">
+                  Translyatsiya Havolasi (YouTube / Twitch / HLS URL)
+                </label>
+                <input
+                  type="text"
+                  value={streamUrl}
+                  onChange={(e) => setStreamUrl(e.target.value)}
+                  className="w-full bg-[#18181c] border border-white/5 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary transition-colors"
+                  placeholder="Masalan: https://www.youtube.com/watch?v=live_stream_id yoki https://twitch.tv/channel"
                 />
               </div>
 
