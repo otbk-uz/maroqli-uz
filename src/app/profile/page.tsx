@@ -41,12 +41,7 @@ const ProfilePage = () => {
   });
   const [savingStream, setSavingStream] = useState(false);
 
-  // Team state
-  const [teamData, setTeamData] = useState<any>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-  const [teamForm, setTeamForm] = useState({ name: "", in_game_id: "" });
-  const [addMemberForm, setAddMemberForm] = useState({ username: "", in_game_id: "" });
-  const [savingTeam, setSavingTeam] = useState(false);
+
 
   // Library state
   const [libraryGames, setLibraryGames] = useState<any[]>([]);
@@ -126,30 +121,7 @@ const ProfilePage = () => {
           });
         }
 
-        // Fetch team data
-        const { data: memberData } = await supabase
-          .from("team_members")
-          .select("team_id, in_game_id, role")
-          .eq("user_id", user?.id)
-          .single();
 
-        if (memberData) {
-          const { data: tData } = await supabase
-            .from("teams")
-            .select("*")
-            .eq("id", memberData.team_id)
-            .single();
-
-          if (tData) {
-            setTeamData({ ...tData, currentUserRole: memberData.role, currentUserInGameId: memberData.in_game_id });
-            // Fetch all members
-            const { data: mData } = await supabase
-              .from("team_members")
-              .select("*, profiles(username, avatar_url, full_name)")
-              .eq("team_id", tData.id);
-            if (mData) setTeamMembers(mData);
-          }
-        }
       } catch (err) {
         console.error("Profile yuklashda xatolik:", err);
       } finally {
@@ -286,78 +258,7 @@ const ProfilePage = () => {
     }
   };
 
-  const handleCreateTeam = async () => {
-    if (!teamForm.name || !teamForm.in_game_id) {
-      alert(t("fill_team_fields", "Jamoa nomi va o'yin ID'sini kiriting!"));
-      return;
-    }
-    setSavingTeam(true);
-    try {
-      // 1. Create team
-      const { data: newTeam, error: teamError } = await supabase
-        .from("teams")
-        .insert({ name: teamForm.name, captain_id: user?.id })
-        .select()
-        .single();
-      if (teamError) throw teamError;
 
-      // 2. Add captain as member
-      const { error: memberError } = await supabase
-        .from("team_members")
-        .insert({
-          team_id: newTeam.id,
-          user_id: user?.id,
-          in_game_id: teamForm.in_game_id,
-          role: 'CAPTAIN'
-        });
-      if (memberError) throw memberError;
-
-      alert(t("team_created", "Jamoa yaratildi!"));
-      window.location.reload(); // Refresh to load team data
-    } catch (err: any) {
-      console.error(err);
-      alert(err.message || t("stream_settings_error", "Xatolik yuz berdi"));
-    } finally {
-      setSavingTeam(false);
-    }
-  };
-
-  const handleAddMember = async () => {
-    if (!addMemberForm.username || !addMemberForm.in_game_id) return;
-    setSavingTeam(true);
-    try {
-      // Find user by username
-      const { data: userData, error: userError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", addMemberForm.username)
-        .single();
-
-      if (userError || !userData) {
-        alert(t("user_not_found", "Bunday foydalanuvchi topilmadi!"));
-        return;
-      }
-
-      // Add to team
-      const { error: insertError } = await supabase
-        .from("team_members")
-        .insert({
-          team_id: teamData.id,
-          user_id: userData.id,
-          in_game_id: addMemberForm.in_game_id,
-          role: 'PLAYER'
-        });
-
-      if (insertError) throw insertError;
-      alert(t("member_added", "A'zo qo'shildi!"));
-      window.location.reload();
-    } catch (err: any) {
-      console.error(err);
-      alert(t("stream_settings_error", "Xatolik yuz berdi: ") + err.message);
-    } finally {
-      setSavingTeam(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -598,9 +499,8 @@ const ProfilePage = () => {
             </div>
             <div className="divide-y divide-white/5">
               {[
-                { key: "my_team", label: t("my_team", "Mening Jamoam") },
                 ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
-                { key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") },
+                ...((streamerData !== null || profileData.role === "ADMIN") ? [{ key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") }] : []),
                 { key: "account_security", label: t("account_security", "Hisob xavfsizligi") },
                 { key: "notification_settings", label: t("notification_settings", "Xabarnomalar sozlamalari") },
                 { key: "payment_methods", label: t("payment_methods", "To'lov usullari") },
@@ -807,118 +707,7 @@ const ProfilePage = () => {
                     {savingStream ? t("saving_profile", "Saqlanmoqda...") : t("save", "Saqlash")}
                   </button>
                 </div>
-              ) : activeSetting === "my_team" ? (
-                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {!teamData ? (
-                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                      <h4 className="text-lg font-bold mb-2">{t("create_team", "Jamoa yaratish")}</h4>
-                      <p className="text-secondary text-xs mb-6">{t("create_team_desc", "Turnirlarda qatnashish uchun o'z jamoangizni yarating.")}</p>
 
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-xs text-secondary font-bold block mb-1">{t("team_name", "Jamoa nomi")}</label>
-                          <input
-                            type="text"
-                            placeholder="Masalan: NAVI Uzb"
-                            value={teamForm.name}
-                            onChange={(e) => setTeamForm({...teamForm, name: e.target.value})}
-                            className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm text-white"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs text-secondary font-bold block mb-1">{t("your_game_id", "Sizning O'yin ID raqamingiz (PUBG/CS2)")}</label>
-                          <input
-                            type="text"
-                            placeholder="5123456789"
-                            value={teamForm.in_game_id}
-                            onChange={(e) => setTeamForm({...teamForm, in_game_id: e.target.value})}
-                            className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none focus:border-primary/50 text-sm text-white"
-                          />
-                        </div>
-                        <button
-                          onClick={handleCreateTeam}
-                          disabled={savingTeam}
-                          className="btn-primary w-full !py-3 text-sm mt-2"
-                        >
-                          {savingTeam ? t("creating", "Yaratilmoqda...") : t("create_team", "Jamoa yaratish")}
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-6">
-                      <div className="flex items-center space-x-4 bg-primary/10 border border-primary/20 rounded-2xl p-6">
-                        <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center font-black text-2xl text-white">
-                          {teamData.name.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-black">{teamData.name}</h2>
-                          <span className="text-xs font-bold text-primary bg-primary/20 px-2 py-1 rounded-md uppercase tracking-wider">
-                            {teamData.currentUserRole === 'CAPTAIN' ? t("you_are_captain", "Siz Sardorsiz") : t("member", "A'zo")}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="text-lg font-bold mb-4 flex items-center justify-between">
-                          <span>{t("team_members_count", "Jamoa a'zolari")} ({teamMembers.length}/5)</span>
-                        </h4>
-                        <div className="space-y-3">
-                          {teamMembers.map(m => (
-                            <div key={m.id} className="flex items-center justify-between bg-white/5 border border-white/10 p-3 rounded-xl">
-                              <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full bg-secondary/20 overflow-hidden">
-                                  {m.profiles?.avatar_url ? (
-                                    <img src={m.profiles.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-                                  ) : (
-                                    <div className="w-full h-full flex items-center justify-center font-bold text-xs">
-                                      {m.profiles?.username?.substring(0,2).toUpperCase()}
-                                    </div>
-                                  )}
-                                </div>
-                                <div>
-                                  <div className="font-bold text-sm">@{m.profiles?.username}</div>
-                                  <div className="text-xs text-secondary">ID: {m.in_game_id}</div>
-                                </div>
-                              </div>
-                              <div className="text-xs font-bold bg-white/10 px-2 py-1 rounded-md">
-                                {m.role}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {teamData.currentUserRole === 'CAPTAIN' && teamMembers.length < 5 && (
-                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 mt-4">
-                          <h4 className="font-bold text-sm mb-4">{t("add_new_member", "Yangi a'zo qo'shish")}</h4>
-                          <div className="flex flex-col gap-3">
-                            <input
-                              type="text"
-                              placeholder={t("member_username_placeholder", "Foydalanuvchi nomi (@siz)")}
-                              value={addMemberForm.username}
-                              onChange={(e) => setAddMemberForm({...addMemberForm, username: e.target.value.replace('@', '')})}
-                              className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
-                            />
-                            <input
-                              type="text"
-                              placeholder={t("member_game_id_placeholder", "Ularning O'yin ID si")}
-                              value={addMemberForm.in_game_id}
-                              onChange={(e) => setAddMemberForm({...addMemberForm, in_game_id: e.target.value})}
-                              className="w-full bg-background border border-white/10 rounded-xl px-4 py-2 outline-none text-sm text-white"
-                            />
-                            <button
-                              onClick={handleAddMember}
-                              disabled={savingTeam}
-                              className="btn-primary w-full !py-2 text-sm"
-                            >
-                              {t("add", "Qo'shish")}
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
               ) : (
                 <>
                   <div className="text-center py-8">
