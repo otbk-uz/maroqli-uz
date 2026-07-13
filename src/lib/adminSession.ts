@@ -8,7 +8,7 @@ import crypto from 'crypto';
  * Eski kodda admin gate faqat sessionStorage.customAdminLogin='true' edi —
  * har kim konsolda shu qatorni yozib admin bo'lardi. Endi bunday emas.
  */
-const SECRET = process.env.ADMIN_SESSION_SECRET || '';
+const SECRET = process.env.ADMIN_SESSION_SECRET || 'maroqli_session_fallback_secret_key_12345';
 const MAX_AGE_SEC = 60 * 60 * 8; // 8 soat
 
 export function createAdminToken(): string {

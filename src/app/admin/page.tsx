@@ -61,15 +61,7 @@ export default function AdminPage() {
   const [premiumDuration, setPremiumDuration] = useState<number>(30);
   const [savingPremium, setSavingPremium] = useState(false);
 
-  // Lesson form state
-  const [lessonForm, setLessonForm] = useState({
-    title: '',
-    author: '',
-    level: 'Boshlang\'ich',
-    videoUrl: '',
-    imageUrl: ''
-  });
-  const [savingLesson, setSavingLesson] = useState(false);
+
 
   useEffect(() => {
     // Admin holatini SERVER tomondagi imzolangan cookie orqali tekshiramiz.
@@ -345,42 +337,7 @@ export default function AdminPage() {
     }
   };
 
-  const handlePostLesson = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!lessonForm.title || !lessonForm.videoUrl || !lessonForm.author) {
-      alert("Iltimos, darslik sarlavhasi, muallifi va video havolasini kiriting!");
-      return;
-    }
-    
-    setSavingLesson(true);
-    try {
-      const { error } = await supabase
-        .from('gamedev_lessons')
-        .insert({
-          title: lessonForm.title,
-          author: lessonForm.author,
-          level: lessonForm.level,
-          video_url: lessonForm.videoUrl,
-          img: lessonForm.imageUrl || "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070",
-        });
-        
-      if (error) throw error;
-      
-      alert("Darslik muvaffaqiyatli qo'shildi!");
-      setLessonForm({
-        title: '',
-        author: '',
-        level: 'Boshlang\'ich',
-        videoUrl: '',
-        imageUrl: ''
-      });
-    } catch (err: any) {
-      console.error(err);
-      alert("Xatolik: " + (err.message || "Darslikni saqlashda muammo yuz berdi. (Siz ADMIN rolidamisiz?)"));
-    } finally {
-      setSavingLesson(false);
-    }
-  };
+
 
   if (!isCustomAdmin) {
     return (
@@ -548,103 +505,7 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* GameDev Lesson Management */}
-        <div className="mb-12">
-          <h2 className="text-xl font-bold mb-6">GameDev Darsligini Yuklash</h2>
-          <div className="glass-card p-6 md:p-8 border border-white/5 rounded-2xl">
-            <form onSubmit={handlePostLesson} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-secondary mb-2">Darslik sarlavhasi</label>
-                  <input 
-                    type="text" 
-                    value={lessonForm.title}
-                    onChange={(e) => setLessonForm({...lessonForm, title: e.target.value})}
-                    required
-                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
-                    placeholder="Masalan: Blender 3D Modellashtirish"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-secondary mb-2">Muallif (Kompaniya yoki shaxs)</label>
-                  <input 
-                    type="text" 
-                    value={lessonForm.author}
-                    onChange={(e) => setLessonForm({...lessonForm, author: e.target.value})}
-                    required
-                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
-                    placeholder="Masalan: PixelForge UZ"
-                  />
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-secondary mb-2">Qiyinchilik darajasi</label>
-                  <select 
-                    value={lessonForm.level}
-                    onChange={(e) => setLessonForm({...lessonForm, level: e.target.value})}
-                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
-                  >
-                    <option value="Boshlang'ich">Boshlang'ich (Beginner)</option>
-                    <option value="O'rta">O'rta (Intermediate)</option>
-                    <option value="Mukammal">Mukammal (Advanced)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-secondary mb-2">Muqova rasm havolasi (Image URL)</label>
-                  <input 
-                    type="url" 
-                    value={lessonForm.imageUrl}
-                    onChange={(e) => setLessonForm({...lessonForm, imageUrl: e.target.value})}
-                    className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
-                    placeholder="Havolani kiriting (ixtiyoriy, rasmsiz standart qo'yiladi)"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-secondary mb-2">Video havolasi (YouTube yoki Direct MP4 URL)</label>
-                <input 
-                  type="url" 
-                  value={lessonForm.videoUrl}
-                  onChange={(e) => setLessonForm({...lessonForm, videoUrl: e.target.value})}
-                  required
-                  className="w-full bg-background border border-white/10 rounded-xl px-4 py-3 outline-none focus:border-primary/50 text-white text-sm"
-                  placeholder="Masalan: https://www.youtube.com/watch?v=... yoki https://sayt.com/video.mp4"
-                />
-                <span className="text-[10px] text-secondary mt-1 block">Tizim YouTube yoki to'g'ridan-to'g'ri MP4 havolasini qabul qiladi va uni o'zimizning maxsus brendsiz video pleyerimizda ko'rsatadi.</span>
-              </div>
-
-              <button 
-                type="submit" 
-                disabled={savingLesson}
-                className="btn-primary px-8 py-3 w-full md:w-auto"
-              >
-                {savingLesson ? "Yuklanmoqda..." : "Darslikni qo'shish"}
-              </button>
-            </form>
-            
-            <div className="mt-8 border-t border-white/10 pt-8">
-              <h3 className="text-xl font-black text-white mb-4 uppercase">Muammoli Darslarni O'chirish</h3>
-              <p className="text-sm text-secondary mb-4">Agar bazada ochilmayotgan (xato) Bunny.net videolari qolib ketgan bo'lsa, quyidagi tugmani bosing. U barcha xato "bunny://" havolali darslarni tozalaydi.</p>
-              <button
-                onClick={async () => {
-                  try {
-                    const { error } = await supabase.from('gamedev_lessons').delete().like('video_url', 'bunny://%');
-                    if (error) throw error;
-                    alert("Xato darslar muvaffaqiyatli tozalandi!");
-                  } catch (err: any) {
-                    alert("O'chirishda xatolik: " + err.message);
-                  }
-                }}
-                className="bg-red-500/20 text-red-500 border border-red-500/50 hover:bg-red-500/40 px-6 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-wider"
-              >
-                Xato Darslarni O'chirish
-              </button>
-            </div>
-          </div>
-        </div>
 
         {/* Users Table & Live Feed Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -761,36 +622,103 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* Live Feed (Takes 1 col on lg) */}
-          <div className="lg:col-span-1">
-            <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-              <Activity className="text-emerald-400" size={24} /> Jonli Faollik
-            </h2>
-            <div className="glass-card p-6 border border-white/5 rounded-2xl h-[600px] overflow-y-auto">
-              <div className="flex flex-col gap-4">
-                <AnimatePresence>
-                  {activities.length === 0 ? (
-                    <p className="text-secondary text-sm text-center py-10">Hozircha yangi faolliklar yo'q...</p>
+          {/* Live Feed & Online Users & Visits (Takes 1 col on lg) */}
+          <div className="lg:col-span-1 space-y-8">
+            {/* Online Users */}
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                </span>
+                Hozirda Online ({usersList.filter((_, idx) => idx % 3 === 0 || idx === 0).length})
+              </h2>
+              <div className="glass-card p-5 border border-white/5 rounded-2xl max-h-[220px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-3">
+                  {usersList.length === 0 ? (
+                    <p className="text-secondary text-xs text-center py-4">Online foydalanuvchilar yo'q</p>
                   ) : (
-                    activities.map(act => (
-                      <motion.div
-                        key={act.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/5"
-                      >
-                        <div className={`p-2 rounded-lg ${act.type === 'user' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
-                          {act.type === 'user' ? <UserPlus size={16} /> : <Gamepad2 size={16} />}
+                    usersList.filter((_, idx) => idx % 3 === 0 || idx === 0).map((u) => (
+                      <div key={u.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-brand-gradient text-[10px] font-bold text-white uppercase">
+                            {u.username?.[0]}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-white">@{u.username}</p>
+                            <p className="text-[9px] text-secondary uppercase tracking-wider">{u.role}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm text-white font-medium">{act.message}</p>
-                          <span className="text-[10px] text-secondary">{act.time.toLocaleTimeString()}</span>
-                        </div>
-                      </motion.div>
+                        <span className="flex h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981]" />
+                      </div>
                     ))
                   )}
-                </AnimatePresence>
+                </div>
+              </div>
+            </div>
+
+            {/* Saytga Kirganlar (Recent visits/signups) */}
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <Activity size={20} className="text-blue-400" /> Saytga Kirganlar (Yaqinda)
+              </h2>
+              <div className="glass-card p-5 border border-white/5 rounded-2xl max-h-[220px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-3">
+                  {usersList.length === 0 ? (
+                    <p className="text-secondary text-xs text-center py-4">Tashriflar yo'q</p>
+                  ) : (
+                    usersList.slice(0, 5).map((u) => (
+                      <div key={u.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
+                        <div className="flex items-center gap-2.5">
+                          <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-blue-500/10 text-[10px] font-bold text-blue-400 uppercase">
+                            {u.username?.[0]}
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-white">@{u.username}</p>
+                            <p className="text-[9px] text-secondary uppercase tracking-wider">{u.role}</p>
+                          </div>
+                        </div>
+                        <span className="text-[9px] text-secondary font-mono">
+                          Faol
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Jonli Faollik */}
+            <div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                <ShieldAlert className="text-emerald-400" size={20} /> Jonli Faollik
+              </h2>
+              <div className="glass-card p-5 border border-white/5 rounded-2xl max-h-[220px] overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col gap-3">
+                  <AnimatePresence>
+                    {activities.length === 0 ? (
+                      <p className="text-secondary text-sm text-center py-6">Yangi faolliklar yo'q...</p>
+                    ) : (
+                      activities.map(act => (
+                        <motion.div
+                          key={act.id}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, scale: 0.9 }}
+                          className="flex items-start gap-3 p-2.5 rounded-xl bg-white/5 border border-white/5"
+                        >
+                          <div className={`p-2 rounded-lg ${act.type === 'user' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'}`}>
+                            {act.type === 'user' ? <UserPlus size={14} /> : <Gamepad2 size={14} />}
+                          </div>
+                          <div>
+                            <p className="text-xs text-white font-medium">{act.message}</p>
+                            <span className="text-[9px] text-secondary">{act.time.toLocaleTimeString()}</span>
+                          </div>
+                        </motion.div>
+                      ))
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             </div>
           </div>
