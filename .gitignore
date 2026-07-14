@@ -51,3 +51,6 @@ backend/media/
 
 # Agent artifacts
 /artifacts/
+
+# Large game files
+*.tar.gz

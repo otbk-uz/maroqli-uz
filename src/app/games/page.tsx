@@ -19,6 +19,7 @@ interface StoreGame {
   };
   cover: string | null;
   price: string;
+  premium_price?: string | null;
   platform: string;
   rating: number;
   language: string;
@@ -72,6 +73,7 @@ const GamesPage = () => {
             },
             cover: null,
             price: g.price?.toString() || '0',
+            premium_price: g.premium_price?.toString() || null,
             platform: g.platform,
             rating: g.rating || 5.0,
             language: g.language || 'O\'zbek',
@@ -283,11 +285,14 @@ const GamesPage = () => {
                             <div className="space-y-0.5">
                               <div className="flex items-center gap-1.5">
                                 <p className="font-display text-lg font-black text-amber-400 tabular-nums">
-                                  {Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
+                                  {g.premium_price ? Number(g.premium_price).toLocaleString() : Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
                                 </p>
                                 <span className="bg-amber-500/15 text-amber-400 text-[8px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
                                   <Crown size={8} className="fill-current" />
-                                  -20%
+                                  {g.premium_price 
+                                    ? `-${Math.round((1 - Number(g.premium_price) / Number(g.price)) * 100)}%`
+                                    : "-20%"
+                                  }
                                 </span>
                               </div>
                               <p className="text-[10px] text-secondary line-through tabular-nums">
@@ -301,7 +306,7 @@ const GamesPage = () => {
                               </p>
                               <p className="text-[9px] text-amber-400/80 font-bold mt-0.5 flex items-center gap-1 tabular-nums">
                                 <Crown size={9} className="fill-current" />
-                                Premium: {Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
+                                Premium: {g.premium_price ? Number(g.premium_price).toLocaleString() : Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
                               </p>
                             </div>
                           )
