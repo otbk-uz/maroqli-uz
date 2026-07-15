@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const http = require('http');
 const https = require('https');
 const { exec } = require('child_process');
 
@@ -127,44 +128,55 @@ ipcMain.handle('download-game', async (event, { slug, downloadUrl, execPath }) =
       ? downloadUrl 
       : `https://maroqli.uz${downloadUrl}`;
 
-    https.get(finalUrl, (response) => {
-      const totalBytes = parseInt(response.headers['content-length'] || '0', 10);
-      let downloadedBytes = 0;
-
-      response.on('data', (chunk) => {
-        downloadedBytes += chunk.length;
-        if (totalBytes > 0 && mainWindow) {
-          const progress = Math.round((downloadedBytes / totalBytes) * 100);
-          mainWindow.webContents.send('download-progress', { slug, progress });
+    function downloadFile(targetUrl) {
+      const client = targetUrl.startsWith('https') ? https : http;
+      client.get(targetUrl, (response) => {
+        // HTTP/HTTPS redirectlarini tekshirish va kuzatish (GitHub releases -> AWS S3 uchun muhim)
+        if ([301, 302, 303, 307, 308].includes(response.statusCode) && response.headers.location) {
+          downloadFile(response.headers.location);
+          return;
         }
-      });
 
-      response.pipe(fileStream);
+        const totalBytes = parseInt(response.headers['content-length'] || '0', 10);
+        let downloadedBytes = 0;
 
-      fileStream.on('finish', () => {
-        fileStream.close();
-        
-        // Windowsda arxivdan chiqarish (.tar.gz uchun tar.exe, .zip uchun powershell)
-        const cmd = isTarGz 
-          ? `tar -xf "${zipPath}" -C "${destDir}"`
-          : `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`;
-        
-        exec(cmd, (err) => {
-          // Yuklab olingan zip faylni o'chiramiz
-          try { fs.unlinkSync(zipPath); } catch (e) {}
-
-          if (err) {
-            console.error('Extraction error:', err);
-            resolve({ success: false, error: 'Arxivdan chiqarishda xatolik' });
-          } else {
-            resolve({ success: true });
+        response.on('data', (chunk) => {
+          downloadedBytes += chunk.length;
+          if (totalBytes > 0 && mainWindow) {
+            const progress = Math.round((downloadedBytes / totalBytes) * 100);
+            mainWindow.webContents.send('download-progress', { slug, progress });
           }
         });
+
+        response.pipe(fileStream);
+
+        fileStream.on('finish', () => {
+          fileStream.close();
+          
+          // Windowsda arxivdan chiqarish (.tar.gz uchun tar.exe, .zip uchun powershell)
+          const cmd = isTarGz 
+            ? `tar -xf "${zipPath}" -C "${destDir}"`
+            : `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`;
+          
+          exec(cmd, (err) => {
+            // Yuklab olingan zip faylni o'chiramiz
+            try { fs.unlinkSync(zipPath); } catch (e) {}
+
+            if (err) {
+              console.error('Extraction error:', err);
+              resolve({ success: false, error: 'Arxivdan chiqarishda xatolik' });
+            } else {
+              resolve({ success: true });
+            }
+          });
+        });
+      }).on('error', (err) => {
+        console.error('Download error:', err);
+        resolve({ success: false, error: 'Yuklab olishda xatolik' });
       });
-    }).on('error', (err) => {
-      console.error('Download error:', err);
-      resolve({ success: false, error: 'Yuklab olishda xatolik' });
-    });
+    }
+
+    downloadFile(finalUrl);
   });
 });
 

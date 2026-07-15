@@ -74,15 +74,6 @@ const ProfilePage = () => {
       // Listen to download progress
       const unsubscribe = (window as any).electron.onDownloadProgress((data: any) => {
         setInstallProgress(prev => ({ ...prev, [data.slug]: data.progress }));
-        if (data.progress === 100) {
-          setInstallingGames(prev => ({ ...prev, [data.slug]: false }));
-          setInstalledGames(prev => ({ ...prev, [data.slug]: true }));
-          setInstallProgress(prev => {
-            const copy = { ...prev };
-            delete copy[data.slug];
-            return copy;
-          });
-        }
       });
 
       return () => {
@@ -106,6 +97,20 @@ const ProfilePage = () => {
           delete copy[slug];
           return copy;
         });
+      } else {
+        setInstallingGames(prev => ({ ...prev, [slug]: false }));
+        setInstalledGames(prev => ({ ...prev, [slug]: true }));
+        setInstallProgress(prev => {
+          const copy = { ...prev };
+          delete copy[slug];
+          return copy;
+        });
+
+        // Avtomatik ravishda o'yinni ishga tushiramiz
+        const launchRes = await (window as any).electron.launchGame(slug, gameDetails.executable_path);
+        if (!launchRes.success) {
+          alert(launchRes.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
+        }
       }
     } catch (err) {
       console.error(err);
