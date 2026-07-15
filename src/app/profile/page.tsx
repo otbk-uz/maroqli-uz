@@ -716,44 +716,15 @@ const ProfilePage = () => {
                                 </div>
                               </div>
 
-                              {isElectron && gameDetails.executable_path ? (
-                                installedGames[gameDetails.slug] ? (
-                                  <button
-                                    onClick={() => handleLaunchLibraryGame(gameDetails)}
-                                    className="mt-3 w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-green-600/20"
-                                  >
-                                    <Gamepad2 size={12} />
-                                    <span>O'ynash</span>
-                                  </button>
-                                ) : installingGames[gameDetails.slug] ? (
-                                  <div className="mt-3 w-full py-2.5 bg-white/5 border border-white/10 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                      <span>Yuklanmoqda: {installProgress[gameDetails.slug] || 0}%</span>
-                                    </div>
-                                    <div className="w-11/12 bg-white/10 h-1 rounded-full overflow-hidden">
-                                      <div className="bg-primary h-full transition-all duration-300" style={{ width: `${installProgress[gameDetails.slug] || 0}%` }} />
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => handleInstallLibraryGame(gameDetails)}
-                                    className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"
-                                  >
-                                    <Download size={12} />
-                                    <span>O'rnatish</span>
-                                  </button>
-                                )
-                              ) : (
-                                gameDetails.download_url && (
-                                  <button
-                                    onClick={(e) => handleWebDownloadClick(e, gameDetails.id)}
-                                    className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"
-                                  >
-                                    <Download size={12} />
-                                    <span>Launcher orqali yuklab olish</span>
-                                  </button>
-                                )
+                              {gameDetails.download_url && (
+                                <a
+                                  href={gameDetails.download_url}
+                                  download
+                                  className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"
+                                >
+                                  <Download size={12} />
+                                  <span>O'yinni yuklab olish</span>
+                                </a>
                               )}
                             </div>
                           </div>

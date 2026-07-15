@@ -633,45 +633,15 @@ const GameDetailPage = () => {
                       </div>
                     </div>
                   )}
-
-                  {isElectron && game.executable_path ? (
-                    isInstalled ? (
-                      <button
-                        onClick={handleLaunchGame}
-                        className="w-full py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-600/20"
-                      >
-                        <Gamepad2 size={14} />
-                        <span>O'yinni ishga tushirish (O'ynash)</span>
-                      </button>
-                    ) : installing ? (
-                      <div className="w-full py-3.5 bg-white/5 border border-white/10 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                          <span>Yuklanmoqda: {installProgress}%</span>
-                        </div>
-                        <div className="w-11/12 bg-white/10 h-1.5 rounded-full overflow-hidden">
-                          <div className="bg-primary h-full transition-all duration-300" style={{ width: `${installProgress}%` }} />
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={handleInstallGame}
-                        className="w-full py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                      >
-                        <Download size={14} />
-                        <span>Yuklab olish va O'rnatish</span>
-                      </button>
-                    )
-                  ) : (
-                    game.download_url && (
-                      <button
-                        onClick={handleWebDownloadClick}
-                        className="w-full py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
-                      >
-                        <Download size={14} />
-                        <span>Launcher orqali yuklab olish</span>
-                      </button>
-                    )
+                  {game.download_url && (
+                    <a
+                      href={game.download_url}
+                      download
+                      className="w-full py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
+                    >
+                      <Download size={14} />
+                      <span>O'yinni yuklab olish</span>
+                    </a>
                   )}
                 </div>
               ) : paymentRequest?.status === 'PENDING' ? (
