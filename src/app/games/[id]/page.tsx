@@ -672,13 +672,13 @@ const GameDetailPage = () => {
                 <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">Karta raqami (P2P)</p>
                 <div className="flex items-center justify-between bg-black/40 px-4 py-3 rounded-xl border border-white/5">
                   <div>
-                    <code className="text-base text-white font-mono select-all tracking-wider">4067 0700 0588 8867</code>
-                    <p className="text-[9px] text-secondary mt-1 uppercase font-bold">Openbank</p>
+                    <code className="text-base text-white font-mono select-all tracking-wider">9860 0101 3799 2664</code>
+                    <p className="text-[9px] text-secondary mt-1 uppercase font-bold">Humo</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => {
-                      navigator.clipboard.writeText("4067070005888867");
+                      navigator.clipboard.writeText("9860010137992664");
                       alert("Karta raqami nusxalandi!");
                     }}
                     className="text-xs text-primary font-bold hover:underline"
@@ -689,7 +689,7 @@ const GameDetailPage = () => {
 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-secondary">Karta Egasi (F.I.SH):</span>
-                  <span className="font-bold text-white uppercase">Otabek Ravshanov</span>
+                  <span className="font-bold text-white uppercase">Zokirjonov Isfandiyor</span>
                 </div>
 
                 <div className="flex justify-between items-center text-xs border-t border-white/5 pt-3">
