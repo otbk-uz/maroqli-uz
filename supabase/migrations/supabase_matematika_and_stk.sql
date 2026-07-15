@@ -3,9 +3,9 @@ ALTER TABLE public.developed_games ADD COLUMN IF NOT EXISTS premium_price NUMERI
 
 -- 2. "O'yinlar matematika nazariyasi" pley-listidagi darslarni kiritish
 INSERT INTO public.gamedev_lessons (title, author, level, img, video_url) VALUES
-('1-Dars: Vektorlar', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/lesson1.png', 'bunny://2fd0968f-c297-4ae3-80da-cc8fd22584d1'),
-('2-Dars: Sinus to''lqinlari', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/lesson2.png', 'bunny://932de42f-f19a-416b-9b3f-c6bce0dbaf2a'),
-('3-Dars: Kuchlar', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/lesson3.png', 'bunny://1164decd-bbd9-4854-a236-87cfc7aafc88')
+('1-Dars: Vektorlar', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/math_lesson1.png', 'bunny://2fd0968f-c297-4ae3-80da-cc8fd22584d1'),
+('2-Dars: Sinus to''lqinlari', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/math_lesson2.png', 'bunny://932de42f-f19a-416b-9b3f-c6bce0dbaf2a'),
+('3-Dars: Kuchlar', 'Maroqli.uz', 'O''yinlar matematika nazariyasi', '/math_lesson3.png', 'bunny://1164decd-bbd9-4854-a236-87cfc7aafc88')
 ON CONFLICT DO NOTHING;
 
 -- 3. STK SUPERTUXKART o'yinini do'konga qo'shish
