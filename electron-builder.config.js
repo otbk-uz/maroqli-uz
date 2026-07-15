@@ -7,6 +7,7 @@ module.exports = {
   },
   files: [
     "main.js",
+    "preload.js",
     "package.json",
     "public/logo.jpg.png",
     "!node_modules/**/*"
