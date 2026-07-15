@@ -71,7 +71,7 @@ const GamesPage = () => {
               username: g.profiles?.username || 'developer',
               full_name: g.profiles?.full_name || 'Game Developer',
             },
-            cover: null,
+            cover: g.cover || null,
             price: g.price?.toString() || '0',
             premium_price: g.premium_price?.toString() || null,
             platform: g.platform,

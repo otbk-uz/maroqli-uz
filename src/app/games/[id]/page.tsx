@@ -117,7 +117,7 @@ const GameDetailPage = () => {
               username: gameData.profiles?.username || 'developer',
               full_name: gameData.profiles?.full_name || 'Developer'
             },
-            cover: null,
+            cover: gameData.cover || null,
             screenshots: [],
             download_url: gameData.download_url,
             reviews: reviewsData ? reviewsData.map((r: any) => ({
