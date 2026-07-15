@@ -19,7 +19,7 @@ BEGIN
             'PC',
             'Shafqatsiz arenalarga xush kelibsiz! Xonotic - bu ochiq kodli, yuqori tezlikdagi birinchi shaxsdan otiladigan (FPS) shooter o''yini. U ajoyib tezlik, turli xil qurollar va turli xil arenalar bilan jihozlangan.
 
-O''yinda Deathmatch, Capture the Flag, Clan Arena va boshqa ko''plab qiziqarli rejimlar mavjud. Xonotic o''yin dunyosining eng mashhur bepul va ochiq kodli FPS o''yinlaridan biri hisoblanadi.',
+O''yinda Deathmatch, Capture the Flag, Clan Arena va boshqa ko''plab qiziqarli rejimlar mavjud. Xonotic o''yin dunyosining eng mashhur va shiddatli ochiq kodli FPS o''yinlaridan biri hisoblanadi. Uni Maroqli.uz platformasida maxsus hamyonbop narxda xarid qilishingiz mumkin.',
             'Ingliz, Rus',
             'OS: Windows 10/11, RAM: 4GB, GPU: Intel HD Graphics / AMD Radeon',
             '/xonotic-0.8.6.zip',
