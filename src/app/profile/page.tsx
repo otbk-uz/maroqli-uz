@@ -125,6 +125,22 @@ const ProfilePage = () => {
     }
   };
 
+  const handleWebDownloadClick = (e: React.MouseEvent, gameId: string | number) => {
+    e.preventDefault();
+    // 1. Launcherni ochishga harakat qilamiz (agar o'rnatilgan bo'lsa)
+    window.location.href = `maroqli://games/${gameId}`;
+    
+    // 2. 1.5 soniyadan keyin, agar Launcher ochilmagan bo'lsa, o'rnatish exe faylini yuklashni boshlaydi
+    setTimeout(() => {
+      const link = document.createElement('a');
+      link.href = '/maroqli-setup.exe';
+      link.download = 'maroqli-setup.exe';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, 1500);
+  };
+
   useEffect(() => {
     if (activeSetting === "my_library" && libraryGames.length === 0) {
       if (profileData?.role !== "GAMER" && profileData?.role !== "ADMIN") {
@@ -731,14 +747,13 @@ const ProfilePage = () => {
                                 )
                               ) : (
                                 gameDetails.download_url && (
-                                  <a
-                                    href={gameDetails.download_url}
-                                    download
-                                    className="mt-3 w-full py-2.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                  <button
+                                    onClick={(e) => handleWebDownloadClick(e, gameDetails.id)}
+                                    className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"
                                   >
                                     <Download size={12} />
-                                    <span>{t("download_game", "O'yinni yuklab olish")}</span>
-                                  </a>
+                                    <span>Launcher orqali yuklab olish</span>
+                                  </button>
                                 )
                               )}
                             </div>

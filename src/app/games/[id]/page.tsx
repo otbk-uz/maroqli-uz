@@ -136,6 +136,22 @@ const GameDetailPage = () => {
     }
   };
 
+  const handleWebDownloadClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // 1. Launcherni ochishga harakat qilamiz (agar o'rnatilgan bo'lsa)
+    window.location.href = `maroqli://games/${id}`;
+    
+    // 2. 1.5 soniyadan keyin, agar Launcher ochilmagan bo'lsa, o'rnatish exe faylini yuklashni boshlaydi
+    setTimeout(() => {
+      const link = document.createElement('a');
+      link.href = '/maroqli-setup.exe';
+      link.download = 'maroqli-setup.exe';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }, 1500);
+  };
+
   useEffect(() => {
     if (!id) return;
 
@@ -649,14 +665,13 @@ const GameDetailPage = () => {
                     )
                   ) : (
                     game.download_url && (
-                      <a
-                        href={game.download_url}
-                        download
-                        className="w-full py-3.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                      <button
+                        onClick={handleWebDownloadClick}
+                        className="w-full py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
                       >
                         <Download size={14} />
-                        <span>O'yinni yuklab olish</span>
-                      </a>
+                        <span>Launcher orqali yuklab olish</span>
+                      </button>
                     )
                   )}
                 </div>

@@ -4,7 +4,40 @@ const fs = require('fs');
 const https = require('https');
 const { exec } = require('child_process');
 
+// Protocol client ro'yxatdan o'tkazish: maroqli://
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('maroqli', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('maroqli');
+}
+
 let mainWindow = null;
+
+// Protocol handler for Windows
+function handleArgv(argv) {
+  const prefix = 'maroqli://';
+  const arg = argv.find(a => a.startsWith(prefix));
+  if (arg && mainWindow) {
+    const urlPath = arg.replace(prefix, '');
+    mainWindow.loadURL(`https://maroqli.uz/${urlPath}`);
+  }
+}
+
+// Bitta instance bo'lishini ta'minlash
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (event, commandLine) => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      handleArgv(commandLine);
+    }
+  });
+}
 
 // O'yinlar yuklanadigan papka: AppData/maroqli-launcher/games
 const getGamesDir = () => {
@@ -29,7 +62,16 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadURL('https://maroqli.uz');
+  // Start URL ni aniqlash (deep link orqali ochilgan bo'lsa)
+  let startUrl = 'https://maroqli.uz';
+  const prefix = 'maroqli://';
+  const arg = process.argv.find(a => a.startsWith(prefix));
+  if (arg) {
+    const urlPath = arg.replace(prefix, '');
+    startUrl = `https://maroqli.uz/${urlPath}`;
+  }
+
+  mainWindow.loadURL(startUrl);
 
   mainWindow.on('closed', () => {
     mainWindow = null;
