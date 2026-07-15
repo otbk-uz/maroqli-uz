@@ -176,11 +176,12 @@ export default function PremiumPage() {
       if (insertError) throw insertError;
 
       // 2. Notify Telegram via API
+      const { data: { session } } = await supabase.auth.getSession();
       const response = await fetch('/api/payments/submit-request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${useAuthStore.getState().token || ''}`,
+          'Authorization': `Bearer ${session?.access_token || useAuthStore.getState().token || ''}`,
         },
         body: JSON.stringify({
           requestId: requestData.id,
