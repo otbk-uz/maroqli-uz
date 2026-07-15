@@ -9,7 +9,7 @@ BEGIN
     END IF;
     
     IF dev_id IS NOT NULL THEN
-        INSERT INTO public.developed_games (developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, download_url, cover)
+        INSERT INTO public.developed_games (developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, download_url, cover, executable_path)
         VALUES (
             dev_id,
             'Xonotic 0.8.6',
@@ -23,13 +23,15 @@ O''yinda Deathmatch, Capture the Flag, Clan Arena va boshqa ko''plab qiziqarli r
             'Ingliz, Rus',
             'OS: Windows 10/11, RAM: 4GB, GPU: Intel HD Graphics / AMD Radeon',
             '/xonotic-0.8.6.zip',
-            '/xonotic_cover.png'
+            '/xonotic_cover.png',
+            'xonotic.exe'
         )
         ON CONFLICT (slug) DO UPDATE SET 
             description = EXCLUDED.description,
             price = EXCLUDED.price,
             premium_price = EXCLUDED.premium_price,
             download_url = EXCLUDED.download_url,
-            cover = EXCLUDED.cover;
+            cover = EXCLUDED.cover,
+            executable_path = EXCLUDED.executable_path;
     END IF;
 END $$;

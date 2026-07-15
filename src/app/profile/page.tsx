@@ -43,9 +43,87 @@ const ProfilePage = () => {
 
 
 
-  // Library state
   const [libraryGames, setLibraryGames] = useState<any[]>([]);
   const [loadingLibrary, setLoadingLibrary] = useState(false);
+
+  // Electron launch states for Library
+  const [isElectron, setIsElectron] = useState(false);
+  const [installedGames, setInstalledGames] = useState<Record<string, boolean>>({});
+  const [installProgress, setInstallProgress] = useState<Record<string, number>>({});
+  const [installingGames, setInstallingGames] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    setIsElectron(typeof window !== 'undefined' && 'electron' in window);
+  }, []);
+
+  useEffect(() => {
+    if (isElectron && libraryGames.length > 0) {
+      const checkStatuses = async () => {
+        const newInstalled: Record<string, boolean> = {};
+        for (const item of libraryGames) {
+          const gameDetails = item.game_details || {};
+          if (gameDetails.slug && gameDetails.executable_path) {
+            const installed = await (window as any).electron.checkInstalled(gameDetails.slug, gameDetails.executable_path);
+            newInstalled[gameDetails.slug] = installed;
+          }
+        }
+        setInstalledGames(newInstalled);
+      };
+      checkStatuses();
+
+      // Listen to download progress
+      const unsubscribe = (window as any).electron.onDownloadProgress((data: any) => {
+        setInstallProgress(prev => ({ ...prev, [data.slug]: data.progress }));
+        if (data.progress === 100) {
+          setInstallingGames(prev => ({ ...prev, [data.slug]: false }));
+          setInstalledGames(prev => ({ ...prev, [data.slug]: true }));
+          setInstallProgress(prev => {
+            const copy = { ...prev };
+            delete copy[data.slug];
+            return copy;
+          });
+        }
+      });
+
+      return () => {
+        unsubscribe();
+      };
+    }
+  }, [isElectron, libraryGames]);
+
+  const handleInstallLibraryGame = async (gameDetails: any) => {
+    if (!gameDetails.slug || !gameDetails.download_url || !gameDetails.executable_path) return;
+    const slug = gameDetails.slug;
+    try {
+      setInstallingGames(prev => ({ ...prev, [slug]: true }));
+      setInstallProgress(prev => ({ ...prev, [slug]: 0 }));
+      const res = await (window as any).electron.downloadGame(slug, gameDetails.download_url, gameDetails.executable_path);
+      if (!res.success) {
+        alert(res.error || "O'yinni yuklab olishda xatolik yuz berdi.");
+        setInstallingGames(prev => ({ ...prev, [slug]: false }));
+        setInstallProgress(prev => {
+          const copy = { ...prev };
+          delete copy[slug];
+          return copy;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setInstallingGames(prev => ({ ...prev, [slug]: false }));
+    }
+  };
+
+  const handleLaunchLibraryGame = async (gameDetails: any) => {
+    if (!gameDetails.slug || !gameDetails.executable_path) return;
+    try {
+      const res = await (window as any).electron.launchGame(gameDetails.slug, gameDetails.executable_path);
+      if (!res.success) {
+        alert(res.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (activeSetting === "my_library" && libraryGames.length === 0) {
@@ -623,15 +701,45 @@ const ProfilePage = () => {
                                 </div>
                               </div>
 
-                              {gameDetails.download_url && (
-                                <a
-                                  href={gameDetails.download_url}
-                                  download
-                                  className="mt-3 w-full py-2.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                                >
-                                  <Download size={12} />
-                                  <span>{t("download_game", "O'yinni yuklab olish")}</span>
-                                </a>
+                              {isElectron && gameDetails.executable_path ? (
+                                installedGames[gameDetails.slug] ? (
+                                  <button
+                                    onClick={() => handleLaunchLibraryGame(gameDetails)}
+                                    className="mt-3 w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-green-600/20"
+                                  >
+                                    <Gamepad2 size={12} />
+                                    <span>O'ynash</span>
+                                  </button>
+                                ) : installingGames[gameDetails.slug] ? (
+                                  <div className="mt-3 w-full py-2.5 bg-white/5 border border-white/10 text-white rounded-xl text-xs font-bold flex flex-col items-center justify-center gap-1">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="w-3.5 h-3.5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                      <span>Yuklanmoqda: {installProgress[gameDetails.slug] || 0}%</span>
+                                    </div>
+                                    <div className="w-11/12 bg-white/10 h-1 rounded-full overflow-hidden">
+                                      <div className="bg-primary h-full transition-all duration-300" style={{ width: `${installProgress[gameDetails.slug] || 0}%` }} />
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => handleInstallLibraryGame(gameDetails)}
+                                    className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"
+                                  >
+                                    <Download size={12} />
+                                    <span>O'rnatish</span>
+                                  </button>
+                                )
+                              ) : (
+                                gameDetails.download_url && (
+                                  <a
+                                    href={gameDetails.download_url}
+                                    download
+                                    className="mt-3 w-full py-2.5 bg-primary/10 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                  >
+                                    <Download size={12} />
+                                    <span>{t("download_game", "O'yinni yuklab olish")}</span>
+                                  </a>
+                                )
                               )}
                             </div>
                           </div>

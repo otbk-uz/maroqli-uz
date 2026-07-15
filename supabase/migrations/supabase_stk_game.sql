@@ -13,7 +13,7 @@ BEGIN
     END IF;
     
     IF dev_id IS NOT NULL THEN
-        INSERT INTO public.developed_games (developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, download_url, cover)
+        INSERT INTO public.developed_games (developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, download_url, cover, executable_path)
         VALUES (
             dev_id,
             'STK SUPERTUXKART',
@@ -27,13 +27,15 @@ Hikoya rejimida siz yovuz Nolokka duch kelishingiz va uni mag''lub etib, Talisma
             'Ingliz, Rus, O''zbek',
             'OS: Windows 10/11, RAM: 4GB, GPU: Intel HD Graphics',
             '/SuperTuxKart-1.5-setup.exe',
-            '/stk_cover.png'
+            '/stk_cover.png',
+            'supertuxkart.exe'
         )
         ON CONFLICT (slug) DO UPDATE SET 
             description = EXCLUDED.description,
             price = EXCLUDED.price,
             premium_price = EXCLUDED.premium_price,
             download_url = EXCLUDED.download_url,
-            cover = EXCLUDED.cover;
+            cover = EXCLUDED.cover,
+            executable_path = EXCLUDED.executable_path;
     END IF;
 END $$;
