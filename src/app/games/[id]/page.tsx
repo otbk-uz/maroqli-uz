@@ -144,7 +144,7 @@ const GameDetailPage = () => {
     // 2. 1.5 soniyadan keyin, agar Launcher ochilmagan bo'lsa, o'rnatish exe faylini yuklashni boshlaydi
     setTimeout(() => {
       const link = document.createElement('a');
-      link.href = '/maroqli-setup.exe';
+      link.href = 'https://github.com/otbk-uz/maroqli-uz/releases/download/v1.0.0/maroqli-setup.exe';
       link.download = 'maroqli-setup.exe';
       document.body.appendChild(link);
       link.click();
