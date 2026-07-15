@@ -74,7 +74,9 @@ ipcMain.handle('download-game', async (event, { slug, downloadUrl, execPath }) =
     fs.mkdirSync(destDir, { recursive: true });
   }
 
-  const zipPath = path.join(destDir, 'game_archive.zip');
+  const isTarGz = downloadUrl.toLowerCase().endsWith('.tar.gz') || downloadUrl.toLowerCase().endsWith('.tgz');
+  const archiveName = isTarGz ? 'game_archive.tar.gz' : 'game_archive.zip';
+  const zipPath = path.join(destDir, archiveName);
   const fileStream = fs.createWriteStream(zipPath);
 
   return new Promise((resolve) => {
@@ -100,8 +102,10 @@ ipcMain.handle('download-game', async (event, { slug, downloadUrl, execPath }) =
       fileStream.on('finish', () => {
         fileStream.close();
         
-        // Windowsda arxivdan chiqarish (PowerShell orqali - dependencies kerak emas)
-        const cmd = `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`;
+        // Windowsda arxivdan chiqarish (.tar.gz uchun tar.exe, .zip uchun powershell)
+        const cmd = isTarGz 
+          ? `tar -xf "${zipPath}" -C "${destDir}"`
+          : `powershell -Command "Expand-Archive -Path '${zipPath}' -DestinationPath '${destDir}' -Force"`;
         
         exec(cmd, (err) => {
           // Yuklab olingan zip faylni o'chiramiz
