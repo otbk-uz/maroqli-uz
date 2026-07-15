@@ -27,7 +27,9 @@ BEGIN
             15000,
             10000,
             'PC',
-            'SuperTuxKart - bu 3D kart racing o''yini. Ushbu o''yinning 1.5-src versiyasi manba kodi.',
+            'Talismanlar Qirolligiga xush kelibsiz! Karting. Tezlik. Hayajon! SuperTuxKart - bu turli xil personajlar, treklar va o''yin rejimlariga ega ochiq kodli 3D arkad poyga o''yini. Bizning maqsadimiz realistikdan ko''ra qiziqarliroq va barcha yoshdagilar uchun mos bo''lgan o''yin yaratishdir.
+
+Hikoya rejimida siz yovuz Nolokka duch kelishingiz va uni mag''lub etib, Talisman Qirolligini qo''lga kiritishingiz kerak! Siz kompyuterga qarshi poyga qilishingiz, bir nechta Gran-pri kuboklarida ishtirok etishingiz yoki Vaqt sinovi rejimida eng tezkor vaqtingizni bosib o''tishga harakat qilishingiz mumkin. Shuningdek, siz bitta kompyuterda sakkiztagacha do''stingiz bilan poyga qilishingiz, jang qilishingiz yoki futbol o''ynashingiz, mahalliy tarmoq orqali o''ynashingiz yoki butun dunyo bo''ylab boshqa o''yinchilar bilan onlayn o''ynashingiz mumkin. SuperTuxKart 1.5 oʻyinida 21 ta rasmiy trek va 18 ta rasmiy kartlar mavjud.',
             'Ingliz, Rus, O''zbek',
             'OS: Windows 10/11, RAM: 4GB, GPU: Intel HD Graphics',
             '/SuperTuxKart-1.5-src.tar.gz'
