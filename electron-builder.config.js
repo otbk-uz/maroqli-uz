@@ -9,12 +9,10 @@ module.exports = {
     "main.js",
     "preload.js",
     "package.json",
-    "public/favicon.ico",
     "!node_modules/**/*"
   ],
   win: {
     target: "nsis",
-    icon: "public/favicon.ico",
     forceCodeSigning: false
   },
   nsis: {
