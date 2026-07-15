@@ -34,8 +34,13 @@ export async function POST(req: Request) {
     // XAVFSIZLIK 2: tasdiqlash tugmasi FAQAT admin guruhida ko'rinadi.
     // Shu sabab callback ayni admin chatidan kelganini talab qilamiz —
     // aks holda begona odam soxta tasdiq yubora olmaydi.
-    if (TELEGRAM_ADMIN_CHAT_ID && String(message?.chat?.id) !== String(TELEGRAM_ADMIN_CHAT_ID)) {
-      console.warn('Payment webhook: admin bo\'lmagan chatdan tasdiq urinishi — rad etildi');
+    const cleanAdminChatId = TELEGRAM_ADMIN_CHAT_ID.replace(/[^-\d]/g, '');
+    const cleanMessageChatId = String(message?.chat?.id || '').replace(/[^-\d]/g, '');
+    if (cleanAdminChatId && cleanMessageChatId !== cleanAdminChatId) {
+      console.warn('Payment webhook: admin bo\'lmagan chatdan tasdiq urinishi — rad etildi', {
+        expected: cleanAdminChatId,
+        got: cleanMessageChatId
+      });
       await answerCallbackQuery(callbackQuery.id, "Sizda bu amalni bajarish huquqi yo'q.");
       return NextResponse.json({ ok: true });
     }
