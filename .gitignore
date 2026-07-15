@@ -53,4 +53,6 @@ backend/media/
 /artifacts/
 
 # Large game files
-*.tar.gz
+*.tar.gz
+public/SuperTuxKart-1.5-setup.exe
+
