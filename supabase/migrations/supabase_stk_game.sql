@@ -18,8 +18,8 @@ BEGIN
             dev_id,
             'STK SUPERTUXKART',
             'stk-supertuxkart',
-            15000,
-            10000,
+            0,
+            0,
             'PC',
             'Talismanlar Qirolligiga xush kelibsiz! Karting. Tezlik. Hayajon! SuperTuxKart - bu turli xil personajlar, treklar va o''yin rejimlariga ega ochiq kodli 3D arkad poyga o''yini. Bizning maqsadimiz realistikdan ko''ra qiziqarliroq va barcha yoshdagilar uchun mos bo''lgan o''yin yaratishdir.
 

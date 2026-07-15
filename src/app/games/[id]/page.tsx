@@ -521,14 +521,16 @@ const GameDetailPage = () => {
                 )}
               </div>
 
-              {isPurchased ? (
+              {isPurchased || Number(game.price) === 0 ? (
                 <div className="space-y-4">
-                  <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs rounded-xl p-4 flex items-start space-x-2">
-                    <Check size={16} className="shrink-0 mt-0.5" />
-                    <span className="font-bold uppercase tracking-wide">Kutubxonangizda mavjud</span>
-                  </div>
+                  {isPurchased && (
+                    <div className="bg-green-500/10 border border-green-500/20 text-green-400 text-xs rounded-xl p-4 flex items-start space-x-2">
+                      <Check size={16} className="shrink-0 mt-0.5" />
+                      <span className="font-bold uppercase tracking-wide">Kutubxonangizda mavjud</span>
+                    </div>
+                  )}
 
-                  {existingCdKey && (
+                  {isPurchased && existingCdKey && (
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl space-y-2">
                       <p className="text-[9px] text-secondary uppercase font-bold tracking-widest">Sizning CD-keyingiz</p>
                       <div className="flex items-center justify-between gap-2 bg-black/40 px-3 py-2.5 rounded-lg border border-white/5">
