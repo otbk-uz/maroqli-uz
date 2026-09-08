@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -47,6 +47,8 @@ const ProfilePage = () => {
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [wishlistGames, setWishlistGames] = useState<any[]>([]);
   const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [userScores, setUserScores] = useState<any[]>([]);
+  const [loadingScores, setLoadingScores] = useState(false);
 
   // Electron launch states for Library
   const [isElectron, setIsElectron] = useState(false);
@@ -201,6 +203,30 @@ const ProfilePage = () => {
         }
       };
       fetchWishlist();
+    }
+  }, [activeSetting, user?.id]);
+
+  useEffect(() => {
+    if (activeSetting === "game_high_scores") {
+      const fetchScores = async () => {
+        setLoadingScores(true);
+        try {
+          const { data, error } = await supabase
+            .from('game_scores')
+            .select('*')
+            .eq('user_id', user?.id)
+            .order('score', { ascending: false });
+
+          if (!error && data) {
+            setUserScores(data);
+          }
+        } catch (err) {
+          console.error("Game scores fetch error:", err);
+        } finally {
+          setLoadingScores(false);
+        }
+      };
+      fetchScores();
     }
   }, [activeSetting, user?.id]);
 
@@ -548,26 +574,33 @@ const ProfilePage = () => {
             </div>
 
             {/* Stat tiles */}
-            <div className="grid grid-cols-3 gap-3 md:gap-4 mt-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4 mt-8">
+              <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-2 text-base">
+                  🪙
+                </div>
+                <p className="font-display text-xl md:text-2xl font-black text-amber-300 tabular-nums">{(profileData.coins || user?.coins || 0).toLocaleString()}</p>
+                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Tangalar</p>
+              </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
                   <TrendingUp size={16} />
                 </div>
-                <p className="font-display text-2xl md:text-3xl font-black text-white tabular-nums">{profileData.level || 1}</p>
+                <p className="font-display text-xl md:text-2xl font-black text-white tabular-nums">{profileData.level || 1}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("level_label", "Daraja")}</p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
                 <div className="w-9 h-9 rounded-xl bg-violet/10 text-violet flex items-center justify-center mx-auto mb-2">
                   <Zap size={16} />
                 </div>
-                <p className="font-display text-2xl md:text-3xl font-black text-white tabular-nums">{profileData.elo ?? 1000}</p>
+                <p className="font-display text-xl md:text-2xl font-black text-white tabular-nums">{profileData.elo ?? 1000}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">ELO</p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
                 <div className="w-9 h-9 rounded-xl bg-cyan/10 text-cyan flex items-center justify-center mx-auto mb-2">
                   <Shield size={16} />
                 </div>
-                <p className="font-display text-lg md:text-2xl font-black text-white truncate">{profileData.role}</p>
+                <p className="font-display text-base md:text-xl font-black text-white truncate">{profileData.role}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("your_role", "Rolingiz")}</p>
               </div>
             </div>
@@ -631,6 +664,7 @@ const ProfilePage = () => {
             </div>
             <div className="divide-y divide-white/5">
               {[
+                { key: "game_high_scores", label: "🏆 O'yin Rekordlarim va Statistika" },
                 { key: "my_wishlist", label: "Xohlayman (Mening Wishlistim)" },
                 ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
                 ...((streamerData !== null || profileData.role === "ADMIN") ? [{ key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") }] : []),
@@ -678,9 +712,14 @@ const ProfilePage = () => {
               </button>
 
               <div className="flex items-center space-x-3 mb-6">
-                <Settings size={24} className="text-primary" />
+                {activeSetting === "game_high_scores" ? (
+                  <Trophy size={24} className="text-amber-400" />
+                ) : (
+                  <Settings size={24} className="text-primary" />
+                )}
                 <h3 className="text-xl font-bold">
-                  {activeSetting === "my_wishlist" ? "Xohlayman (Mening Wishlistim)" :
+                  {activeSetting === "game_high_scores" ? "🏆 O'yin Rekordlarim va Statistika" :
+                   activeSetting === "my_wishlist" ? "Xohlayman (Mening Wishlistim)" :
                    activeSetting === "my_team" ? t("my_team", "Mening Jamoam") :
                    activeSetting === "my_library" ? t("my_library", "Mening Kutubxonam") :
                    activeSetting === "streaming_settings" ? t("streaming_settings", "Striming sozlamalari") :
@@ -691,7 +730,61 @@ const ProfilePage = () => {
                 </h3>
               </div>
 
-              {activeSetting === "my_wishlist" ? (
+              {activeSetting === "game_high_scores" ? (
+                <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <p className="text-secondary text-xs">Maroqli.uz platformasidagi onlayn o'yinlarda erishgan shaxsiy rekordlaringiz ro'yxati.</p>
+
+                  {loadingScores ? (
+                    <div className="py-12 flex items-center justify-center">
+                      <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : userScores.length === 0 ? (
+                    <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
+                      <Trophy size={40} className="text-amber-400/30 mx-auto mb-4" />
+                      <p className="text-secondary text-sm">Hali birorta o'yinda rekord o'rnatmadingiz.</p>
+                      <Link
+                        href="/games"
+                        onClick={() => setActiveSetting(null)}
+                        className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
+                      >
+                        O'yinlarni o'ynash
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {userScores.map((sc: any, idx: number) => {
+                        const gameTitle = sc.game_slug
+                          .split('-')
+                          .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                          .join(' ');
+
+                        return (
+                          <div key={sc.id || idx} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-amber-500/30 transition-all">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                                <Trophy size={18} />
+                              </div>
+                              <div>
+                                <h4 className="font-bold text-sm text-white">{gameTitle}</h4>
+                                <p className="text-[10px] text-secondary">
+                                  {new Date(sc.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="font-display font-black text-amber-300 text-sm md:text-base tabular-nums">
+                                {Number(sc.score).toLocaleString()}
+                              </span>
+                              <p className="text-[9px] text-secondary font-bold uppercase">ball</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : activeSetting === "my_wishlist" ? (
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                   <p className="text-secondary text-xs">Siz 'Xohlayman' ro'yxatiga qo'shgan va kelajakda sotib olmoqchi bo'lgan o'yinlaringiz.</p>
 

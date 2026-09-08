@@ -12,6 +12,7 @@ interface User {
   avatar?: string;
   elo?: number;
   is_premium?: boolean;
+  coins?: number;
 }
 
 interface AuthState {
@@ -19,6 +20,7 @@ interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   setAuth: (user: User, token: string) => void;
+  updateUser: (fields: Partial<User>) => void;
   logout: () => void;
 }
 
@@ -29,6 +31,10 @@ export const useAuthStore = create<AuthState>()(
       token: null as string | null,
       isAuthenticated: false,
       setAuth: (user: User, token: string) => set({ user, token, isAuthenticated: true }),
+      updateUser: (fields: Partial<User>) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...fields } : null,
+        })),
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
     }),
     {

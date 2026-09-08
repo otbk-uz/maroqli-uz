@@ -344,6 +344,16 @@ export default function FloatingConsoleHUD() {
                 </AnimatePresence>
               </div>
 
+              {/* Coins Balance Badge */}
+              <Link
+                href="/profile"
+                className="flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-display font-black text-amber-300 transition-all hover:bg-amber-500/20 hover:border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]"
+                title="Maroqli Tangalaringiz"
+              >
+                <span className="text-xs">🪙</span>
+                <span>{(user.coins || 0).toLocaleString()}</span>
+              </Link>
+
               {/* Profile Avatar */}
               <Link
                 href="/profile"
@@ -501,6 +511,16 @@ export default function FloatingConsoleHUD() {
                   )}
                 </AnimatePresence>
               </div>
+
+              {/* Coins Balance Badge (Mobile) */}
+              <Link
+                href="/profile"
+                className="flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-[10px] font-display font-black text-amber-300 transition-all active:scale-95"
+                title="Maroqli Tangalaringiz"
+              >
+                <span className="text-[11px]">🪙</span>
+                <span>{(user.coins || 0).toLocaleString()}</span>
+              </Link>
 
               {/* Profile Avatar */}
               <Link

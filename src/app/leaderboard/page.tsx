@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Navbar from "../../components/Navbar";
-import { Trophy, Crown, Medal, Search, Users } from "lucide-react";
+import { Trophy, Crown, Medal, Search, Users, Gamepad2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { BackButton } from "../../components/ui/BackButton";
 import { supabase } from "@/lib/supabase";
@@ -60,7 +60,9 @@ const placeMeta: Record<
 const LeaderboardPage = () => {
   const { t, locale } = useTranslation();
 
+  const [category, setCategory] = useState<"elo" | "games">("elo");
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [gameHighScores, setGameHighScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
 
@@ -68,18 +70,29 @@ const LeaderboardPage = () => {
     const fetchLeaders = async () => {
       try {
         setLoading(true);
-        // Real profiles — ustunlar mavjud bo'lmasa xato bermasligi uchun select('*')
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .limit(500);
+        if (category === "elo") {
+          const { data, error } = await supabase
+            .from("profiles")
+            .select("*")
+            .limit(500);
 
-        if (error) throw error;
+          if (error) throw error;
 
-        const sorted = ((data as Profile[]) || [])
-          .slice()
-          .sort((a, b) => eloOf(b) - eloOf(a));
-        setProfiles(sorted);
+          const sorted = ((data as Profile[]) || [])
+            .slice()
+            .sort((a, b) => eloOf(b) - eloOf(a));
+          setProfiles(sorted);
+        } else {
+          const { data, error } = await supabase
+            .from("game_scores")
+            .select("*, profiles:user_id(username, full_name, avatar_url)")
+            .order("score", { ascending: false })
+            .limit(100);
+
+          if (!error && data) {
+            setGameHighScores(data);
+          }
+        }
       } catch (err) {
         console.error("Error fetching leaderboard:", err);
       } finally {
@@ -88,7 +101,7 @@ const LeaderboardPage = () => {
     };
 
     fetchLeaders();
-  }, []);
+  }, [category]);
 
   const ranked: RankedProfile[] = useMemo(
     () => profiles.map((p, i) => ({ ...p, rank: i + 1 })),
@@ -166,16 +179,112 @@ const LeaderboardPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-secondary text-lg md:text-xl leading-relaxed"
+              className="text-secondary text-lg md:text-xl leading-relaxed mb-8"
             >
-              {t("leaderboard_desc", "Eng yaxshi o'yinchilar ELO ballari bo'yicha")}
+              {category === "elo"
+                ? t("leaderboard_desc", "Eng yaxshi o'yinchilar ELO ballari bo'yicha")
+                : "Onlayn HTML5 o'yinlaridagi eng yuqori rekordchilar ro'yxati"}
             </motion.p>
+
+            {/* Category Switcher Tabs */}
+            <div className="flex items-center gap-3 glass-card p-2 border-white/10 max-w-md">
+              <button
+                onClick={() => setCategory("elo")}
+                className={`flex-1 py-3 px-4 rounded-xl font-display text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  category === "elo"
+                    ? "bg-primary text-white shadow-glow"
+                    : "text-secondary hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Trophy size={16} />
+                <span>ELO Reytingi</span>
+              </button>
+              <button
+                onClick={() => setCategory("games")}
+                className={`flex-1 py-3 px-4 rounded-xl font-display text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                  category === "games"
+                    ? "bg-primary text-white shadow-glow"
+                    : "text-secondary hover:text-white hover:bg-white/5"
+                }`}
+              >
+                <Gamepad2 size={16} />
+                <span>O'yin Rekordlari</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
       <div className="container-app pb-32">
-        {loading ? (
+        {category === "games" ? (
+          <div className="glass-card overflow-hidden">
+            <div className="p-6 border-b border-white/5 flex items-center justify-between">
+              <h3 className="font-display font-black text-xl text-white uppercase tracking-tight flex items-center gap-2">
+                <Trophy size={22} className="text-amber-400" />
+                <span>Onlayn O'yinlar Rekordlari</span>
+              </h3>
+              <span className="text-xs text-secondary font-bold">Top 100 natijalar</span>
+            </div>
+
+            {loading ? (
+              <div className="p-12 text-center">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+              </div>
+            ) : gameHighScores.length === 0 ? (
+              <div className="py-20 text-center space-y-3">
+                <Trophy size={48} className="text-white/20 mx-auto" />
+                <h4 className="font-bold text-white text-lg">Hali o'yinlarda rekordlar mavjud emas</h4>
+                <p className="text-secondary text-xs">Birinchi bo'lib o'yin o'ynang va rekord o'rnating!</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {gameHighScores.map((sc, idx) => {
+                  const gameTitle = sc.game_slug
+                    .split('-')
+                    .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' ');
+
+                  return (
+                    <div
+                      key={sc.id || idx}
+                      className="flex items-center justify-between p-4 md:px-6 transition-colors hover:bg-white/5"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <span className={`w-8 h-8 rounded-xl flex items-center justify-center font-display font-black text-xs tabular-nums ${
+                          idx === 0 ? 'bg-amber-400 text-black' : idx === 1 ? 'bg-slate-300 text-black' : idx === 2 ? 'bg-orange-500 text-black' : 'bg-white/10 text-white'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <div className="w-10 h-10 rounded-full bg-violet/20 overflow-hidden flex items-center justify-center font-bold text-xs text-white shrink-0">
+                          {sc.profiles?.avatar_url ? (
+                            <img src={sc.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                          ) : (
+                            (sc.profiles?.username || "U")[0].toUpperCase()
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block font-bold text-sm text-white truncate">
+                            {sc.profiles?.username || sc.profiles?.full_name || "O'yinchi"}
+                          </span>
+                          <span className="block text-[11px] text-amber-400 font-semibold truncate">
+                            🎮 {gameTitle}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="font-display font-black text-base md:text-lg text-amber-300 tabular-nums">
+                          {Number(sc.score).toLocaleString()}
+                        </span>
+                        <span className="block text-[10px] text-secondary uppercase font-bold">ball</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : loading ? (
           <>
             {/* Podium skeleton */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-16 items-end max-w-5xl mx-auto">

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -53,6 +53,7 @@ const GameDetailPage = () => {
   const { isAuthenticated, user } = useAuthStore();
 
   const [game, setGame] = useState<GameDetail | null>(null);
+  const [topScores, setTopScores] = useState<any[]>([]);
   const [libraryGames, setLibraryGames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
@@ -222,6 +223,20 @@ const GameDetailPage = () => {
               created_at: r.created_at
             })) : []
           } as any);
+
+          // Fetch top scores for game if slug exists
+          try {
+            const { data: sData } = await supabase
+              .from('game_scores')
+              .select('*, profiles:user_id(username, full_name, avatar_url)')
+              .eq('game_slug', gameData.slug)
+              .order('score', { ascending: false })
+              .limit(5);
+
+            if (sData) setTopScores(sData);
+          } catch (sErr) {
+            console.warn("Top scores fetch warning:", sErr);
+          }
         }
         
         if (isAuthenticated && user) {
@@ -635,6 +650,46 @@ const GameDetailPage = () => {
                       </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* Top High Scorers Leaderboard */}
+            {topScores.length > 0 && (
+              <div className="glass-card p-6 md:p-8 space-y-4 border-amber-500/20 bg-gradient-to-br from-amber-500/5 via-white/[0.01] to-transparent">
+                <h3 className="font-black text-white flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy size={20} className="text-amber-400" />
+                    <span>Eng Yuqori Natijalar (Top Rekordchilar)</span>
+                  </div>
+                  <Link
+                    href={`/games/play/${game.slug}`}
+                    className="text-xs text-amber-300 font-bold hover:underline"
+                  >
+                    O'ynash va Rekord o'rnatish →
+                  </Link>
+                </h3>
+                <div className="space-y-2 pt-2">
+                  {topScores.map((sc: any, idx: number) => (
+                    <div
+                      key={sc.id || idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 text-xs"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-[11px] ${
+                          idx === 0 ? 'bg-amber-400 text-black' : idx === 1 ? 'bg-slate-300 text-black' : idx === 2 ? 'bg-orange-500 text-black' : 'bg-white/10 text-white'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <span className="font-bold text-white">
+                          {sc.profiles?.username || sc.profiles?.full_name || "O'yinchi"}
+                        </span>
+                      </div>
+                      <div className="font-display font-black text-amber-300">
+                        {Number(sc.score).toLocaleString()} <span className="text-[10px] text-secondary font-normal">ball</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
