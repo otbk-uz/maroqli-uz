@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy, CalendarPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -47,6 +47,9 @@ const ProfilePage = () => {
   const [loadingLibrary, setLoadingLibrary] = useState(false);
   const [wishlistGames, setWishlistGames] = useState<any[]>([]);
   const [loadingWishlist, setLoadingWishlist] = useState(false);
+  const [purchasePlanGames, setPurchasePlanGames] = useState<any[]>([]);
+  const [loadingPurchasePlan, setLoadingPurchasePlan] = useState(false);
+  const [activeWishlistTab, setActiveWishlistTab] = useState<"wishlist" | "plan">("wishlist");
   const [userScores, setUserScores] = useState<any[]>([]);
   const [loadingScores, setLoadingScores] = useState(false);
 
@@ -180,29 +183,47 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (activeSetting === "my_wishlist") {
-      const fetchWishlist = async () => {
+      const fetchWishlistData = async () => {
         setLoadingWishlist(true);
+        setLoadingPurchasePlan(true);
         try {
-          const { data, error } = await supabase
+          // Fetch wishlist
+          const { data: wishData, error: wishErr } = await supabase
             .from('game_wishlist')
             .select('id, game_id, created_at, developed_games(*)')
             .eq('user_id', user?.id)
             .order('created_at', { ascending: false });
 
-          if (!error && data) {
-            setWishlistGames(data.map((item: any) => ({
+          if (!wishErr && wishData) {
+            setWishlistGames(wishData.map((item: any) => ({
+              id: item.id,
+              game_id: item.game_id,
+              game_details: item.developed_games
+            })));
+          }
+
+          // Fetch purchase plan
+          const { data: planData, error: planErr } = await supabase
+            .from('game_purchase_plan')
+            .select('id, game_id, created_at, developed_games(*)')
+            .eq('user_id', user?.id)
+            .order('created_at', { ascending: false });
+
+          if (!planErr && planData) {
+            setPurchasePlanGames(planData.map((item: any) => ({
               id: item.id,
               game_id: item.game_id,
               game_details: item.developed_games
             })));
           }
         } catch (err) {
-          console.error("Wishlist fetch error:", err);
+          console.error("Wishlist data fetch error:", err);
         } finally {
           setLoadingWishlist(false);
+          setLoadingPurchasePlan(false);
         }
       };
-      fetchWishlist();
+      fetchWishlistData();
     }
   }, [activeSetting, user?.id]);
 
@@ -236,6 +257,15 @@ const ProfilePage = () => {
       setWishlistGames(prev => prev.filter(item => item.id !== wishlistId));
     } catch (err) {
       console.error("Remove wishlist error:", err);
+    }
+  };
+
+  const handleRemoveFromPurchasePlan = async (planId: string) => {
+    try {
+      await supabase.from('game_purchase_plan').delete().eq('id', planId);
+      setPurchasePlanGames(prev => prev.filter(item => item.id !== planId));
+    } catch (err) {
+      console.error("Remove purchase plan error:", err);
     }
   };
 
@@ -786,78 +816,194 @@ const ProfilePage = () => {
                 </div>
               ) : activeSetting === "my_wishlist" ? (
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
-                  <p className="text-secondary text-xs">Siz 'Xohlayman' ro'yxatiga qo'shgan va kelajakda sotib olmoqchi bo'lgan o'yinlaringiz.</p>
+                  
+                  {/* Tabs */}
+                  <div className="flex bg-white/5 p-1 rounded-xl">
+                    <button
+                      onClick={() => setActiveWishlistTab("wishlist")}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'wishlist' ? 'bg-rose-500 text-white shadow-lg' : 'text-secondary hover:text-white'}`}
+                    >
+                      <Heart size={14} className={activeWishlistTab === 'wishlist' ? 'fill-current' : ''} />
+                      Xohlayman
+                    </button>
+                    <button
+                      onClick={() => setActiveWishlistTab("plan")}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'plan' ? 'bg-amber-500 text-black shadow-lg' : 'text-secondary hover:text-white'}`}
+                    >
+                      <CalendarPlus size={14} />
+                      Sotib olish rejasi
+                    </button>
+                  </div>
 
-                  {loadingWishlist ? (
-                    <div className="py-12 flex items-center justify-center">
-                      <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : wishlistGames.length === 0 ? (
-                    <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
-                      <Heart size={40} className="text-rose-500/30 mx-auto mb-4" />
-                      <p className="text-secondary text-sm">'Xohlayman' ro'yxatida hali o'yinlar mavjud emas.</p>
-                      <Link
-                        href="/games"
-                        onClick={() => setActiveSetting(null)}
-                        className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
-                      >
-                        Do'konga o'tish
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {wishlistGames.map((item) => {
-                        const gameDetails = item.game_details || {};
+                  {activeWishlistTab === "wishlist" && (
+                    <>
+                      <p className="text-secondary text-xs">Siz 'Xohlayman' ro'yxatiga qo'shgan va kelajakda sotib olmoqchi bo'lgan o'yinlaringiz.</p>
 
-                        return (
-                          <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col sm:flex-row gap-4 p-4 relative group hover:border-rose-500/30 transition-all duration-300">
-                            {/* Cover */}
-                            <div className="w-full sm:w-24 aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-white/5 shrink-0 flex items-center justify-center">
-                              {gameDetails.cover ? (
-                                <img
-                                  src={gameDetails.cover}
-                                  alt={gameDetails.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-brand-gradient-soft flex items-center justify-center">
-                                  <Gamepad2 size={24} className="text-secondary" />
+                      {loadingWishlist ? (
+                        <div className="py-12 flex items-center justify-center">
+                          <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : wishlistGames.length === 0 ? (
+                        <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
+                          <Heart size={40} className="text-rose-500/30 mx-auto mb-4" />
+                          <p className="text-secondary text-sm">'Xohlayman' ro'yxatida hali o'yinlar mavjud emas.</p>
+                          <Link
+                            href="/games"
+                            onClick={() => setActiveSetting(null)}
+                            className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
+                          >
+                            Do'konga o'tish
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {wishlistGames.map((item) => {
+                            const gameDetails = item.game_details || {};
+                            return (
+                              <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col sm:flex-row gap-4 p-4 relative group hover:border-rose-500/30 transition-all duration-300">
+                                {/* Cover */}
+                                <div className="w-full sm:w-24 aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-white/5 shrink-0 flex items-center justify-center">
+                                  {gameDetails.cover ? (
+                                    <img
+                                      src={gameDetails.cover}
+                                      alt={gameDetails.title}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-brand-gradient-soft flex items-center justify-center">
+                                      <Gamepad2 size={24} className="text-secondary" />
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0 flex flex-col justify-between">
-                              <div>
-                                <h4 className="font-bold text-base text-white truncate mb-1">{gameDetails.title}</h4>
-                                <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">
-                                  {gameDetails.platform} • {Number(gameDetails.price) === 0 ? "BEPUL" : `${Number(gameDetails.price).toLocaleString()} UZS`}
-                                </p>
+                                {/* Info */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                  <div>
+                                    <h4 className="font-bold text-base text-white truncate mb-1">{gameDetails.title}</h4>
+                                    <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">
+                                      {gameDetails.platform} • {Number(gameDetails.price) === 0 ? "BEPUL" : `${Number(gameDetails.price).toLocaleString()} UZS`}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Link
+                                      href={`/games/${gameDetails.id}`}
+                                      onClick={() => setActiveSetting(null)}
+                                      className="flex-1 py-2 px-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <ShoppingCart size={13} />
+                                      <span>O'yinga o'tish</span>
+                                    </Link>
+                                    <button
+                                      onClick={() => handleRemoveFromWishlist(item.id)}
+                                      className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition-colors"
+                                      title="Ro'yxatdan o'chirish"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  )}
 
-                              <div className="flex items-center gap-2 mt-2">
-                                <Link
-                                  href={`/games/${gameDetails.id}`}
-                                  onClick={() => setActiveSetting(null)}
-                                  className="flex-1 py-2 px-3 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                                >
-                                  <ShoppingCart size={13} />
-                                  <span>O'yinga o'tish</span>
-                                </Link>
+                  {activeWishlistTab === "plan" && (
+                    <>
+                      <p className="text-secondary text-xs">Sotib olish rejangizga kiritilgan o'yinlar ro'yxati.</p>
 
-                                <button
-                                  onClick={() => handleRemoveFromWishlist(item.id)}
-                                  className="p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition-colors"
-                                  title="Ro'yxatdan o'chirish"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
+                      {loadingPurchasePlan ? (
+                        <div className="py-12 flex items-center justify-center">
+                          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      ) : purchasePlanGames.length === 0 ? (
+                        <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
+                          <CalendarPlus size={40} className="text-amber-500/30 mx-auto mb-4" />
+                          <p className="text-secondary text-sm">Sotib olish rejasida o'yinlar mavjud emas.</p>
+                          <Link
+                            href="/games"
+                            onClick={() => setActiveSetting(null)}
+                            className="btn-primary mt-4 inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider bg-amber-500 hover:bg-amber-600 text-black"
+                          >
+                            Do'konga o'tish
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {purchasePlanGames.map((item) => {
+                            const gameDetails = item.game_details || {};
+                            return (
+                              <div key={item.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden flex flex-col sm:flex-row gap-4 p-4 relative group hover:border-amber-500/30 transition-all duration-300">
+                                {/* Cover */}
+                                <div className="w-full sm:w-24 aspect-video sm:aspect-[4/3] rounded-xl overflow-hidden bg-white/5 shrink-0 flex items-center justify-center">
+                                  {gameDetails.cover ? (
+                                    <img
+                                      src={gameDetails.cover}
+                                      alt={gameDetails.title}
+                                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-brand-gradient-soft flex items-center justify-center">
+                                      <Gamepad2 size={24} className="text-secondary" />
+                                    </div>
+                                  )}
+                                </div>
+                                {/* Info */}
+                                <div className="flex-1 min-w-0 flex flex-col justify-between">
+                                  <div>
+                                    <h4 className="font-bold text-base text-white truncate mb-1">{gameDetails.title}</h4>
+                                    <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mb-2">
+                                      {gameDetails.platform} • {Number(gameDetails.price) === 0 ? "BEPUL" : `${Number(gameDetails.price).toLocaleString()} UZS`}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <Link
+                                      href={`/games/${gameDetails.id}`}
+                                      onClick={() => setActiveSetting(null)}
+                                      className="flex-1 py-2 px-3 bg-amber-500 hover:bg-amber-600 text-black rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                                    >
+                                      <ShoppingCart size={13} />
+                                      <span>O'yinga o'tish</span>
+                                    </Link>
+                                    <button
+                                      onClick={() => handleRemoveFromPurchasePlan(item.id)}
+                                      className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-xl transition-colors"
+                                      title="Ro'yxatdan o'chirish"
+                                    >
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
+                            );
+                          })}
+
+                          {/* Budget Summary */}
+                          <div className="mt-2 p-4 bg-amber-500/10 border border-amber-500/25 rounded-2xl">
+                            <div className="flex items-center justify-between mb-3">
+                              <p className="text-[10px] text-amber-300 font-bold uppercase tracking-widest">💰 Taxminiy umumiy narx</p>
+                              <p className="font-display font-black text-amber-300 text-lg tabular-nums">
+                                {purchasePlanGames
+                                  .reduce((sum: number, item: any) => {
+                                    const price = Number(item.game_details?.price || 0);
+                                    return sum + (price > 0 ? (user?.is_premium ? (item.game_details?.premium_price ? Number(item.game_details.premium_price) : Math.round(price * 0.8)) : price) : 0);
+                                  }, 0)
+                                  .toLocaleString()} <span className="text-sm font-bold">UZS</span>
+                              </p>
                             </div>
+                            <Link
+                              href="/games"
+                              onClick={() => setActiveSetting(null)}
+                              className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-black rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all"
+                            >
+                              <ShoppingCart size={14} />
+                              Do'konga o'tib sotib olish
+                            </Link>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ) : activeSetting === "my_library" ? (

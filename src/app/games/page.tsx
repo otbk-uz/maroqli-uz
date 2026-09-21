@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle } from "lucide-react";
+import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle, CalendarPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
@@ -35,6 +35,7 @@ const GamesPage = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [wishlistIds, setWishlistIds] = useState<Set<string | number>>(new Set());
+  const [purchasePlanIds, setPurchasePlanIds] = useState<Set<string | number>>(new Set());
 
   useEffect(() => {
     if (user) {
@@ -52,7 +53,34 @@ const GamesPage = () => {
           console.warn("Wishlist fetch error:", err);
         }
       };
+
+      const fetchPurchasePlan = async () => {
+        try {
+          const { data } = await supabase
+            .from('game_purchase_plan')
+            .select('game_id')
+            .eq('user_id', user.id);
+
+          const localKey = `game_purchase_plan_${user.id}`;
+          const savedLocal = localStorage.getItem(localKey);
+          const localSet = new Set<string | number>(savedLocal ? JSON.parse(savedLocal) : []);
+
+          if (data) {
+            data.forEach(item => localSet.add(item.game_id));
+          }
+          setPurchasePlanIds(localSet);
+        } catch (err) {
+          console.warn("Purchase plan fetch error:", err);
+          const localKey = `game_purchase_plan_${user.id}`;
+          const savedLocal = localStorage.getItem(localKey);
+          if (savedLocal) {
+            setPurchasePlanIds(new Set(JSON.parse(savedLocal)));
+          }
+        }
+      };
+
       fetchWishlist();
+      fetchPurchasePlan();
     }
   }, [user]);
 
@@ -93,6 +121,54 @@ const GamesPage = () => {
         else next.delete(gameId);
         return next;
       });
+    }
+  };
+
+  const handleTogglePurchasePlan = async (gameId: string | number) => {
+    if (!user) {
+      window.location.href = "/login";
+      return;
+    }
+
+    const isCurrentlyInPlan = purchasePlanIds.has(gameId);
+    setPurchasePlanIds(prev => {
+      const next = new Set(prev);
+      if (isCurrentlyInPlan) next.delete(gameId);
+      else next.add(gameId);
+      return next;
+    });
+
+    const localKey = `game_purchase_plan_${user.id}`;
+    const savedLocal = localStorage.getItem(localKey);
+    let localList: string[] = savedLocal ? JSON.parse(savedLocal) : [];
+
+    if (isCurrentlyInPlan) {
+      localList = localList.filter((gid: string) => String(gid) !== String(gameId));
+      localStorage.setItem(localKey, JSON.stringify(localList));
+      try {
+        await supabase
+          .from('game_purchase_plan')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('game_id', gameId);
+      } catch (err) {
+        console.warn("DB purchase plan delete fallback:", err);
+      }
+    } else {
+      if (!localList.includes(String(gameId))) {
+        localList.push(String(gameId));
+      }
+      localStorage.setItem(localKey, JSON.stringify(localList));
+      try {
+        await supabase
+          .from('game_purchase_plan')
+          .insert({
+            user_id: user.id,
+            game_id: gameId
+          });
+      } catch (err) {
+        console.warn("DB purchase plan insert fallback:", err);
+      }
     }
   };
 
@@ -211,6 +287,68 @@ const GamesPage = () => {
           </div>
         </div>
 
+        {/* Web Games Playlist (Carousel) */}
+        {!loading && games.filter(g => g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2 uppercase font-display tracking-wide">
+                <Globe className="text-violet" size={24} /> 
+                {t("web_games_playlist", "Web O'yinlar Playlitsi")}
+              </h2>
+              <button 
+                onClick={() => setFilter("WEB")}
+                className="text-xs font-bold text-violet hover:text-white transition-colors"
+              >
+                Barchasini ko'rish &rarr;
+              </button>
+            </div>
+            
+            <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 snap-x">
+              {games.filter(g => g.platform === "WEB").map((game) => (
+                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
+                  <Link href={`/games/${game.id}`}>
+                    <div className="card-interactive bg-white/5 border border-white/5 overflow-hidden group h-full flex flex-col">
+                      <div className="aspect-video relative overflow-hidden bg-black/50">
+                        {game.cover ? (
+                          <img
+                            src={game.cover}
+                            alt={game.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-violet/20 to-black/80 flex items-center justify-center">
+                            <Gamepad2 size={40} className="text-violet/30" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
+                        <div className="absolute top-2 left-2 bg-violet text-white text-[9px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 shadow-glow-violet">
+                          <Globe size={10} /> WEB
+                        </div>
+                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                          <Star size={10} className="text-yellow-500 fill-yellow-500" />
+                          <span className="text-white text-[10px] font-bold">{Number(game.rating).toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="text-base font-bold text-white mb-1 truncate">{game.title}</h3>
+                        <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-3">
+                          @{game.developer_details.username}
+                        </p>
+                        <div className="mt-auto flex items-center justify-between">
+                          <span className="text-xs font-black text-emerald-400">BEPUL</span>
+                          <span className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
+                            <PlayCircle size={12} /> O'ynash
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filter row */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -319,7 +457,24 @@ const GamesPage = () => {
                       </span>
                     </div>
 
-                    <div className="absolute top-4 right-4">
+                    <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                      {Number(g.price) > 0 && (
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleTogglePurchasePlan(g.id);
+                          }}
+                          className={`p-2 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
+                            purchasePlanIds.has(g.id)
+                              ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                              : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-black/80"
+                          }`}
+                          title="Sotib olish rejasiga qo'shish"
+                        >
+                          <CalendarPlus size={14} className={purchasePlanIds.has(g.id) ? "text-amber-400" : ""} />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.preventDefault();

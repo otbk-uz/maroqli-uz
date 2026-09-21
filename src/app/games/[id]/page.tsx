@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy, CalendarPlus } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -37,6 +37,9 @@ interface GameDetail {
   developer_details: {
     username: string;
     full_name: string;
+    telegram_url?: string;
+    instagram_url?: string;
+    youtube_url?: string;
   };
   cover: string | null;
   demo_url?: string | null;
@@ -74,6 +77,8 @@ const GameDetailPage = () => {
   // Wishlist and modal states
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [wishlistLoading, setWishlistLoading] = useState(false);
+  const [isInPurchasePlan, setIsInPurchasePlan] = useState(false);
+  const [purchasePlanLoading, setPurchasePlanLoading] = useState(false);
   const [selectedImageModal, setSelectedImageModal] = useState<string | null>(null);
 
   // Electron launch states
@@ -190,6 +195,20 @@ const GameDetailPage = () => {
           console.warn("Reviews fetch exception:", reviewErr);
         }
 
+        let socialLinks: any = {};
+        if (gameData?.developer_id) {
+          try {
+            const { data: devProfile } = await supabase
+              .from('gamedev_profiles')
+              .select('telegram_url, instagram_url, youtube_url')
+              .eq('user_id', gameData.developer_id)
+              .maybeSingle();
+            if (devProfile) socialLinks = devProfile;
+          } catch (e) {
+            console.warn("Dev profile fetch warning:", e);
+          }
+        }
+
         if (gameData) {
           setGame({
             id: gameData.id,
@@ -205,7 +224,8 @@ const GameDetailPage = () => {
             trailer_url: null,
             developer_details: {
               username: gameData.profiles?.username || 'developer',
-              full_name: gameData.profiles?.full_name || 'Developer'
+              full_name: gameData.profiles?.full_name || 'Developer',
+              ...socialLinks
             },
             cover: gameData.cover || null,
             demo_url: gameData.demo_url || null,
@@ -253,6 +273,31 @@ const GameDetailPage = () => {
             }
           } catch (wErr) {
             console.warn("Wishlist check warning:", wErr);
+          }
+
+          try {
+            const { data: planData } = await supabase
+              .from('game_purchase_plan')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('game_id', id)
+              .maybeSingle();
+
+            if (planData) {
+              setIsInPurchasePlan(true);
+            } else {
+              const saved = localStorage.getItem(`game_purchase_plan_${user.id}`);
+              if (saved) {
+                const list: string[] = JSON.parse(saved);
+                if (list.includes(String(id))) setIsInPurchasePlan(true);
+              }
+            }
+          } catch (pErr) {
+            const saved = localStorage.getItem(`game_purchase_plan_${user.id}`);
+            if (saved) {
+              const list: string[] = JSON.parse(saved);
+              if (list.includes(String(id))) setIsInPurchasePlan(true);
+            }
           }
           const { data: libraryData, error: libraryError } = await supabase
             .from('bought_games')
@@ -328,6 +373,56 @@ const GameDetailPage = () => {
       alert("Xohlayman ro'yxatini yangilashda xatolik yuz berdi.");
     } finally {
       setWishlistLoading(false);
+    }
+  };
+
+  const handleTogglePurchasePlan = async () => {
+    if (!isAuthenticated || !user) {
+      router.push("/login");
+      return;
+    }
+    if (!game) return;
+
+    setPurchasePlanLoading(true);
+    try {
+      const localKey = `game_purchase_plan_${user.id}`;
+      const savedLocal = localStorage.getItem(localKey);
+      let localList: string[] = savedLocal ? JSON.parse(savedLocal) : [];
+
+      if (isInPurchasePlan) {
+        try {
+          await supabase
+            .from('game_purchase_plan')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('game_id', game.id);
+        } catch (err) {
+          console.warn("DB purchase plan delete error, using local fallback:", err);
+        }
+        localList = localList.filter((gid: string) => String(gid) !== String(game.id));
+        localStorage.setItem(localKey, JSON.stringify(localList));
+        setIsInPurchasePlan(false);
+      } else {
+        try {
+          await supabase
+            .from('game_purchase_plan')
+            .insert({
+              user_id: user.id,
+              game_id: game.id
+            });
+        } catch (err) {
+          console.warn("DB purchase plan insert error, using local fallback:", err);
+        }
+        if (!localList.includes(String(game.id))) {
+          localList.push(String(game.id));
+        }
+        localStorage.setItem(localKey, JSON.stringify(localList));
+        setIsInPurchasePlan(true);
+      }
+    } catch (err) {
+      console.error("Purchase plan toggle error:", err);
+    } finally {
+      setPurchasePlanLoading(false);
     }
   };
 
@@ -928,8 +1023,52 @@ const GameDetailPage = () => {
                 <span>{isWishlisted ? "Xohlayman (Qo'shilgan)" : "Xohlayman ro'yxatiga qo'shish"}</span>
               </button>
 
+              {/* Purchase Plan Toggle Button for paid games */}
+              {Number(game.price) > 0 && !isPurchased && (
+                <button
+                  onClick={handleTogglePurchasePlan}
+                  disabled={purchasePlanLoading}
+                  className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
+                    isInPurchasePlan
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25 shadow-glow"
+                      : "bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <CalendarPlus size={16} className={isInPurchasePlan ? "text-amber-400" : "text-white"} />
+                  <span>{isInPurchasePlan ? "📅 Sotib olish rejasida" : "📅 Sotib olish rejasiga qo'shish"}</span>
+                </button>
+              )}
+
               <div className="text-[10px] text-secondary leading-normal text-center opacity-75">
                 Tasdiqlangandan so'ng o'yin CD-keyi taqdim etiladi va kutubxonangizga (/profile/library) qo'shiladi.
+              </div>
+
+              {/* Developer Social Links */}
+              <div className="border-t border-white/5 pt-6 mt-6">
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Dasturchi sahifalari</h4>
+                <div className="flex flex-col gap-2">
+                  <div className="text-sm font-bold text-primary mb-1">@{game.developer_details.username}</div>
+                  
+                  {game.developer_details.telegram_url && (
+                    <a href={game.developer_details.telegram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
+                      <span>📱 Telegram kanal</span>
+                    </a>
+                  )}
+                  {game.developer_details.instagram_url && (
+                    <a href={game.developer_details.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
+                      <span>📸 Instagram sahifa</span>
+                    </a>
+                  )}
+                  {game.developer_details.youtube_url && (
+                    <a href={game.developer_details.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
+                      <span>🎥 YouTube kanal</span>
+                    </a>
+                  )}
+                  
+                  {!game.developer_details.telegram_url && !game.developer_details.instagram_url && !game.developer_details.youtube_url && (
+                    <p className="text-[10px] text-secondary opacity-50">Ijtimoiy tarmoqlar kiritilmagan</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

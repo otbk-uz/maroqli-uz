@@ -64,6 +64,9 @@ export default function GamedevPage() {
   const [demoType, setDemoType] = useState<"image" | "video">("image");
   const [releaseDate, setReleaseDate] = useState("");
   const [donationUrl, setDonationUrl] = useState("");
+  const [telegramUrl, setTelegramUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
   const [profileExists, setProfileExists] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
 
@@ -155,6 +158,9 @@ export default function GamedevPage() {
         setDemoType(data.demo_type || "image");
         setReleaseDate(data.release_date || "");
         setDonationUrl(data.donation_url || "");
+        setTelegramUrl(data.telegram_url || "");
+        setInstagramUrl(data.instagram_url || "");
+        setYoutubeUrl(data.youtube_url || "");
         setProfileExists(true);
       }
     } catch (err) {
@@ -230,6 +236,9 @@ export default function GamedevPage() {
         demo_type: demoType,
         release_date: releaseDate,
         donation_url: donationUrl,
+        telegram_url: telegramUrl,
+        instagram_url: instagramUrl,
+        youtube_url: youtubeUrl,
       };
 
       let error;
@@ -1207,6 +1216,39 @@ export default function GamedevPage() {
                           onChange={(e) => setDonationUrl(e.target.value)}
                           className={inputClass}
                           placeholder="Masalan: https://payme.uz/@studio_name"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">Telegram ssilkasi</label>
+                        <input
+                          type="url"
+                          value={telegramUrl}
+                          onChange={(e) => setTelegramUrl(e.target.value)}
+                          className={inputClass}
+                          placeholder="Masalan: https://t.me/studio_name"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">Instagram ssilkasi</label>
+                        <input
+                          type="url"
+                          value={instagramUrl}
+                          onChange={(e) => setInstagramUrl(e.target.value)}
+                          className={inputClass}
+                          placeholder="Masalan: https://instagram.com/studio_name"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">YouTube kanali ssilkasi</label>
+                        <input
+                          type="url"
+                          value={youtubeUrl}
+                          onChange={(e) => setYoutubeUrl(e.target.value)}
+                          className={inputClass}
+                          placeholder="Masalan: https://youtube.com/@studio_name"
                         />
                       </div>
                     </div>

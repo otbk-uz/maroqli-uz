@@ -9,6 +9,9 @@ CREATE TABLE IF NOT EXISTS gamedev_profiles (
   demo_type TEXT DEFAULT 'image', -- 'image' yoki 'video'
   release_date TEXT, -- O'yinning to'liq reliz sanasi
   donation_url TEXT, -- Donat qilish uchun havola (Click/Payme yoki boshqa)
+  telegram_url TEXT,
+  instagram_url TEXT,
+  youtube_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
