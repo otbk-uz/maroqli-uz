@@ -695,7 +695,7 @@ const ProfilePage = () => {
             <div className="divide-y divide-white/5">
               {[
                 { key: "game_high_scores", label: "🏆 O'yin Rekordlarim va Statistika" },
-                { key: "my_wishlist", label: "Xohlayman (Mening Wishlistim)" },
+                { key: "my_wishlist", label: "Sotib olish rejasi (Wishlist)" },
                 ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
                 ...((streamerData !== null || profileData.role === "ADMIN") ? [{ key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") }] : []),
                 { key: "account_security", label: t("account_security", "Hisob xavfsizligi") },
@@ -749,7 +749,7 @@ const ProfilePage = () => {
                 )}
                 <h3 className="text-xl font-bold">
                   {activeSetting === "game_high_scores" ? "🏆 O'yin Rekordlarim va Statistika" :
-                   activeSetting === "my_wishlist" ? "Xohlayman (Mening Wishlistim)" :
+                   activeSetting === "my_wishlist" ? "Sotib olish rejasi (Wishlist)" :
                    activeSetting === "my_team" ? t("my_team", "Mening Jamoam") :
                    activeSetting === "my_library" ? t("my_library", "Mening Kutubxonam") :
                    activeSetting === "streaming_settings" ? t("streaming_settings", "Striming sozlamalari") :
@@ -824,7 +824,7 @@ const ProfilePage = () => {
                       className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'wishlist' ? 'bg-rose-500 text-white shadow-lg' : 'text-secondary hover:text-white'}`}
                     >
                       <Heart size={14} className={activeWishlistTab === 'wishlist' ? 'fill-current' : ''} />
-                      Xohlayman
+                      Sotib olish rejasi (Wishlist)
                     </button>
                     <button
                       onClick={() => setActiveWishlistTab("plan")}
@@ -837,7 +837,7 @@ const ProfilePage = () => {
 
                   {activeWishlistTab === "wishlist" && (
                     <>
-                      <p className="text-secondary text-xs">Siz 'Xohlayman' ro'yxatiga qo'shgan va kelajakda sotib olmoqchi bo'lgan o'yinlaringiz.</p>
+                      <p className="text-secondary text-xs">Siz 'Sotib olish rejasi (Wishlist)' ro'yxatiga qo'shgan o'yinlaringiz.</p>
 
                       {loadingWishlist ? (
                         <div className="py-12 flex items-center justify-center">
@@ -846,7 +846,7 @@ const ProfilePage = () => {
                       ) : wishlistGames.length === 0 ? (
                         <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
                           <Heart size={40} className="text-rose-500/30 mx-auto mb-4" />
-                          <p className="text-secondary text-sm">'Xohlayman' ro'yxatida hali o'yinlar mavjud emas.</p>
+                          <p className="text-secondary text-sm">'Sotib olish rejasi (Wishlist)' ro'yxatida hali o'yinlar mavjud emas.</p>
                           <Link
                             href="/games"
                             onClick={() => setActiveSetting(null)}

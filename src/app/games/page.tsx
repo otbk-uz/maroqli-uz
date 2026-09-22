@@ -514,7 +514,7 @@ const GamesPage = () => {
                             ? "bg-rose-500/20 border-rose-500/40 text-rose-400"
                             : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-black/80"
                         }`}
-                        title="Xohlayman ro'yxatiga qo'shish"
+                        title="Sotib olish rejasi (Wishlist)ga qo'shish"
                       >
                         <Heart size={14} className={wishlistIds.has(g.id) ? "fill-rose-500 text-rose-500" : ""} />
                       </button>

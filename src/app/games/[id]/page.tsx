@@ -395,7 +395,7 @@ const GameDetailPage = () => {
       }
     } catch (err: any) {
       console.error("Wishlist toggle error:", err);
-      alert("Xohlayman ro'yxatini yangilashda xatolik yuz berdi.");
+      alert("Wishlist ro'yxatini yangilashda xatolik yuz berdi.");
     } finally {
       setWishlistLoading(false);
     }
@@ -1034,7 +1034,7 @@ const GameDetailPage = () => {
                 </div>
               )}
 
-              {/* "Xohlayman" (Wishlist) Toggle Button */}
+              {/* "Sotib olish rejasi (Wishlist)" Toggle Button */}
               <button
                 onClick={handleToggleWishlist}
                 disabled={wishlistLoading}
@@ -1045,7 +1045,7 @@ const GameDetailPage = () => {
                 }`}
               >
                 <Heart size={16} className={isWishlisted ? "fill-rose-500 text-rose-500" : "text-white"} />
-                <span>{isWishlisted ? "Xohlayman (Qo'shilgan)" : "Xohlayman ro'yxatiga qo'shish"}</span>
+                <span>{isWishlisted ? "Sotib olish rejasi (Wishlist) (Qo'shilgan)" : "Sotib olish rejasi (Wishlist)ga qo'shish"}</span>
               </button>
 
               {/* Purchase Plan Toggle Button for paid games */}
