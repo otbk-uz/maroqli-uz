@@ -25,6 +25,21 @@ export default function LayoutShell({ children }: { children: React.ReactNode })
           .from("profiles")
           .update({ last_seen: new Date().toISOString() })
           .eq("id", user.id);
+
+        // Record visit once per session
+        const sessionVisitedKey = `maroqli_visited_${user.id}_${new Date().toDateString()}`;
+        if (!sessionStorage.getItem(sessionVisitedKey)) {
+          sessionStorage.setItem(sessionVisitedKey, "1");
+          try {
+            await supabase.rpc('increment_user_visit_count', { target_user_id: user.id });
+          } catch (e) {
+            // Fallback if RPC function is not created yet
+            const { data: pData } = await supabase.from('profiles').select('visit_count').eq('id', user.id).single();
+            if (pData) {
+              await supabase.from('profiles').update({ visit_count: (pData.visit_count || 1) + 1 }).eq('id', user.id);
+            }
+          }
+        }
       } catch (err) {
         console.error("Error updating last_seen:", err);
       }

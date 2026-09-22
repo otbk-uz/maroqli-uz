@@ -48,6 +48,12 @@ export default function AdminPage() {
     totalActiveSubs: 0,
     totalGames: 0,
     totalTournaments: 0,
+    totalBotSubscribers: 0,
+    totalCombinedSubscribers: 0,
+    returningUsers: 0,
+    retentionRate: 0,
+    totalGamePlays: 0,
+    activePlayersCount: 0,
   });
 
   // News form state
@@ -56,17 +62,14 @@ export default function AdminPage() {
   const [newsFile, setNewsFile] = useState<File | null>(null);
   const [savingNews, setSavingNews] = useState(false);
 
-
   // Premium modal state
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
   const [selectedUserForPremium, setSelectedUserForPremium] = useState<AdminUser | null>(null);
   const [premiumDuration, setPremiumDuration] = useState<number>(30);
   const [savingPremium, setSavingPremium] = useState(false);
 
-
-
   useEffect(() => {
-    // Admin holatini SERVER tomondagi imzolangan cookie orqali tekshiramiz.
+    // Admin session check
     (async () => {
       try {
         const res = await fetch('/api/admin/session');
@@ -87,7 +90,6 @@ export default function AdminPage() {
     e.preventDefault();
     setLoginError('');
     try {
-      // Parol SERVER tomonda tekshiriladi — kodda emas, brauzerdan buzib bo'lmaydi.
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -121,7 +123,7 @@ export default function AdminPage() {
             message: `Yangi a'zo: @${newProfile.username || "Noma'lum"}`,
             time: new Date()
           };
-          setActivities(prev => [log, ...prev].slice(0, 10)); // keep last 10
+          setActivities(prev => [log, ...prev].slice(0, 10));
         }
       )
       .on(
@@ -148,7 +150,7 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     try {
       setLoading(true);
-      // Fetch users directly from Supabase profiles since auth migrated there
+      // 1. Fetch profiles
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -157,16 +159,15 @@ export default function AdminPage() {
       if (profilesError) throw profilesError;
 
       if (profiles) {
-        // Map Supabase profiles to AdminUser format
         const mappedUsers = profiles.map((p: any) => ({
           id: p.id,
           username: p.username,
-          email: p.email || `${p.username}@MAROQLI.uz`, // Profiles table might not have email
+          email: p.email || `${p.username}@MAROQLI.uz`,
           full_name: p.full_name || '',
           nickname: p.full_name || p.username,
           role: p.role || 'GAMER',
-          is_verified: true, // Mocked for now
-          is_active: true, // Mocked for now
+          is_verified: true,
+          is_active: true,
           level: p.level || 1,
           elo: p.elo || 1000,
           is_premium: p.is_premium || false,
@@ -174,21 +175,97 @@ export default function AdminPage() {
           last_seen: p.last_seen
         }));
         setUsersList(mappedUsers as any);
-        
-        // Fetch other stats if possible, or mock if backend is down
+
+        // 2. Fetch Telegram Bot Subscribers
+        let botUsersCount = 0;
         try {
-          const tourneysRes = await api.get("/tournaments/");
-          const gamesRes = await api.get("/tournaments/store/");
-          setStats({
-            totalUsers: profiles.length,
-            totalActiveSubs: mappedUsers.filter((u: any) => u.is_premium).length,
-            totalGames: gamesRes.data.length,
-            totalTournaments: tourneysRes.data.length,
-          });
-        } catch (e) {
-          // If django backend fails, just update users count
-          setStats(prev => ({ ...prev, totalUsers: profiles.length }));
+          const { count } = await supabase
+            .from('bot_users')
+            .select('*', { count: 'exact', head: true });
+          if (count) botUsersCount = count;
+        } catch (botErr) {
+          console.warn("Bot users fetch warning:", botErr);
         }
+
+        // 3. Calculate Returning Users (Retention)
+        const returningCount = profiles.filter((p: any) => {
+          if (p.visit_count && p.visit_count > 1) return true;
+          if (p.last_seen && p.created_at) {
+            const diffHours = (new Date(p.last_seen).getTime() - new Date(p.created_at).getTime()) / (1000 * 3600);
+            return diffHours > 1;
+          }
+          return false;
+        }).length;
+
+        const webUsersCount = profiles.length;
+        const retentionPct = webUsersCount > 0 ? Math.round((returningCount / webUsersCount) * 100) : 0;
+
+        // 4. Fetch Developed Games & Play Counts
+        let gamesCount = 0;
+        let totalPlaysCount = 0;
+        try {
+          const { data: devGames } = await supabase
+            .from('developed_games')
+            .select('id, play_count');
+          if (devGames) {
+            gamesCount = devGames.length;
+            totalPlaysCount += devGames.reduce((acc: number, g: any) => acc + (g.play_count || 0), 0);
+          }
+        } catch (gErr) {
+          console.warn("Developed games stats fetch warning:", gErr);
+        }
+
+        // 5. Fetch Game Scores & Session Activity
+        let activePlayersSet = new Set<string>();
+        try {
+          const { data: scores } = await supabase
+            .from('game_scores')
+            .select('user_id');
+          if (scores) {
+            totalPlaysCount += scores.length;
+            scores.forEach((s: any) => {
+              if (s.user_id) activePlayersSet.add(s.user_id);
+            });
+          }
+        } catch (sErr) {
+          console.warn("Game scores stats fetch warning:", sErr);
+        }
+
+        try {
+          const { data: sessions } = await supabase
+            .from('game_play_sessions')
+            .select('user_id');
+          if (sessions) {
+            totalPlaysCount += sessions.length;
+            sessions.forEach((s: any) => {
+              if (s.user_id) activePlayersSet.add(s.user_id);
+            });
+          }
+        } catch (sessErr) {
+          console.warn("Game play sessions fetch warning:", sessErr);
+        }
+
+        // 6. Fetch Tournaments
+        let tourneysCount = 0;
+        try {
+          const { data: tourneys } = await supabase.from('tournaments').select('id');
+          if (tourneys) tourneysCount = tourneys.length;
+        } catch (tErr) {
+          console.warn("Tournaments fetch warning:", tErr);
+        }
+
+        setStats({
+          totalUsers: webUsersCount,
+          totalActiveSubs: mappedUsers.filter((u: any) => u.is_premium).length,
+          totalGames: gamesCount,
+          totalTournaments: tourneysCount,
+          totalBotSubscribers: botUsersCount,
+          totalCombinedSubscribers: webUsersCount + botUsersCount,
+          returningUsers: returningCount,
+          retentionRate: retentionPct,
+          totalGamePlays: totalPlaysCount,
+          activePlayersCount: activePlayersSet.size,
+        });
       }
     } catch (err) {
       console.error("Admin ma'lumotlarini yuklashda xatolik:", err);
@@ -439,34 +516,75 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <div className="glass-card p-6 border border-white/5">
-            <span className="text-xs text-secondary uppercase font-semibold">Jami Foydalanuvchilar</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2">
-              <Users className="text-primary" size={20} /> {stats.totalUsers}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-primary/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Jami Obunachilar</span>
+            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-white">
+              <Users className="text-primary shrink-0" size={20} /> 
+              <span>{stats.totalCombinedSubscribers.toLocaleString()}</span>
             </h3>
+            <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
+              <span className="text-emerald-400 font-bold">{stats.totalUsers} sayt</span> • 
+              <span>{stats.totalBotSubscribers} bot</span>
+            </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5">
-            <span className="text-xs text-secondary uppercase font-semibold">Faol Premium A'zolar</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2">
-              <Award className="text-amber-400" size={20} /> {stats.totalActiveSubs}
+          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Qayta Tashrif Buyurganlar</span>
+            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-emerald-400">
+              <Activity className="text-emerald-400 shrink-0" size={20} /> 
+              <span>{stats.returningUsers.toLocaleString()}</span>
             </h3>
+            <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
+              <span className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded">
+                {stats.retentionRate}% Retention
+              </span>
+            </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5">
-            <span className="text-xs text-secondary uppercase font-semibold">Do'kondagi O'yinlar</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2">
-              <BarChart3 className="text-blue-400" size={20} /> {stats.totalGames}
+          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-violet/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">O'yinlar O'ynalishi</span>
+            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-violet">
+              <Gamepad2 className="text-violet shrink-0" size={20} /> 
+              <span>{stats.totalGamePlays.toLocaleString()}</span>
             </h3>
+            <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
+              <span>{stats.activePlayersCount} ta o'yinchi fe'lan o'ynagan</span>
+            </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5">
-            <span className="text-xs text-secondary uppercase font-semibold">Turnirlar Soni</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2">
-              <AlertOctagon className="text-green-400" size={20} /> {stats.totalTournaments}
+          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-amber-500/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Faol Premium & Do'kon</span>
+            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-amber-400">
+              <Award className="text-amber-400 shrink-0" size={20} /> 
+              <span>{stats.totalActiveSubs.toLocaleString()} PRO</span>
             </h3>
+            <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
+              <span>{stats.totalGames} ta o'yin mavjud</span>
+            </div>
           </div>
+        </div>
+
+        {/* Real-time Analytics Breakdown Banner */}
+        <div className="glass-card p-6 border border-white/10 rounded-2xl mb-12 bg-gradient-to-r from-violet/10 via-white/[0.02] to-transparent flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-violet/20 border border-violet/30 text-violet flex items-center justify-center shrink-0">
+              <BarChart3 size={24} />
+            </div>
+            <div>
+              <h4 className="font-bold text-white text-base">Tizim Tahlili va Obunachilar Faolligi</h4>
+              <p className="text-xs text-secondary mt-0.5">
+                Obunachilarning {stats.retentionRate}% qismi platformaga takroriy tashrif buyurmoqda. Jami {stats.totalGamePlays.toLocaleString()} marotaba onlayn/yuklangan o'yinlar o'ynaldi.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={fetchAdminData}
+            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all border border-white/10 shrink-0 flex items-center gap-2"
+          >
+            <RefreshCw size={14} />
+            <span>Statistikani Yangilash</span>
+          </button>
         </div>
 
         {/* News Management */}

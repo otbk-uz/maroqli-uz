@@ -67,6 +67,7 @@ export default function GamedevPage() {
   const [telegramUrl, setTelegramUrl] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [githubUrl, setGithubUrl] = useState("");
   const [profileExists, setProfileExists] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
 
@@ -161,6 +162,7 @@ export default function GamedevPage() {
         setTelegramUrl(data.telegram_url || "");
         setInstagramUrl(data.instagram_url || "");
         setYoutubeUrl(data.youtube_url || "");
+        setGithubUrl(data.github_url || "");
         setProfileExists(true);
       }
     } catch (err) {
@@ -239,6 +241,7 @@ export default function GamedevPage() {
         telegram_url: telegramUrl,
         instagram_url: instagramUrl,
         youtube_url: youtubeUrl,
+        github_url: githubUrl,
       };
 
       let error;
@@ -257,7 +260,23 @@ export default function GamedevPage() {
       }
 
       if (error) throw error;
-      alert("Studiya profili muvaffaqiyatli saqlandi!");
+
+      // Sync social links to main profiles table as well
+      try {
+        await supabase
+          .from("profiles")
+          .update({
+            telegram_url: telegramUrl,
+            instagram_url: instagramUrl,
+            youtube_url: youtubeUrl,
+            github_url: githubUrl
+          })
+          .eq("id", user.id);
+      } catch (syncErr) {
+        console.warn("Profiles social links sync warning:", syncErr);
+      }
+
+      alert("Studiya profili va ijtimoiy tarmoqlar saqlandi!");
       fetchRegisteredStudios(); // Refresh directory list
     } catch (err: any) {
       alert(err.message || "Profilni saqlashda xatolik yuz berdi.");
@@ -1220,35 +1239,45 @@ export default function GamedevPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
-                        <label className="text-xs font-semibold text-secondary block mb-1.5">Telegram ssilkasi</label>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">📢 Telegram ssilkasi</label>
                         <input
                           type="url"
                           value={telegramUrl}
                           onChange={(e) => setTelegramUrl(e.target.value)}
                           className={inputClass}
-                          placeholder="Masalan: https://t.me/studio_name"
+                          placeholder="https://t.me/..."
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-secondary block mb-1.5">Instagram ssilkasi</label>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">📸 Instagram ssilkasi</label>
                         <input
                           type="url"
                           value={instagramUrl}
                           onChange={(e) => setInstagramUrl(e.target.value)}
                           className={inputClass}
-                          placeholder="Masalan: https://instagram.com/studio_name"
+                          placeholder="https://instagram.com/..."
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-secondary block mb-1.5">YouTube kanali ssilkasi</label>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">🎬 YouTube kanali</label>
                         <input
                           type="url"
                           value={youtubeUrl}
                           onChange={(e) => setYoutubeUrl(e.target.value)}
                           className={inputClass}
-                          placeholder="Masalan: https://youtube.com/@studio_name"
+                          placeholder="https://youtube.com/..."
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold text-secondary block mb-1.5">💻 GitHub / Portfolio</label>
+                        <input
+                          type="url"
+                          value={githubUrl}
+                          onChange={(e) => setGithubUrl(e.target.value)}
+                          className={inputClass}
+                          placeholder="https://github.com/..."
                         />
                       </div>
                     </div>

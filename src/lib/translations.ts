@@ -88,6 +88,8 @@ export const translations = {
     games_desc: "Mahalliy va xalqaro o'yinlarni sotib oling",
     search_game: "O'yin nomini yozing...",
     all_platforms: "Barcha platformalar",
+    web_games: "🌐 Web o'yinlar",
+    web_games_playlist: "Web O'yinlar Playlitsi",
     pc_games: "PC o'yinlar",
     mobile_games: "Mobil o'yinlar",
     buy_game: "Sotib olish",

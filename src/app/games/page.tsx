@@ -289,60 +289,88 @@ const GamesPage = () => {
 
         {/* Web Games Playlist (Carousel) */}
         {!loading && games.filter(g => g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2 uppercase font-display tracking-wide">
-                <Globe className="text-violet" size={24} /> 
-                {t("web_games_playlist", "Web O'yinlar Playlitsi")}
-              </h2>
+          <div className="mb-14 bg-gradient-to-r from-violet/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/20 shadow-glow-violet relative overflow-hidden">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-violet/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet/20 border border-violet/30 text-violet text-[10px] font-black uppercase tracking-wider mb-2">
+                  <Sparkles size={12} /> Exkluziv brauzer pleylisti
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
+                  <Globe className="text-violet animate-pulse" size={28} /> 
+                  <span>{t("web_games_playlist", "Web O'yinlar Playlitsi")}</span>
+                </h2>
+                <p className="text-secondary text-xs mt-1">
+                  Yuklab olmasdan brauzerning o'zida bepul o'ynashingiz mumkin bo'lgan onlayn o'yinlar to'plami.
+                </p>
+              </div>
+
               <button 
                 onClick={() => setFilter("WEB")}
-                className="text-xs font-bold text-violet hover:text-white transition-colors"
+                className="self-start sm:self-auto px-4 py-2 bg-violet/20 hover:bg-violet text-violet hover:text-white border border-violet/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
               >
-                Barchasini ko'rish &rarr;
+                <span>Barchasini ko'rish</span>
+                <ArrowRight size={14} />
               </button>
             </div>
             
-            <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 snap-x">
+            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-2 snap-x relative z-10">
               {games.filter(g => g.platform === "WEB").map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
-                  <Link href={`/games/${game.id}`}>
-                    <div className="card-interactive bg-white/5 border border-white/5 overflow-hidden group h-full flex flex-col">
-                      <div className="aspect-video relative overflow-hidden bg-black/50">
-                        {game.cover ? (
-                          <img
-                            src={game.cover}
-                            alt={game.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-violet/20 to-black/80 flex items-center justify-center">
-                            <Gamepad2 size={40} className="text-violet/30" />
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/0 transition-colors" />
-                        <div className="absolute top-2 left-2 bg-violet text-white text-[9px] font-black uppercase px-2 py-0.5 rounded flex items-center gap-1 shadow-glow-violet">
-                          <Globe size={10} /> WEB
+                <div key={game.id} className="min-w-[280px] md:min-w-[330px] max-w-[330px] shrink-0 snap-start">
+                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-violet/50 hover:shadow-glow-violet transition-all duration-300">
+                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
+                      {game.cover ? (
+                        <img
+                          src={game.cover}
+                          alt={game.title}
+                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-violet/30 via-black/80 to-black flex items-center justify-center">
+                          <Gamepad2 size={48} className="text-violet/40" />
                         </div>
-                        <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-md border border-white/10 px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <Star size={10} className="text-yellow-500 fill-yellow-500" />
-                          <span className="text-white text-[10px] font-bold">{Number(game.rating).toFixed(1)}</span>
-                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
+                      <div className="absolute top-3 left-3 bg-violet text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow-violet border border-violet/30">
+                        <Globe size={11} /> WEB ONLINE
                       </div>
-                      <div className="p-4 flex flex-col flex-1">
-                        <h3 className="text-base font-bold text-white mb-1 truncate">{game.title}</h3>
-                        <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-3">
-                          @{game.developer_details.username}
-                        </p>
-                        <div className="mt-auto flex items-center justify-between">
-                          <span className="text-xs font-black text-emerald-400">BEPUL</span>
-                          <span className="bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1">
-                            <PlayCircle size={12} /> O'ynash
-                          </span>
+                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star size={11} className="text-amber-400 fill-amber-400" />
+                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 flex flex-col flex-1">
+                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
+                        Dev: @{game.developer_details.username}
+                      </p>
+                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-violet transition-colors">{game.title}</h3>
+                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
+                        {game.description}
+                      </p>
+
+                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-xs font-black text-emerald-400 font-display">BEPUL</span>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/games/${game.id}`}
+                            className="p-2.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white rounded-xl transition-colors border border-white/10"
+                            title="Tafsilotlar"
+                          >
+                            <ShoppingCart size={14} />
+                          </Link>
+                          <Link
+                            href={isAuthenticated ? `/games/play/${game.slug}` : `/login?redirect=/games/play/${game.slug}`}
+                            className="px-4 py-2.5 bg-violet hover:bg-violet/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-glow-violet active:scale-95"
+                          >
+                            <PlayCircle size={15} />
+                            <span>O'ynash</span>
+                          </Link>
                         </div>
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </div>
               ))}
             </div>

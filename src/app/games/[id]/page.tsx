@@ -195,7 +195,12 @@ const GameDetailPage = () => {
           console.warn("Reviews fetch exception:", reviewErr);
         }
 
-        let socialLinks: any = {};
+        let socialLinks: any = {
+          telegram_url: gameData?.telegram_url || null,
+          instagram_url: gameData?.instagram_url || null,
+          youtube_url: gameData?.youtube_url || null,
+          github_url: gameData?.github_url || null,
+        };
         if (gameData?.developer_id) {
           try {
             const { data: devProfile } = await supabase
@@ -203,9 +208,29 @@ const GameDetailPage = () => {
               .select('telegram_url, instagram_url, youtube_url')
               .eq('user_id', gameData.developer_id)
               .maybeSingle();
-            if (devProfile) socialLinks = devProfile;
+            if (devProfile) {
+              socialLinks.telegram_url = socialLinks.telegram_url || devProfile.telegram_url;
+              socialLinks.instagram_url = socialLinks.instagram_url || devProfile.instagram_url;
+              socialLinks.youtube_url = socialLinks.youtube_url || devProfile.youtube_url;
+            }
           } catch (e) {
             console.warn("Dev profile fetch warning:", e);
+          }
+
+          try {
+            const { data: mainProfile } = await supabase
+              .from('profiles')
+              .select('telegram_url, instagram_url, youtube_url, github_url')
+              .eq('id', gameData.developer_id)
+              .maybeSingle();
+            if (mainProfile) {
+              socialLinks.telegram_url = socialLinks.telegram_url || mainProfile.telegram_url;
+              socialLinks.instagram_url = socialLinks.instagram_url || mainProfile.instagram_url;
+              socialLinks.youtube_url = socialLinks.youtube_url || mainProfile.youtube_url;
+              socialLinks.github_url = socialLinks.github_url || mainProfile.github_url;
+            }
+          } catch (e) {
+            console.warn("Main profile fetch warning:", e);
           }
         }
 
@@ -1044,29 +1069,79 @@ const GameDetailPage = () => {
               </div>
 
               {/* Developer Social Links */}
-              <div className="border-t border-white/5 pt-6 mt-6">
-                <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3">Dasturchi sahifalari</h4>
-                <div className="flex flex-col gap-2">
-                  <div className="text-sm font-bold text-primary mb-1">@{game.developer_details.username}</div>
-                  
+              <div className="border-t border-white/10 pt-6 mt-6 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📱 GameDev Ijtimoiy Tarmoqlari</span>
+                  </h4>
+                  <span className="text-[10px] text-primary font-bold">@{game.developer_details.username}</span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
                   {game.developer_details.telegram_url && (
-                    <a href={game.developer_details.telegram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
-                      <span>📱 Telegram kanal</span>
+                    <a
+                      href={game.developer_details.telegram_url.startsWith('http') ? game.developer_details.telegram_url : `https://${game.developer_details.telegram_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between text-xs font-bold text-sky-400 hover:text-white bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 p-2.5 rounded-xl transition-all group"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-sky-500/20 flex items-center justify-center text-xs">📢</span>
+                        <span>Telegram Kanal / Guruh</span>
+                      </span>
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                   )}
+
                   {game.developer_details.instagram_url && (
-                    <a href={game.developer_details.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
-                      <span>📸 Instagram sahifa</span>
+                    <a
+                      href={game.developer_details.instagram_url.startsWith('http') ? game.developer_details.instagram_url : `https://${game.developer_details.instagram_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between text-xs font-bold text-pink-400 hover:text-white bg-pink-500/10 hover:bg-pink-500/20 border border-pink-500/20 p-2.5 rounded-xl transition-all group"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-pink-500/20 flex items-center justify-center text-xs">📸</span>
+                        <span>Instagram Sahifa</span>
+                      </span>
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                   )}
+
                   {game.developer_details.youtube_url && (
-                    <a href={game.developer_details.youtube_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-secondary hover:text-white transition-colors bg-white/5 p-2 rounded-lg hover:bg-white/10">
-                      <span>🎥 YouTube kanal</span>
+                    <a
+                      href={game.developer_details.youtube_url.startsWith('http') ? game.developer_details.youtube_url : `https://${game.developer_details.youtube_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between text-xs font-bold text-red-400 hover:text-white bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 p-2.5 rounded-xl transition-all group"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-red-500/20 flex items-center justify-center text-xs">🎬</span>
+                        <span>YouTube Kanal</span>
+                      </span>
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                     </a>
                   )}
-                  
-                  {!game.developer_details.telegram_url && !game.developer_details.instagram_url && !game.developer_details.youtube_url && (
-                    <p className="text-[10px] text-secondary opacity-50">Ijtimoiy tarmoqlar kiritilmagan</p>
+
+                  {(game.developer_details as any).github_url && (
+                    <a
+                      href={(game.developer_details as any).github_url.startsWith('http') ? (game.developer_details as any).github_url : `https://${(game.developer_details as any).github_url}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between text-xs font-bold text-purple-400 hover:text-white bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 p-2.5 rounded-xl transition-all group"
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-xs">💻</span>
+                        <span>GitHub / Portfolio</span>
+                      </span>
+                      <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    </a>
+                  )}
+
+                  {!game.developer_details.telegram_url && !game.developer_details.instagram_url && !game.developer_details.youtube_url && !(game.developer_details as any).github_url && (
+                    <div className="p-3 bg-white/5 border border-white/5 rounded-xl text-center">
+                      <p className="text-[11px] text-secondary">GameDev ijtimoiy tarmoqlari kiritilmagan</p>
+                    </div>
                   )}
                 </div>
               </div>
