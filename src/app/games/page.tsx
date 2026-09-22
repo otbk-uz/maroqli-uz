@@ -189,7 +189,7 @@ const GamesPage = () => {
           .select('*, profiles:developer_id(username, full_name)')
           .order('created_at', { ascending: false });
 
-        if (filter !== "ALL") {
+        if (filter !== "ALL" && filter !== "DEMO") {
           query = query.eq('platform', filter);
         }
         if (debouncedSearch) {
@@ -230,9 +230,17 @@ const GamesPage = () => {
   const platformTabs = [
     { value: "ALL", label: t("all_platforms", "Barcha platformalar") },
     { value: "WEB", label: t("web_games", "🌐 Onlayn (Brauzer)") },
+    { value: "DEMO", label: "🎮 Demo O'yinlar" },
     { value: "PC", label: t("pc_games", "PC o'yinlar") },
     { value: "MOBILE", label: t("mobile_games", "Mobil o'yinlar") },
   ];
+
+  const displayedGames = games.filter(g => {
+    if (filter === "DEMO") {
+      return Number(g.price) === 0 || g.platform === "WEB";
+    }
+    return true;
+  });
 
   return (
     <main className="min-h-screen bg-background relative overflow-hidden">
@@ -289,7 +297,7 @@ const GamesPage = () => {
 
         {/* Web Games Playlist (Carousel) */}
         {!loading && games.filter(g => g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
-          <div className="mb-14 bg-gradient-to-r from-violet/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/20 shadow-glow-violet relative overflow-hidden">
+          <div className="mb-10 bg-gradient-to-r from-violet/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/20 shadow-glow-violet relative overflow-hidden">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-violet/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
@@ -377,6 +385,96 @@ const GamesPage = () => {
           </div>
         )}
 
+        {/* Demo Games Playlist (Carousel) */}
+        {!loading && games.filter(g => Number(g.price) === 0 || g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
+          <div className="mb-14 bg-gradient-to-r from-emerald-500/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-emerald-500/20 shadow-glow relative overflow-hidden">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-2">
+                  <Sparkles size={12} /> Bepul Sinov To'plami
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
+                  <Gamepad2 className="text-emerald-400 animate-pulse" size={28} /> 
+                  <span>Demo O'yinlar Playlitsi</span>
+                </h2>
+                <p className="text-secondary text-xs mt-1">
+                  Har bir o'yinni sinab ko'rishingiz uchun bepul va demo versiyalar jamlangan playlist.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setFilter("DEMO")}
+                className="self-start sm:self-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
+              >
+                <span>Barchasini ko'rish</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+            
+            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-2 snap-x relative z-10">
+              {games.filter(g => Number(g.price) === 0 || g.platform === "WEB").map((game) => (
+                <div key={game.id} className="min-w-[280px] md:min-w-[330px] max-w-[330px] shrink-0 snap-start">
+                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-emerald-500/50 hover:shadow-glow transition-all duration-300">
+                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
+                      {game.cover ? (
+                        <img
+                          src={game.cover}
+                          alt={game.title}
+                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-emerald-500/30 via-black/80 to-black flex items-center justify-center">
+                          <Gamepad2 size={48} className="text-emerald-400/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
+                      <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow border border-emerald-400/30">
+                        <Gamepad2 size={11} /> DEMO / BEPUL
+                      </div>
+                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star size={11} className="text-amber-400 fill-amber-400" />
+                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 flex flex-col flex-1">
+                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
+                        Dev: @{game.developer_details.username}
+                      </p>
+                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-emerald-400 transition-colors">{game.title}</h3>
+                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
+                        {game.description}
+                      </p>
+
+                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                        <span className="text-xs font-black text-emerald-400 font-display">BEPUL / DEMO</span>
+                        <div className="flex items-center gap-2">
+                          <Link
+                            href={`/games/${game.id}`}
+                            className="p-2.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white rounded-xl transition-colors border border-white/10"
+                            title="Tafsilotlar"
+                          >
+                            <ShoppingCart size={14} />
+                          </Link>
+                          <Link
+                            href={game.platform === "WEB" ? (isAuthenticated ? `/games/play/${game.slug}` : `/login?redirect=/games/play/${game.slug}`) : `/games/${game.id}`}
+                            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-glow active:scale-95"
+                          >
+                            <PlayCircle size={15} />
+                            <span>{game.platform === "WEB" ? "O'ynash" : "Sinash"}</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Filter row */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -427,7 +525,7 @@ const GamesPage = () => {
               </div>
             ))}
           </div>
-        ) : games.length === 0 ? (
+        ) : displayedGames.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -449,7 +547,7 @@ const GamesPage = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence mode="popLayout">
-              {games.map((g, i) => (
+              {displayedGames.map((g, i) => (
                 <motion.div
                   layout
                   initial={{ opacity: 0, y: 24 }}

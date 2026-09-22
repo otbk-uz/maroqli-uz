@@ -1034,7 +1034,7 @@ const GameDetailPage = () => {
                 </div>
               )}
 
-              {/* "Sotib olish rejasi (Wishlist)" Toggle Button */}
+              {/* "Sotib olish rejasi" Toggle Button */}
               <button
                 onClick={handleToggleWishlist}
                 disabled={wishlistLoading}
@@ -1045,24 +1045,8 @@ const GameDetailPage = () => {
                 }`}
               >
                 <Heart size={16} className={isWishlisted ? "fill-rose-500 text-rose-500" : "text-white"} />
-                <span>{isWishlisted ? "Sotib olish rejasi (Wishlist) (Qo'shilgan)" : "Sotib olish rejasi (Wishlist)ga qo'shish"}</span>
+                <span>{isWishlisted ? "Sotib olish rejasida (Qo'shilgan)" : "Sotib olish rejasiga qo'shish"}</span>
               </button>
-
-              {/* Purchase Plan Toggle Button for paid games */}
-              {Number(game.price) > 0 && !isPurchased && (
-                <button
-                  onClick={handleTogglePurchasePlan}
-                  disabled={purchasePlanLoading}
-                  className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
-                    isInPurchasePlan
-                      ? "bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25 shadow-glow"
-                      : "bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <CalendarPlus size={16} className={isInPurchasePlan ? "text-amber-400" : "text-white"} />
-                  <span>{isInPurchasePlan ? "📅 Sotib olish rejasida" : "📅 Sotib olish rejasiga qo'shish"}</span>
-                </button>
-              )}
 
               <div className="text-[10px] text-secondary leading-normal text-center opacity-75">
                 Tasdiqlangandan so'ng o'yin CD-keyi taqdim etiladi va kutubxonangizga (/profile/library) qo'shiladi.
