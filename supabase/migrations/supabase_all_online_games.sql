@@ -803,20 +803,44 @@ BEGIN
             demo_url = EXCLUDED.demo_url,
             cover = EXCLUDED.cover;
 
-        -- Qamal
+        -- Qamal / Drift Bastion
         INSERT INTO public.developed_games (
             developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, demo_url, cover
         ) VALUES (
             dev_id,
-            'Qamal',
+            'Qamal (Drift Bastion)',
             'qamal',
             0,
             0,
             'WEB',
-            'Barcha kerakli fayllar ichida — boshqa hech narsaga bog''liq emas. 1) Ushbu ''qamal'' papkasini saytingizga yuklang (masalan: https://saytingiz.uz/qamal/).',
+            'Drift Bastion — PC UI/UX uslubidagi eng so''nggi va kuchaytirilgan grafikaga ega onlayn arkada va baston himoya o''yini.',
             'O''zbek',
             'Brauzer (Chrome, Firefox, Safari, Edge)',
             '/games-online/qamal/index.html',
+            '/games-online/qamal/covers/qamal.png'
+        ) ON CONFLICT (slug) DO UPDATE SET
+            title = EXCLUDED.title,
+            platform = 'WEB',
+            price = 0,
+            premium_price = 0,
+            description = EXCLUDED.description,
+            demo_url = EXCLUDED.demo_url,
+            cover = EXCLUDED.cover;
+
+        -- Drift Bastion
+        INSERT INTO public.developed_games (
+            developer_id, title, slug, price, premium_price, platform, description, language, sys_requirements, demo_url, cover
+        ) VALUES (
+            dev_id,
+            'Drift Bastion',
+            'drift-bastion',
+            0,
+            0,
+            'WEB',
+            'Drift Bastion — PC UI/UX uslubidagi eng so''nggi va kuchaytirilgan grafikaga ega onlayn arkada va baston himoya o''yini.',
+            'O''zbek',
+            'Brauzer (Chrome, Firefox, Safari, Edge)',
+            '/games-online/drift-bastion/index.html',
             '/games-online/qamal/covers/qamal.png'
         ) ON CONFLICT (slug) DO UPDATE SET
             title = EXCLUDED.title,
