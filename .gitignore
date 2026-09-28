@@ -55,6 +55,7 @@ backend/media/
 # Large game files
 *.tar.gz
 *.zip
+*.rar
 public/SuperTuxKart-1.5-setup.exe
 public/xonotic-0.8.6.zip
 
