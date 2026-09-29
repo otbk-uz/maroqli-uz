@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy, CalendarPlus } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy, CalendarPlus, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -1231,8 +1231,53 @@ const GameDetailPage = () => {
                 </div>
               </div>
 
-              <div className="text-xs text-secondary leading-relaxed bg-primary/5 border border-primary/10 p-4 rounded-xl">
-                <span className="font-bold text-white">Yo'riqnoma.</span> Istalgan to'lov ilovasi (Click, Payme, Uzum va hokazo) orqali yuqoridagi kartaga ko'rsatilgan summani o'tkazing va to'lov muvaffaqiyatli bo'lgani haqidagi <span className="font-bold text-white">chek skrinshotini</span> pastda yuklang.
+              <div className="space-y-3 pt-1">
+                <button
+                  type="button"
+                  disabled={submittingPayment}
+                  onClick={async () => {
+                    if (!user || !game) return;
+                    setSubmittingPayment(true);
+                    try {
+                      const finalPrice = user.is_premium
+                        ? (game.premium_price ? Number(game.premium_price) : Math.round(Number(game.price) * 0.8))
+                        : Number(game.price);
+
+                      const res = await fetch('/api/payments/wlcm/checkout', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          userId: user.id,
+                          itemType: 'GAME',
+                          itemId: game.id,
+                          amount: finalPrice,
+                          itemName: game.title
+                        })
+                      });
+
+                      const data = await res.json();
+                      if (data.checkoutUrl) {
+                        window.location.href = data.checkoutUrl;
+                      } else {
+                        alert(data.error || "WLCM to'lov shlyuzida xatolik.");
+                      }
+                    } catch (err: any) {
+                      alert(err.message || "To'lovga yo'naltirishda xatolik.");
+                    } finally {
+                      setSubmittingPayment(false);
+                    }
+                  }}
+                  className="w-full py-3.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25 active:scale-95"
+                >
+                  <Zap size={16} className="text-amber-300 fill-current animate-pulse" />
+                  <span>⚡ WLCM Onlayn To'lov (Payme / Click / Uzcard / Humo)</span>
+                </button>
+
+                <div className="flex items-center gap-2 text-[10px] text-secondary/60 justify-center">
+                  <span className="h-px bg-white/10 flex-1" />
+                  <span>yoki qo'lda chek yuborish</span>
+                  <span className="h-px bg-white/10 flex-1" />
+                </div>
               </div>
 
               <div className="space-y-2">

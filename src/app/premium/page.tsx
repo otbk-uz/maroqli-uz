@@ -553,6 +553,54 @@ export default function PremiumPage() {
                   </div>
                 </div>
 
+                <div className="space-y-3 pt-2">
+                  <button
+                    type="button"
+                    disabled={submittingPayment}
+                    onClick={async () => {
+                      if (!user || !selectedPlan) return;
+                      setSubmittingPayment(true);
+                      try {
+                        const plan = PLANS.find(p => p.key === selectedPlan);
+                        const amountVal = parseFloat(plan?.price.replace(/[^\d]/g, '') || '0');
+                        
+                        const res = await fetch('/api/payments/wlcm/checkout', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({
+                            userId: user.id,
+                            itemType: 'PREMIUM',
+                            itemId: null,
+                            amount: amountVal,
+                            itemName: plan?.name
+                          })
+                        });
+
+                        const data = await res.json();
+                        if (data.checkoutUrl) {
+                          window.location.href = data.checkoutUrl;
+                        } else {
+                          alert(data.error || "WLCM to'lov shlyuzida xatolik.");
+                        }
+                      } catch (err: any) {
+                        alert(err.message || "To'lovga yo'naltirishda xatolik.");
+                      } finally {
+                        setSubmittingPayment(false);
+                      }
+                    }}
+                    className="w-full py-3.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25 active:scale-95"
+                  >
+                    <Zap size={16} className="text-amber-300 fill-current animate-pulse" />
+                    <span>⚡ WLCM Onlayn To'lov (Payme / Click / Uzcard / Humo)</span>
+                  </button>
+
+                  <div className="flex items-center gap-2 text-[10px] text-secondary/60 justify-center">
+                    <span className="h-px bg-white/10 flex-1" />
+                    <span>yoki qo'lda chek yuborish</span>
+                    <span className="h-px bg-white/10 flex-1" />
+                  </div>
+                </div>
+
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
