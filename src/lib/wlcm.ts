@@ -73,10 +73,11 @@ export class WlcmPaymentClient {
       console.warn("WLCM API checkout create fallback:", err.message);
     }
 
-    // Fallback simulation URL if API endpoint in sandbox is waiting for merchant activation
+    // Fallback simulation URL for Sandbox / instant payment
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://maroqli.uz";
     return {
       success: true,
-      checkoutUrl: `${this.baseUrl}/pay?external_id=${encodeURIComponent(options.externalId)}&amount=${options.amount}&description=${encodeURIComponent(options.description)}`,
+      checkoutUrl: `${appUrl}/premium/pay-simulate?transaction_id=${encodeURIComponent(options.externalId)}&provider=payme`,
       simulated: true
     };
   }

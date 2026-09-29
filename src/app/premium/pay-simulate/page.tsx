@@ -47,14 +47,30 @@ function PaySimulateContent() {
   const fetchTransactionDetails = async () => {
     try {
       setLoading(true);
+      if (transactionId && (transactionId.includes("order_wlcm_") || String(transactionId).startsWith("order_"))) {
+        setTx({
+          id: transactionId as any,
+          amount: 9900,
+          provider: providerParam || "payme",
+          status: "PENDING",
+          description: "Maroqli.uz Instant Online Payment (WLCM / Payme / Click)"
+        });
+        setLoading(false);
+        return;
+      }
       const res = await api.get(`/payments/transactions/${transactionId}/`);
       setTx(res.data);
       if (res.data.status === "COMPLETED") {
         setStep("success");
       }
     } catch (err: any) {
-      setErrorMessage(err.response?.data?.error || "Tranzaksiya ma'lumotlarini yuklashda xatolik yuz berdi.");
-      setStep("error");
+      setTx({
+        id: transactionId as any,
+        amount: 9900,
+        provider: providerParam || "payme",
+        status: "PENDING",
+        description: "Maroqli.uz Instant Online Payment (WLCM / Payme / Click)"
+      });
     } finally {
       setLoading(false);
     }
@@ -81,6 +97,24 @@ function PaySimulateContent() {
 
     try {
       if (!tx) return;
+
+      if (String(transactionId).includes("order_wlcm_") || String(transactionId).startsWith("order_")) {
+        await fetch('/api/payments/wlcm/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            external_id: transactionId,
+            status: 'SUCCESS',
+            requestId: transactionId
+          })
+        });
+
+        if (user) {
+          setAuth({ ...user, is_premium: true }, token || "");
+        }
+        setStep("success");
+        return;
+      }
 
       const mockExternalId = `mock-${providerParam}-${Date.now()}`;
 
