@@ -21,10 +21,6 @@ export default function PremiumPage() {
   const { t, locale } = useTranslation();
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
-  const [showModal, setShowModal] = useState(false);
-  const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [submittingPayment, setSubmittingPayment] = useState(false);
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
 
   const PLANS = [
@@ -126,100 +122,37 @@ export default function PremiumPage() {
     }
   };
 
-  const handlePurchaseClick = (planKey: string) => {
-    if (!isAuthenticated) {
+  const handlePurchaseClick = async (planKey: string) => {
+    if (!isAuthenticated || !user) {
       router.push("/login?redirect=/premium");
       return;
     }
-    setSelectedPlan(planKey);
-    setShowModal(true);
-  };
+    const plan = PLANS.find(p => p.key === planKey);
+    if (!plan) return;
 
-  const handleSubmitReceipt = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!receiptFile || !user || !selectedPlan) return;
-
-    setSubmittingPayment(true);
     try {
-      try {
-        await supabase.auth.refreshSession();
-      } catch (sessErr) {
-        console.warn("Session refresh attempt before receipt upload:", sessErr);
-      }
+      const amountVal = parseFloat(plan.price.replace(/[^\d]/g, '') || '0');
 
-      const plan = PLANS.find(p => p.key === selectedPlan);
-      if (!plan) throw new Error("Plan not found");
-
-      const amountVal = parseFloat(plan.price.replace(/[^\d]/g, ''));
-
-      const fileExt = receiptFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}_receipt.${fileExt}`;
-
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('receipts')
-        .upload(fileName, receiptFile, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('receipts')
-        .getPublicUrl(fileName);
-
-      // 1. Insert locally
-      const { data: requestData, error: insertError } = await supabase
-        .from('payment_requests')
-        .insert({
-          user_id: user.id,
-          item_type: 'PREMIUM',
-          item_id: null,
-          amount: amountVal,
-          receipt_url: publicUrl,
-          status: 'PENDING'
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // 2. Notify Telegram via API
-      const { data: { session } } = await supabase.auth.getSession();
-      const response = await fetch('/api/payments/submit-request', {
+      const res = await fetch('/api/payments/wlcm/checkout', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.access_token || useAuthStore.getState().token || ''}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          requestId: requestData.id,
+          userId: user.id,
           itemType: 'PREMIUM',
           itemId: null,
           amount: amountVal,
-          receiptUrl: publicUrl,
-          itemName: plan.name,
-          username: user.username || user.email?.split('@')[0] || 'username'
+          itemName: plan.name
         })
       });
 
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || "To'lov arizasini yuborishda xatolik yuz berdi.");
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        alert(data.error || "WLCM to'lov shlyuzida xatolik.");
       }
-
-      alert("To'lov cheki yuborildi! Admin tasdiqlashi bilan Premium obuna faollashadi.");
-      setShowModal(false);
-      setReceiptFile(null);
-
-      setPaymentRequest({
-        id: resData.requestId,
-        status: 'PENDING',
-        receipt_url: publicUrl,
-        amount: amountVal
-      });
     } catch (err: any) {
-      console.error("Receipt submission error:", err);
-      alert(err.message || "Xatolik yuz berdi. Iltimos, qayta urinib ko'ring.");
-    } finally {
-      setSubmittingPayment(false);
+      alert(err.message || "To'lovga yo'naltirishda xatolik.");
     }
   };
 
@@ -458,177 +391,7 @@ export default function PremiumPage() {
         </div>
       </div>
 
-      {/* Telegram Payment Modal */}
-      <AnimatePresence>
-        {showModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowModal(false)}
-              className="absolute inset-0 bg-black/75 backdrop-blur-sm"
-            />
 
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="glass-card relative w-full max-w-md p-8 overflow-hidden shadow-2xl"
-            >
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setReceiptFile(null);
-                }}
-                className="absolute top-4 right-4 text-secondary hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-all"
-              >
-                <X size={18} />
-              </button>
-
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto mb-4">
-                <Crown size={26} className="fill-current" />
-              </div>
-              <h3 className="font-display text-xl font-black mb-4 text-center">Premium Obuna To'lovi</h3>
-              
-              <form onSubmit={handleSubmitReceipt} className="space-y-4 text-left">
-                <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-3">
-                  <p className="text-[10px] text-secondary font-bold uppercase tracking-widest">Karta raqami (P2P)</p>
-                  <div className="flex items-center justify-between bg-black/40 px-3 py-2.5 rounded-xl border border-white/5">
-                    <div>
-                      <code className="text-sm text-white font-mono select-all tracking-wider">9860 0101 3799 2664</code>
-                      <p className="text-[8px] text-secondary mt-0.5 uppercase font-bold">Zokirjonov Isfandiyor</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText("9860010137992664");
-                        alert("Karta raqami nusxalandi!");
-                      }}
-                      className="text-xs text-primary font-bold hover:underline"
-                    >
-                      Nusxalash
-                    </button>
-                  </div>
-
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="text-secondary">To'lov summasi:</span>
-                    <span className="font-black text-amber-400 text-sm">
-                      {PLANS.find(p => p.key === selectedPlan)?.price}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-[11px] text-secondary leading-relaxed bg-primary/5 border border-primary/10 p-3 rounded-xl">
-                  Har qanday to'lov ilovasi (Click, Payme, Uzum) orqali yuqoridagi kartaga to'lovni amalga oshiring va <span className="font-bold text-white">chek skrinshotini</span> pastda yuklang.
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-secondary block">To'lov Cheki (Skrinshot)</label>
-                  <div className="relative border border-dashed border-white/10 hover:border-primary/50 transition-colors rounded-2xl p-5 text-center cursor-pointer bg-black/20">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      required
-                      onChange={(e) => {
-                        if (e.target.files && e.target.files.length > 0) {
-                          setReceiptFile(e.target.files[0]);
-                        }
-                      }}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                    />
-                    {receiptFile ? (
-                      <div className="flex flex-col items-center justify-center space-y-1">
-                        <FileText size={20} className="text-primary" />
-                        <p className="text-xs font-bold text-white truncate max-w-xs">{receiptFile.name}</p>
-                        <p className="text-[9px] text-secondary">{(receiptFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center space-y-1 text-secondary">
-                        <Upload size={20} className="mx-auto" />
-                        <p className="text-xs font-bold">Chek rasmini yuklash</p>
-                        <p className="text-[9px] text-secondary/60">PNG, JPG (maks 5MB)</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-3 pt-2">
-                  <button
-                    type="button"
-                    disabled={submittingPayment}
-                    onClick={async () => {
-                      if (!user || !selectedPlan) return;
-                      setSubmittingPayment(true);
-                      try {
-                        const plan = PLANS.find(p => p.key === selectedPlan);
-                        const amountVal = parseFloat(plan?.price.replace(/[^\d]/g, '') || '0');
-                        
-                        const res = await fetch('/api/payments/wlcm/checkout', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            userId: user.id,
-                            itemType: 'PREMIUM',
-                            itemId: null,
-                            amount: amountVal,
-                            itemName: plan?.name
-                          })
-                        });
-
-                        const data = await res.json();
-                        if (data.checkoutUrl) {
-                          window.location.href = data.checkoutUrl;
-                        } else {
-                          alert(data.error || "WLCM to'lov shlyuzida xatolik.");
-                        }
-                      } catch (err: any) {
-                        alert(err.message || "To'lovga yo'naltirishda xatolik.");
-                      } finally {
-                        setSubmittingPayment(false);
-                      }
-                    }}
-                    className="w-full py-3.5 bg-gradient-to-r from-violet-600 via-indigo-600 to-purple-600 hover:from-violet-500 hover:to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-violet-500/25 active:scale-95"
-                  >
-                    <Zap size={16} className="text-amber-300 fill-current animate-pulse" />
-                    <span>⚡ WLCM Onlayn To'lov (Payme / Click / Uzcard / Humo)</span>
-                  </button>
-
-                  <div className="flex items-center gap-2 text-[10px] text-secondary/60 justify-center">
-                    <span className="h-px bg-white/10 flex-1" />
-                    <span>yoki qo'lda chek yuborish</span>
-                    <span className="h-px bg-white/10 flex-1" />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false);
-                      setReceiptFile(null);
-                    }}
-                    className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition-all border border-white/5"
-                  >
-                    Bekor qilish
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submittingPayment}
-                    className="flex-1 btn-primary py-3 text-xs font-bold flex items-center justify-center space-x-2"
-                  >
-                    {submittingPayment ? (
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      <span>Chekni yuborish</span>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
