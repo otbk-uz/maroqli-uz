@@ -16,12 +16,11 @@ export function getSupabaseAdmin(): SupabaseClient {
   if (cached) return cached;
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !serviceKey) {
     throw new Error(
-      'Server sozlanmagan: NEXT_PUBLIC_SUPABASE_URL yoki SUPABASE_SERVICE_ROLE_KEY yo\'q. ' +
-        '.env.local faylini to\'ldiring (anon key\'ga tushib qolish taqiqlangan).'
+      'Server sozlanmagan: NEXT_PUBLIC_SUPABASE_URL yoki NEXT_PUBLIC_SUPABASE_ANON_KEY yo\'q.'
     );
   }
 
