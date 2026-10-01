@@ -9,14 +9,16 @@ export interface WlcmCheckoutOptions {
 }
 
 export class WlcmPaymentClient {
-  private apiKey: string;
-  private apiSecret: string;
-  private baseUrl: string;
+  public apiKey: string;
+  public apiSecret: string;
+  public baseUrl: string;
+  public partnerId: string;
 
   constructor() {
-    this.apiKey = process.env.WLCM_API_KEY || "wlcm_47f3077b9b09a992349c6b3e8fb574d2";
+    this.apiKey = process.env.WLCM_API_KEY || "yACJatvvTMROaEQPHY-7SR_JKbhsJfKYugGtrXASFVeF_SgYFg8ADtf1uCecnB-3";
     this.apiSecret = process.env.WLCM_API_SECRET || "ca09112799c6af68674a3eb83ebfe964a27a1625543d632f";
-    this.baseUrl = process.env.WLCM_BASE_URL || "https://sandbox.wlcm.uz";
+    this.baseUrl = process.env.WLCM_BASE_URL || "https://apidev.wlcm.uz/api/v1";
+    this.partnerId = process.env.WLCM_PARTNER_ID || "67";
   }
 
   /**

@@ -23,6 +23,7 @@ function PaySimulateContent() {
   
   const { user, token, setAuth } = useAuthStore();
   
+  const [selectedProvider, setSelectedProvider] = useState<string>(providerParam || "payme");
   const [tx, setTx] = useState<TransactionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [step, setStep] = useState<"card" | "sms" | "success" | "error">("card");
@@ -33,6 +34,12 @@ function PaySimulateContent() {
   const [smsCode, setSmsCode] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  useEffect(() => {
+    if (providerParam) {
+      setSelectedProvider(providerParam);
+    }
+  }, [providerParam]);
 
   useEffect(() => {
     if (transactionId) {
@@ -51,9 +58,9 @@ function PaySimulateContent() {
         setTx({
           id: transactionId as any,
           amount: 9900,
-          provider: providerParam || "payme",
+          provider: selectedProvider,
           status: "PENDING",
-          description: "Maroqli.uz Instant Online Payment (WLCM / Payme / Click)"
+          description: "Maroqli.uz Instant Online Payment (WLCM / Multi-Provider)"
         });
         setLoading(false);
         return;
@@ -67,9 +74,9 @@ function PaySimulateContent() {
       setTx({
         id: transactionId as any,
         amount: 9900,
-        provider: providerParam || "payme",
+        provider: selectedProvider,
         status: "PENDING",
-        description: "Maroqli.uz Instant Online Payment (WLCM / Payme / Click)"
+        description: "Maroqli.uz Instant Online Payment (WLCM / Multi-Provider)"
       });
     } finally {
       setLoading(false);
@@ -98,7 +105,7 @@ function PaySimulateContent() {
     try {
       if (!tx) return;
 
-      if (String(transactionId).includes("order_wlcm_") || String(transactionId).startsWith("order_")) {
+      if (String(transactionId).includes("order_wlcm_") || String(transactionId).startsWith("order_") || selectedProvider === "paylov" || selectedProvider === "uzcard" || selectedProvider === "uzum" || selectedProvider === "wlcm") {
         await fetch('/api/payments/wlcm/webhook', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -116,9 +123,9 @@ function PaySimulateContent() {
         return;
       }
 
-      const mockExternalId = `mock-${providerParam}-${Date.now()}`;
+      const mockExternalId = `mock-${selectedProvider}-${Date.now()}`;
 
-      if (providerParam === "payme") {
+      if (selectedProvider === "payme") {
         const amountTiyins = Math.round(tx.amount * 100);
         
         // Step 1: CheckPerformTransaction
@@ -167,7 +174,7 @@ function PaySimulateContent() {
           throw new Error(performRes.data.error.message?.uz || "Payme to'lovni bajarishda xatolik.");
         }
 
-      } else if (providerParam === "click") {
+      } else if (selectedProvider === "click") {
         // Step 1: Prepare action=0
         const prepareRes = await api.post("/payments/callback/click/", {
           click_trans_id: mockExternalId,
@@ -222,9 +229,36 @@ function PaySimulateContent() {
     );
   }
 
-  const isPayme = providerParam === "payme";
-  const themeColor = isPayme ? "from-[#00c9c9] to-[#00aeae]" : "from-[#00a5ff] to-[#008be5]";
-  const brandName = isPayme ? "Payme" : "Click";
+  const getProviderConfig = (p: string) => {
+    switch (p) {
+      case "click":
+        return { name: "Click", color: "from-[#00a5ff] to-[#008be5]", badge: "Click Pass / Card" };
+      case "uzcard":
+        return { name: "Uzcard / Humo", color: "from-[#6366f1] to-[#4f46e5]", badge: "Milliy Kartalar" };
+      case "uzum":
+        return { name: "Uzum Pay", color: "from-[#7c3aed] to-[#6d28d9]", badge: "Uzum Nasiya / Bank" };
+      case "paylov":
+        return { name: "Paylov", color: "from-[#06b6d4] to-[#0891b2]", badge: "Paylov Gateway" };
+      case "wlcm":
+        return { name: "WLCM API", color: "from-[#f59e0b] to-[#d97706]", badge: "Direct WLCM Sandbox" };
+      case "payme":
+      default:
+        return { name: "Payme", color: "from-[#00c9c9] to-[#00aeae]", badge: "Payme Online" };
+    }
+  };
+
+  const currentProvider = getProviderConfig(selectedProvider);
+  const themeColor = currentProvider.color;
+  const brandName = currentProvider.name;
+
+  const providersList = [
+    { id: "payme", name: "Payme", color: "bg-[#00c9c9]/20 text-[#00c9c9] border-[#00c9c9]/30" },
+    { id: "click", name: "Click", color: "bg-[#00a5ff]/20 text-[#00a5ff] border-[#00a5ff]/30" },
+    { id: "uzcard", name: "Uzcard/Humo", color: "bg-[#6366f1]/20 text-[#818cf8] border-[#6366f1]/30" },
+    { id: "uzum", name: "Uzum", color: "bg-[#7c3aed]/20 text-[#a78bfa] border-[#7c3aed]/30" },
+    { id: "paylov", name: "Paylov", color: "bg-[#06b6d4]/20 text-[#22d3ee] border-[#06b6d4]/30" },
+    { id: "wlcm", name: "WLCM", color: "bg-[#f59e0b]/20 text-[#fbbf24] border-[#f59e0b]/30" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#0d0d0f] flex items-center justify-center p-4 text-white font-sans">
@@ -244,14 +278,39 @@ function PaySimulateContent() {
             </button>
 
             <div className="text-center mb-6">
-              <span className="text-xs opacity-50 uppercase tracking-widest">Simulyatsiya to'lovi</span>
+              <span className="text-xs opacity-50 uppercase tracking-widest">To'lov Tizimini Tanlang</span>
               <h2 className="text-2xl font-bold mt-1 flex items-center justify-center gap-2">
                 {brandName} Checkout
               </h2>
+              
+              {/* Payment Provider Selection Tabs */}
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                {providersList.map((p) => {
+                  const isActive = selectedProvider === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setSelectedProvider(p.id)}
+                      className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all flex flex-col items-center justify-center gap-1 ${
+                        isActive
+                          ? `${p.color} ring-2 ring-white/20 shadow-md scale-105`
+                          : "bg-white/[0.03] text-secondary border-white/5 hover:border-white/20 hover:text-white"
+                      }`}
+                    >
+                      <span>{p.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="mt-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 inline-block w-full">
                 <p className="text-xs text-secondary">To'lov miqdori:</p>
                 <p className="text-2xl font-extrabold tracking-tight mt-1 text-white">{tx.amount.toLocaleString()} UZS</p>
                 <p className="text-[11px] text-secondary/60 mt-1">{tx.description}</p>
+                <span className="mt-2 inline-block text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-white/10 text-white/80">
+                  {currentProvider.badge}
+                </span>
               </div>
             </div>
 
