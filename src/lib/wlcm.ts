@@ -6,6 +6,7 @@ export interface WlcmCheckoutOptions {
   currency?: string;
   description: string;
   returnUrl: string;
+  paymentProvider?: string;
 }
 
 export class WlcmPaymentClient {
@@ -46,15 +47,17 @@ export class WlcmPaymentClient {
    */
   public async createCheckoutSession(options: WlcmCheckoutOptions) {
     const path = "/integrations/checkout";
+    const amountTiyin = Math.round(options.amount * 100);
     const body = {
       external_id: options.externalId,
-      amount: options.amount,
+      amount: amountTiyin,
       currency: options.currency || "UZS",
       description: options.description,
-      return_url: options.returnUrl
+      return_url: options.returnUrl,
+      payment_provider: options.paymentProvider || "payme"
     };
 
-    const officialWlcmCheckoutUrl = `https://sandbox.wlcm.uz/checkout/${options.externalId}?partner_id=${this.partnerId}&token=${this.apiKey}&amount=${options.amount}&return_url=${encodeURIComponent(options.returnUrl)}`;
+    const officialWlcmCheckoutUrl = `https://sandbox.wlcm.uz/checkout/${options.externalId}?partner_id=${this.partnerId}&token=${this.apiKey}&amount=${amountTiyin}&payment_provider=${options.paymentProvider || 'payme'}&return_url=${encodeURIComponent(options.returnUrl)}`;
 
     try {
       const headers = this.signRequest("POST", "/api/v1/integrations/checkout", body);
