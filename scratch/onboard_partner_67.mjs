@@ -1,31 +1,38 @@
 const token = "yACJatvvTMROaEQPHY-7SR_JKbhsJfKYugGtrXASFVeF_SgYFg8ADtf1uCecnB-3";
-const baseUrl = "https://sandbox.wlcm.uz";
+const partnerId = "67";
 
-async function onboard67() {
-  console.log("1. Verifying Token for Partner 67...");
-  const verifyUrl = `${baseUrl}/api/v1/partners/onboarding/?token=${token}`;
-  const vRes = await fetch(verifyUrl);
-  const vData = await vRes.json();
-  console.log("Verify Response (Status " + vRes.status + "):", vData);
+const endpoints = [
+  "/onboarding",
+  "/onboarding/start",
+  "/partners/onboarding",
+  "/auth/token",
+  "/auth/partner",
+  "/integrations/checkout",
+  "/checkout"
+];
 
-  console.log("\n2. Requesting Partner 67 API Credentials...");
-  const partnerUsername = "maroqli_official_67";
-  const partnerPassword = "MaroqliPartner67!SecurePass";
-
-  const pRes = await fetch(verifyUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json"
-    },
-    body: JSON.stringify({
-      username: partnerUsername,
-      password: partnerPassword
-    })
-  });
-
-  const pData = await pRes.json();
-  console.log("Credentials Response (Status " + pRes.status + "):", pData);
+async function testEndpoint(path) {
+  const url = `https://apidev.wlcm.uz/api/v1${path}`;
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "X-API-Key": token,
+        "X-Partner-ID": partnerId
+      }
+    });
+    const text = await res.text();
+    console.log(`${path}: Status ${res.status} -> ${text.substring(0, 150)}`);
+  } catch (e) {
+    console.log(`${path}: Error ${e.message}`);
+  }
 }
 
-onboard67();
+async function run() {
+  for (const ep of endpoints) {
+    await testEndpoint(ep);
+  }
+}
+
+run();

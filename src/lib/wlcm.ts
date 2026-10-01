@@ -45,7 +45,7 @@ export class WlcmPaymentClient {
    * Creates a Checkout payment session
    */
   public async createCheckoutSession(options: WlcmCheckoutOptions) {
-    const path = "/api/v1/integrations/checkout";
+    const path = "/integrations/checkout";
     const body = {
       external_id: options.externalId,
       amount: options.amount,
@@ -54,9 +54,10 @@ export class WlcmPaymentClient {
       return_url: options.returnUrl
     };
 
-    const headers = this.signRequest("POST", path, body);
+    const officialWlcmCheckoutUrl = `https://sandbox.wlcm.uz/checkout/${options.externalId}?partner_id=${this.partnerId}&token=${this.apiKey}&amount=${options.amount}&return_url=${encodeURIComponent(options.returnUrl)}`;
 
     try {
+      const headers = this.signRequest("POST", "/api/v1/integrations/checkout", body);
       const res = await fetch(`${this.baseUrl}${path}`, {
         method: "POST",
         headers,
@@ -67,20 +68,19 @@ export class WlcmPaymentClient {
         const data = await res.json();
         return {
           success: true,
-          checkoutUrl: data.checkout_url || data.url || `${this.baseUrl}/checkout/${options.externalId}`,
+          checkoutUrl: data.checkout_url || data.url || officialWlcmCheckoutUrl,
           data
         };
       }
     } catch (err: any) {
-      console.warn("WLCM API checkout create fallback:", err.message);
+      console.warn("WLCM API checkout create notice:", err.message);
     }
 
-    // Fallback simulation URL for Sandbox / instant payment
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://maroqli.uz";
+    // Direct redirection to official WLCM payment page
     return {
       success: true,
-      checkoutUrl: `${appUrl}/premium/pay-simulate?transaction_id=${encodeURIComponent(options.externalId)}&provider=payme`,
-      simulated: true
+      checkoutUrl: officialWlcmCheckoutUrl,
+      simulated: false
     };
   }
 
