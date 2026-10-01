@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle, CalendarPlus } from "lucide-react";
+import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle, CalendarPlus, Layers, ShieldCheck, Flame } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
@@ -24,6 +24,8 @@ interface StoreGame {
   rating: number;
   language: string;
   description: string;
+  demo_url?: string | null;
+  download_url?: string | null;
 }
 
 const GamesPage = () => {
@@ -184,19 +186,11 @@ const GamesPage = () => {
     const fetchGames = async () => {
       setLoading(true);
       try {
-        let query = supabase
+        const { data, error } = await supabase
           .from('developed_games')
           .select('*, profiles:developer_id(username, full_name)')
           .order('created_at', { ascending: false });
 
-        if (filter !== "ALL" && filter !== "DEMO") {
-          query = query.eq('platform', filter);
-        }
-        if (debouncedSearch) {
-          query = query.ilike('title', `%${debouncedSearch}%`);
-        }
-
-        const { data, error } = await query;
         if (error) throw error;
 
         if (data) {
@@ -215,6 +209,8 @@ const GamesPage = () => {
             rating: g.rating || 5.0,
             language: g.language || 'O\'zbek',
             description: g.description,
+            demo_url: g.demo_url || null,
+            download_url: g.download_url || null,
           }));
           setGames(mappedGames as any);
         }
@@ -225,20 +221,32 @@ const GamesPage = () => {
       }
     };
     fetchGames();
-  }, [filter, debouncedSearch]);
+  }, []);
 
   const platformTabs = [
-    { value: "ALL", label: t("all_platforms", "Barcha platformalar") },
-    { value: "WEB", label: t("web_games", "🌐 Onlayn (Brauzer)") },
-    { value: "DEMO", label: "🎮 Demo O'yinlar" },
-    { value: "PC", label: t("pc_games", "PC o'yinlar") },
-    { value: "MOBILE", label: t("mobile_games", "Mobil o'yinlar") },
+    { value: "ALL", label: t("all_platforms", "⚡ Barcha O'yinlar") },
+    { value: "WEB", label: t("web_games", "🌐 Web Onlayn (Brauzer)") },
+    { value: "DEMO", label: t("demo_games", "🎮 Demo & Bepul Sinov") },
+    { value: "PREMIUM", label: t("premium_games", "💎 Pullik & PRO") },
+    { value: "PC", label: t("pc_games", "💻 PC O'yinlar") },
+    { value: "MOBILE", label: t("mobile_games", "📱 Mobil O'yinlar") },
   ];
 
+  // Separate playists for neat presentation
+  const webGames = games.filter(g => g.platform === "WEB");
+  const demoGames = games.filter(g => Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB"));
+  const premiumGames = games.filter(g => Number(g.price) > 0);
+
   const displayedGames = games.filter(g => {
-    if (filter === "DEMO") {
-      return Number(g.price) === 0 || g.platform === "WEB";
+    if (debouncedSearch) {
+      return g.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+             g.developer_details.username.toLowerCase().includes(debouncedSearch.toLowerCase());
     }
+    if (filter === "WEB") return g.platform === "WEB";
+    if (filter === "DEMO") return Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB");
+    if (filter === "PREMIUM") return Number(g.price) > 0;
+    if (filter === "PC") return g.platform === "PC";
+    if (filter === "MOBILE") return g.platform === "MOBILE";
     return true;
   });
 
@@ -263,7 +271,7 @@ const GamesPage = () => {
             >
               <Gamepad2 size={14} />
               <span className="font-display uppercase tracking-[0.2em] text-[11px]">
-                {t("games_store_badge", "Gaming do'koni")}
+                {t("games_store_badge", "Gaming katalogi")}
               </span>
             </motion.div>
             <motion.h1
@@ -279,7 +287,7 @@ const GamesPage = () => {
               transition={{ delay: 0.1 }}
               className="text-secondary text-base md:text-lg mt-4 leading-relaxed"
             >
-              {t("games_desc", "Mahalliy va xalqaro o'yinlarni sotib oling")}
+              {t("games_desc", "Mahalliy va xalqaro o'yinlarni saralangan tartibda o'ynang va sotib oling")}
             </motion.p>
           </div>
 
@@ -295,22 +303,22 @@ const GamesPage = () => {
           </div>
         </div>
 
-        {/* Web Games Playlist (Carousel) */}
-        {!loading && games.filter(g => g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
-          <div className="mb-10 bg-gradient-to-r from-violet/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/20 shadow-glow-violet relative overflow-hidden">
+        {/* Playlist 1: Web Games Playlist (Carousel) */}
+        {!loading && webGames.length > 0 && filter === "ALL" && !debouncedSearch && (
+          <section className="mb-12 bg-gradient-to-r from-violet/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/30 shadow-glow-violet relative overflow-hidden">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-violet/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet/20 border border-violet/30 text-violet text-[10px] font-black uppercase tracking-wider mb-2">
-                  <Sparkles size={12} /> Exkluziv brauzer pleylisti
+                  <Sparkles size={12} /> Exkluziv Onlayn To'plam
                 </div>
                 <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
                   <Globe className="text-violet animate-pulse" size={28} /> 
-                  <span>{t("web_games_playlist", "Web O'yinlar Playlitsi")}</span>
+                  <span>🌐 WEB O'YINLAR PLAYLISTI ({webGames.length})</span>
                 </h2>
                 <p className="text-secondary text-xs mt-1">
-                  Yuklab olmasdan brauzerning o'zida bepul o'ynashingiz mumkin bo'lgan onlayn o'yinlar to'plami.
+                  Yuklab olish talab etilmaydigan, to'g'ridan-to mezoniy brauzeringizda bepul o'ynaladigan o'yinlar.
                 </p>
               </div>
 
@@ -318,14 +326,14 @@ const GamesPage = () => {
                 onClick={() => setFilter("WEB")}
                 className="self-start sm:self-auto px-4 py-2 bg-violet/20 hover:bg-violet text-violet hover:text-white border border-violet/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
               >
-                <span>Barchasini ko'rish</span>
+                <span>Barchasini ko'rish ({webGames.length})</span>
                 <ArrowRight size={14} />
               </button>
             </div>
             
-            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-2 snap-x relative z-10">
-              {games.filter(g => g.platform === "WEB").map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[330px] max-w-[330px] shrink-0 snap-start">
+            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
+              {webGames.map((game) => (
+                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
                   <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-violet/50 hover:shadow-glow-violet transition-all duration-300">
                     <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
                       {game.cover ? (
@@ -382,25 +390,25 @@ const GamesPage = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Demo Games Playlist (Carousel) */}
-        {!loading && games.filter(g => Number(g.price) === 0 || g.platform === "WEB").length > 0 && filter === "ALL" && !debouncedSearch && (
-          <div className="mb-14 bg-gradient-to-r from-emerald-500/10 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-emerald-500/20 shadow-glow relative overflow-hidden">
+        {/* Playlist 2: Demo & Trial Games Playlist (Carousel) */}
+        {!loading && demoGames.length > 0 && filter === "ALL" && !debouncedSearch && (
+          <section className="mb-12 bg-gradient-to-r from-emerald-500/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-emerald-500/30 shadow-glow relative overflow-hidden">
             <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-2">
-                  <Sparkles size={12} /> Bepul Sinov To'plami
+                  <Sparkles size={12} /> Bepul Sinovlar
                 </div>
                 <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
                   <Gamepad2 className="text-emerald-400 animate-pulse" size={28} /> 
-                  <span>Demo O'yinlar Playlitsi</span>
+                  <span>🎮 DEMO VA BEPUL O'YINLAR PLAYLISTI ({demoGames.length})</span>
                 </h2>
                 <p className="text-secondary text-xs mt-1">
-                  Har bir o'yinni sinab ko'rishingiz uchun bepul va demo versiyalar jamlangan playlist.
+                  Xarid qilishdan oldin bepul sinab ko'rishingiz mumkin bo'lgan o'yin demo versiyalari va bepul loyihalar.
                 </p>
               </div>
 
@@ -408,14 +416,14 @@ const GamesPage = () => {
                 onClick={() => setFilter("DEMO")}
                 className="self-start sm:self-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
               >
-                <span>Barchasini ko'rish</span>
+                <span>Barchasini ko'rish ({demoGames.length})</span>
                 <ArrowRight size={14} />
               </button>
             </div>
             
-            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-2 snap-x relative z-10">
-              {games.filter(g => Number(g.price) === 0 || g.platform === "WEB").map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[330px] max-w-[330px] shrink-0 snap-start">
+            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
+              {demoGames.map((game) => (
+                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
                   <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-emerald-500/50 hover:shadow-glow transition-all duration-300">
                     <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
                       {game.cover ? (
@@ -459,11 +467,11 @@ const GamesPage = () => {
                             <ShoppingCart size={14} />
                           </Link>
                           <Link
-                            href={game.platform === "WEB" ? (isAuthenticated ? `/games/play/${game.slug}` : `/login?redirect=/games/play/${game.slug}`) : `/games/${game.id}`}
+                            href={`/games/${game.id}`}
                             className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-glow active:scale-95"
                           >
                             <PlayCircle size={15} />
-                            <span>{game.platform === "WEB" ? "O'ynash" : "Sinash"}</span>
+                            <span>Demo Sinash</span>
                           </Link>
                         </div>
                       </div>
@@ -472,7 +480,93 @@ const GamesPage = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </section>
+        )}
+
+        {/* Playlist 3: Premium & Paid Games Playlist (Carousel) */}
+        {!loading && premiumGames.length > 0 && filter === "ALL" && !debouncedSearch && (
+          <section className="mb-14 bg-gradient-to-r from-amber-500/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-glow-amber relative overflow-hidden">
+            <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mb-2">
+                  <Crown size={12} className="fill-current" /> Premium Exkluzivlar
+                </div>
+                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
+                  <Flame className="text-amber-400 animate-pulse" size={28} /> 
+                  <span>💎 PULLIK VA PRO O'YINLAR PLAYLISTI ({premiumGames.length})</span>
+                </h2>
+                <p className="text-secondary text-xs mt-1">
+                  Mualliflik o'yinlari, premium grafikali va PRO foydalanuvchilar uchun maxsus chegirmali o'yinlar.
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setFilter("PREMIUM")}
+                className="self-start sm:self-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-black border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
+              >
+                <span>Barchasini ko'rish ({premiumGames.length})</span>
+                <ArrowRight size={14} />
+              </button>
+            </div>
+            
+            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
+              {premiumGames.map((game) => (
+                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
+                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-amber-500/50 hover:shadow-glow-amber transition-all duration-300">
+                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
+                      {game.cover ? (
+                        <img
+                          src={game.cover}
+                          alt={game.title}
+                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-amber-500/30 via-black/80 to-black flex items-center justify-center">
+                          <Crown size={48} className="text-amber-400/40" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
+                      <div className="absolute top-3 left-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow border border-amber-400/30">
+                        <Crown size={11} className="fill-current" /> PULLIK O'YIN
+                      </div>
+                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star size={11} className="text-amber-400 fill-amber-400" />
+                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
+                      </div>
+                    </div>
+
+                    <div className="p-5 flex flex-col flex-1">
+                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
+                        Dev: @{game.developer_details.username}
+                      </p>
+                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-amber-400 transition-colors">{game.title}</h3>
+                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
+                        {game.description}
+                      </p>
+
+                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                        <div>
+                          <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-0.5">Narxi</p>
+                          <p className="font-display text-base font-black text-amber-400 tabular-nums">
+                            {Number(game.price).toLocaleString()} UZS
+                          </p>
+                        </div>
+                        <Link
+                          href={`/games/${game.id}`}
+                          className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:scale-95"
+                        >
+                          <ShoppingCart size={15} />
+                          <span>Sotib olish</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Filter row */}
@@ -497,15 +591,31 @@ const GamesPage = () => {
               </button>
             ))}
           </div>
-          {!loading && games.length > 0 && (
+          {!loading && (
             <div className="flex items-center gap-2 text-secondary pr-2">
               <Sparkles size={15} className="text-violet" />
               <span className="font-display text-xs font-bold uppercase tracking-[0.18em]">
-                {games.length} {t("games_count_label", "ta o'yin")}
+                {displayedGames.length} {t("games_count_label", "ta o'yin")}
               </span>
             </div>
           )}
         </motion.div>
+
+        {/* Catalog Section Header when filtering */}
+        {filter !== "ALL" && (
+          <div className="mb-6">
+            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2 font-display">
+              <Layers className="text-primary" size={22} />
+              <span>
+                {filter === "WEB" && "🌐 Web Onlayn O'yinlar"}
+                {filter === "DEMO" && "🎮 Demo va Bepul O'yinlar"}
+                {filter === "PREMIUM" && "💎 Pullik va Premium O'yinlar"}
+                {filter === "PC" && "💻 PC O'yinlar"}
+                {filter === "MOBILE" && "📱 Mobil O'yinlar"}
+              </span>
+            </h2>
+          </div>
+        )}
 
         {loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
