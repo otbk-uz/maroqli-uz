@@ -223,19 +223,23 @@ const GamesPage = () => {
     fetchGames();
   }, []);
 
-  const platformTabs = [
-    { value: "ALL", label: t("all_platforms", "⚡ Barcha O'yinlar") },
-    { value: "WEB", label: t("web_games", "🌐 Web Onlayn (Brauzer)") },
-    { value: "DEMO", label: t("demo_games", "🎮 Demo & Bepul Sinov") },
-    { value: "PREMIUM", label: t("premium_games", "💎 Pullik & PRO") },
-    { value: "PC", label: t("pc_games", "💻 PC O'yinlar") },
-    { value: "MOBILE", label: t("mobile_games", "📱 Mobil O'yinlar") },
-  ];
+  const counts = {
+    ALL: games.length,
+    WEB: games.filter(g => g.platform === "WEB").length,
+    DEMO: games.filter(g => Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB")).length,
+    PREMIUM: games.filter(g => Number(g.price) > 0).length,
+    PC: games.filter(g => g.platform === "PC").length,
+    MOBILE: games.filter(g => g.platform === "MOBILE").length,
+  };
 
-  // Separate playists for neat presentation
-  const webGames = games.filter(g => g.platform === "WEB");
-  const demoGames = games.filter(g => Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB"));
-  const premiumGames = games.filter(g => Number(g.price) > 0);
+  const platformTabs = [
+    { value: "ALL", label: "⚡ Barcha O'yinlar", count: counts.ALL },
+    { value: "WEB", label: "🌐 Web Onlayn", count: counts.WEB },
+    { value: "DEMO", label: "🎮 Demo & Sinov", count: counts.DEMO },
+    { value: "PREMIUM", label: "💎 Pullik & PRO", count: counts.PREMIUM },
+    { value: "PC", label: "💻 PC O'yinlar", count: counts.PC },
+    { value: "MOBILE", label: "📱 Mobil O'yinlar", count: counts.MOBILE },
+  ];
 
   const displayedGames = games.filter(g => {
     if (debouncedSearch) {
@@ -256,38 +260,38 @@ const GamesPage = () => {
       <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_50%_-10%,rgba(255,51,85,0.16),transparent_60%)]" />
       <div className="absolute inset-x-0 top-0 h-[540px] -z-10 bg-[radial-gradient(circle_at_15%_0%,rgba(139,92,246,0.12),transparent_55%)]" />
 
-      <div className="container-app pt-28 pb-24 relative z-10">
+      <div className="container-app pt-28 pb-24 relative z-10 max-w-7xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <BackButton />
         </div>
 
         {/* Page header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div className="max-w-2xl">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="chip mb-5 border-violet/25 bg-violet/10 text-violet"
+              className="chip mb-4 border-violet/25 bg-violet/10 text-violet"
             >
               <Gamepad2 size={14} />
               <span className="font-display uppercase tracking-[0.2em] text-[11px]">
-                {t("games_store_badge", "Gaming katalogi")}
+                {t("games_store_badge", "Gaming Katalogi")}
               </span>
             </motion.div>
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="font-display text-4xl md:text-6xl font-black text-white tracking-tight leading-[1.05] uppercase"
+              className="font-display text-3xl md:text-5xl font-black text-white tracking-tight leading-[1.05] uppercase"
             >
-              {t("games_title", "O'yinlar do'koni")}
+              O'yinlar Katalogi
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-secondary text-base md:text-lg mt-4 leading-relaxed"
+              className="text-secondary text-sm md:text-base mt-2 leading-relaxed opacity-90"
             >
-              {t("games_desc", "Mahalliy va xalqaro o'yinlarni saralangan tartibda o'ynang va sotib oling")}
+              Tartiblangan toza va qulay katalog orqali o'yinlarni o'ynang va sotib oling
             </motion.p>
           </div>
 
@@ -303,333 +307,58 @@ const GamesPage = () => {
           </div>
         </div>
 
-        {/* Playlist 1: Web Games Playlist (Carousel) */}
-        {!loading && webGames.length > 0 && filter === "ALL" && !debouncedSearch && (
-          <section className="mb-12 bg-gradient-to-r from-violet/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-violet/30 shadow-glow-violet relative overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-violet/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet/20 border border-violet/30 text-violet text-[10px] font-black uppercase tracking-wider mb-2">
-                  <Sparkles size={12} /> Exkluziv Onlayn To'plam
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
-                  <Globe className="text-violet animate-pulse" size={28} /> 
-                  <span>🌐 WEB O'YINLAR PLAYLISTI ({webGames.length})</span>
-                </h2>
-                <p className="text-secondary text-xs mt-1">
-                  Yuklab olish talab etilmaydigan, to'g'ridan-to mezoniy brauzeringizda bepul o'ynaladigan o'yinlar.
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setFilter("WEB")}
-                className="self-start sm:self-auto px-4 py-2 bg-violet/20 hover:bg-violet text-violet hover:text-white border border-violet/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
-              >
-                <span>Barchasini ko'rish ({webGames.length})</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-            
-            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
-              {webGames.map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
-                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-violet/50 hover:shadow-glow-violet transition-all duration-300">
-                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
-                      {game.cover ? (
-                        <img
-                          src={game.cover}
-                          alt={game.title}
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-violet/30 via-black/80 to-black flex items-center justify-center">
-                          <Gamepad2 size={48} className="text-violet/40" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
-                      <div className="absolute top-3 left-3 bg-violet text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow-violet border border-violet/30">
-                        <Globe size={11} /> WEB ONLINE
-                      </div>
-                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <Star size={11} className="text-amber-400 fill-amber-400" />
-                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-5 flex flex-col flex-1">
-                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
-                        Dev: @{game.developer_details.username}
-                      </p>
-                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-violet transition-colors">{game.title}</h3>
-                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
-                        {game.description}
-                      </p>
-
-                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-xs font-black text-emerald-400 font-display">BEPUL</span>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/games/${game.id}`}
-                            className="p-2.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white rounded-xl transition-colors border border-white/10"
-                            title="Tafsilotlar"
-                          >
-                            <ShoppingCart size={14} />
-                          </Link>
-                          <Link
-                            href={isAuthenticated ? `/games/play/${game.slug}` : `/login?redirect=/games/play/${game.slug}`}
-                            className="px-4 py-2.5 bg-violet hover:bg-violet/90 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-glow-violet active:scale-95"
-                          >
-                            <PlayCircle size={15} />
-                            <span>O'ynash</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Playlist 2: Demo & Trial Games Playlist (Carousel) */}
-        {!loading && demoGames.length > 0 && filter === "ALL" && !debouncedSearch && (
-          <section className="mb-12 bg-gradient-to-r from-emerald-500/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-emerald-500/30 shadow-glow relative overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-wider mb-2">
-                  <Sparkles size={12} /> Bepul Sinovlar
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
-                  <Gamepad2 className="text-emerald-400 animate-pulse" size={28} /> 
-                  <span>🎮 DEMO VA BEPUL O'YINLAR PLAYLISTI ({demoGames.length})</span>
-                </h2>
-                <p className="text-secondary text-xs mt-1">
-                  Xarid qilishdan oldin bepul sinab ko'rishingiz mumkin bo'lgan o'yin demo versiyalari va bepul loyihalar.
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setFilter("DEMO")}
-                className="self-start sm:self-auto px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-white border border-emerald-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
-              >
-                <span>Barchasini ko'rish ({demoGames.length})</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-            
-            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
-              {demoGames.map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
-                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-emerald-500/50 hover:shadow-glow transition-all duration-300">
-                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
-                      {game.cover ? (
-                        <img
-                          src={game.cover}
-                          alt={game.title}
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-emerald-500/30 via-black/80 to-black flex items-center justify-center">
-                          <Gamepad2 size={48} className="text-emerald-400/40" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
-                      <div className="absolute top-3 left-3 bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow border border-emerald-400/30">
-                        <Gamepad2 size={11} /> DEMO / BEPUL
-                      </div>
-                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <Star size={11} className="text-amber-400 fill-amber-400" />
-                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-5 flex flex-col flex-1">
-                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
-                        Dev: @{game.developer_details.username}
-                      </p>
-                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-emerald-400 transition-colors">{game.title}</h3>
-                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
-                        {game.description}
-                      </p>
-
-                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-xs font-black text-emerald-400 font-display">BEPUL / DEMO</span>
-                        <div className="flex items-center gap-2">
-                          <Link
-                            href={`/games/${game.id}`}
-                            className="p-2.5 bg-white/5 hover:bg-white/10 text-secondary hover:text-white rounded-xl transition-colors border border-white/10"
-                            title="Tafsilotlar"
-                          >
-                            <ShoppingCart size={14} />
-                          </Link>
-                          <Link
-                            href={`/games/${game.id}`}
-                            className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-glow active:scale-95"
-                          >
-                            <PlayCircle size={15} />
-                            <span>Demo Sinash</span>
-                          </Link>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Playlist 3: Premium & Paid Games Playlist (Carousel) */}
-        {!loading && premiumGames.length > 0 && filter === "ALL" && !debouncedSearch && (
-          <section className="mb-14 bg-gradient-to-r from-amber-500/15 via-white/[0.02] to-transparent p-6 md:p-8 rounded-3xl border border-amber-500/30 shadow-glow-amber relative overflow-hidden">
-            <div className="absolute -right-20 -top-20 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
-              <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[10px] font-black uppercase tracking-wider mb-2">
-                  <Crown size={12} className="fill-current" /> Premium Exkluzivlar
-                </div>
-                <h2 className="text-2xl md:text-3xl font-black text-white flex items-center gap-2.5 uppercase font-display tracking-tight">
-                  <Flame className="text-amber-400 animate-pulse" size={28} /> 
-                  <span>💎 PULLIK VA PRO O'YINLAR PLAYLISTI ({premiumGames.length})</span>
-                </h2>
-                <p className="text-secondary text-xs mt-1">
-                  Mualliflik o'yinlari, premium grafikali va PRO foydalanuvchilar uchun maxsus chegirmali o'yinlar.
-                </p>
-              </div>
-
-              <button 
-                onClick={() => setFilter("PREMIUM")}
-                className="self-start sm:self-auto px-4 py-2 bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-black border border-amber-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm active:scale-95 shrink-0"
-              >
-                <span>Barchasini ko'rish ({premiumGames.length})</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-            
-            <div className="flex overflow-x-auto no-scrollbar gap-5 pb-3 snap-x relative z-10">
-              {premiumGames.map((game) => (
-                <div key={game.id} className="min-w-[280px] md:min-w-[320px] max-w-[320px] shrink-0 snap-start">
-                  <div className="card-interactive bg-background/80 border border-white/10 overflow-hidden group h-full flex flex-col hover:border-amber-500/50 hover:shadow-glow-amber transition-all duration-300">
-                    <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
-                      {game.cover ? (
-                        <img
-                          src={game.cover}
-                          alt={game.title}
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-amber-500/30 via-black/80 to-black flex items-center justify-center">
-                          <Crown size={48} className="text-amber-400/40" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
-                      <div className="absolute top-3 left-3 bg-amber-500 text-black text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow border border-amber-400/30">
-                        <Crown size={11} className="fill-current" /> PULLIK O'YIN
-                      </div>
-                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                        <Star size={11} className="text-amber-400 fill-amber-400" />
-                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(game.rating).toFixed(1)}</span>
-                      </div>
-                    </div>
-
-                    <div className="p-5 flex flex-col flex-1">
-                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider truncate mb-1">
-                        Dev: @{game.developer_details.username}
-                      </p>
-                      <h3 className="text-lg font-black text-white mb-2 truncate group-hover:text-amber-400 transition-colors">{game.title}</h3>
-                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed opacity-85 mb-5">
-                        {game.description}
-                      </p>
-
-                      <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                        <div>
-                          <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-0.5">Narxi</p>
-                          <p className="font-display text-base font-black text-amber-400 tabular-nums">
-                            {Number(game.price).toLocaleString()} UZS
-                          </p>
-                        </div>
-                        <Link
-                          href={`/games/${game.id}`}
-                          className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-lg active:scale-95"
-                        >
-                          <ShoppingCart size={15} />
-                          <span>Sotib olish</span>
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Filter row */}
+        {/* Clean Filter Tabs Bar */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="flex flex-wrap items-center justify-between gap-4 glass-card p-3 md:p-4 mb-8"
+          className="flex flex-wrap items-center justify-between gap-4 glass-card p-2.5 md:p-3 mb-8 border-white/10"
         >
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar p-1">
             {platformTabs.map((p) => (
               <button
                 key={p.value}
                 onClick={() => setFilter(p.value)}
-                className={`px-5 py-2.5 rounded-full font-display text-[11px] font-bold uppercase tracking-[0.15em] transition-all whitespace-nowrap ${
+                className={`px-4 py-2 rounded-xl font-display text-[11px] font-bold uppercase tracking-[0.12em] transition-all whitespace-nowrap flex items-center gap-2 ${
                   filter === p.value
                     ? "bg-primary text-white shadow-glow"
                     : "text-secondary hover:text-white hover:bg-white/5"
                 }`}
               >
-                {p.label}
+                <span>{p.label}</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                  filter === p.value ? "bg-white/20 text-white" : "bg-white/10 text-secondary"
+                }`}>
+                  {p.count}
+                </span>
               </button>
             ))}
           </div>
+
           {!loading && (
-            <div className="flex items-center gap-2 text-secondary pr-2">
-              <Sparkles size={15} className="text-violet" />
-              <span className="font-display text-xs font-bold uppercase tracking-[0.18em]">
-                {displayedGames.length} {t("games_count_label", "ta o'yin")}
+            <div className="flex items-center gap-2 text-secondary pr-2 shrink-0">
+              <Sparkles size={14} className="text-violet" />
+              <span className="font-display text-xs font-bold uppercase tracking-[0.15em]">
+                {displayedGames.length} ta o'yin
               </span>
             </div>
           )}
         </motion.div>
 
-        {/* Catalog Section Header when filtering */}
-        {filter !== "ALL" && (
-          <div className="mb-6">
-            <h2 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight flex items-center gap-2 font-display">
-              <Layers className="text-primary" size={22} />
-              <span>
-                {filter === "WEB" && "🌐 Web Onlayn O'yinlar"}
-                {filter === "DEMO" && "🎮 Demo va Bepul O'yinlar"}
-                {filter === "PREMIUM" && "💎 Pullik va Premium O'yinlar"}
-                {filter === "PC" && "💻 PC O'yinlar"}
-                {filter === "MOBILE" && "📱 Mobil O'yinlar"}
-              </span>
-            </h2>
-          </div>
-        )}
-
+        {/* Catalog Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {[0, 1, 2, 3, 4, 5].map((n) => (
-              <div key={n} className="glass-card overflow-hidden flex flex-col h-full">
+              <div key={n} className="glass-card overflow-hidden flex flex-col h-full border-white/5">
                 <div className="skeleton aspect-[16/10] rounded-none" />
-                <div className="p-7 space-y-4">
+                <div className="p-6 space-y-3">
                   <div className="skeleton h-3 w-24" />
-                  <div className="skeleton h-6 w-2/3" />
+                  <div className="skeleton h-5 w-2/3" />
                   <div className="skeleton h-3 w-full" />
                   <div className="skeleton h-3 w-4/5" />
-                  <div className="flex items-center justify-between pt-6">
-                    <div className="skeleton h-8 w-24" />
-                    <div className="skeleton h-11 w-28 rounded-xl" />
+                  <div className="flex items-center justify-between pt-4">
+                    <div className="skeleton h-7 w-20" />
+                    <div className="skeleton h-10 w-24 rounded-xl" />
                   </div>
                 </div>
               </div>
@@ -639,61 +368,71 @@ const GamesPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card py-24 px-6 text-center flex flex-col items-center"
+            className="glass-card py-20 px-6 text-center flex flex-col items-center"
           >
-            <div className="relative mb-8">
+            <div className="relative mb-6">
               <div className="absolute inset-0 bg-violet/20 blur-2xl rounded-full" />
-              <div className="relative w-24 h-24 rounded-3xl bg-white/5 border border-white/10 flex items-center justify-center animate-float">
-                <Gamepad2 size={40} className="text-violet" />
+              <div className="relative w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                <Gamepad2 size={36} className="text-violet" />
               </div>
             </div>
-            <h3 className="font-display text-2xl md:text-3xl font-black text-white mb-3 uppercase tracking-tight">
-              {t("no_games_found", "Do'konda hech qanday o'yin topilmadi.")}
+            <h3 className="font-display text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-tight">
+              {t("no_games_found", "O'yinlar topilmadi")}
             </h3>
-            <p className="text-secondary max-w-md">
+            <p className="text-secondary text-xs max-w-md">
               {t("try_changing_filters", "Qidiruv so'rovini yoki filtrlarni o'zgartirib ko'ring")}
             </p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <AnimatePresence mode="popLayout">
               {displayedGames.map((g, i) => (
                 <motion.div
                   layout
-                  initial={{ opacity: 0, y: 24 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                  transition={{ duration: 0.3, delay: i * 0.03 }}
                   key={g.id}
-                  className="card-interactive overflow-hidden group flex flex-col h-full hover:border-primary/40"
+                  className="card-interactive overflow-hidden group flex flex-col h-full border-white/10 hover:border-violet/40 bg-card"
                 >
                   {/* Cover */}
-                  <div className="aspect-[16/10] relative overflow-hidden bg-white/5">
+                  <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
                     {g.cover ? (
                       <img
                         src={g.cover}
                         alt={g.title}
-                        className="w-full h-full object-cover opacity-60 group-hover:scale-110 group-hover:opacity-85 transition-all duration-700"
+                        className="w-full h-full object-cover opacity-70 group-hover:scale-108 group-hover:opacity-90 transition-all duration-500"
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/[0.07] to-white/[0.01]">
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(255,51,85,0.10),transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                        <Gamepad2 size={132} strokeWidth={1} className="absolute -bottom-5 -right-3 text-white/[0.04]" />
-                        <span className="relative font-display text-5xl font-black uppercase tracking-tight text-white/90 group-hover:scale-110 transition-transform duration-500">
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet/20 via-black/80 to-black">
+                        <Gamepad2 size={96} strokeWidth={1} className="absolute -bottom-5 -right-3 text-white/[0.04]" />
+                        <span className="relative font-display text-4xl font-black uppercase tracking-tight text-white/80 group-hover:scale-110 transition-transform duration-500">
                           {(g.title || "?").charAt(0)}
                         </span>
                       </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
 
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <span className="bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white flex items-center gap-1.5">
-                        {g.platform === "WEB" ? <Globe size={10} className="text-violet" /> : g.platform === "PC" ? <Monitor size={10} /> : <Smartphone size={10} />}
-                        {g.platform}
-                      </span>
+                    {/* Platform / Tag Badge */}
+                    <div className="absolute top-3 left-3 flex gap-1.5">
+                      {g.platform === "WEB" ? (
+                        <span className="bg-violet text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow-violet border border-violet/30">
+                          <Globe size={10} /> WEB ONLINE
+                        </span>
+                      ) : Number(g.price) > 0 ? (
+                        <span className="bg-amber-500 text-black text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-amber-400/30">
+                          <Crown size={10} className="fill-current" /> PULLIK O'YIN
+                        </span>
+                      ) : (
+                        <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30">
+                          <Gamepad2 size={10} /> DEMO / BEPUL
+                        </span>
+                      )}
                     </div>
 
-                    <div className="absolute top-4 right-4 flex items-center gap-1.5">
+                    {/* Action buttons on cover top-right */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
                       {Number(g.price) > 0 && (
                         <button
                           onClick={(e) => {
@@ -701,14 +440,14 @@ const GamesPage = () => {
                             e.stopPropagation();
                             handleTogglePurchasePlan(g.id);
                           }}
-                          className={`p-2 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
+                          className={`p-1.5 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
                             purchasePlanIds.has(g.id)
                               ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
                               : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-black/80"
                           }`}
                           title="Sotib olish rejasiga qo'shish"
                         >
-                          <CalendarPlus size={14} className={purchasePlanIds.has(g.id) ? "text-amber-400" : ""} />
+                          <CalendarPlus size={13} className={purchasePlanIds.has(g.id) ? "text-amber-400" : ""} />
                         </button>
                       )}
                       <button
@@ -717,45 +456,46 @@ const GamesPage = () => {
                           e.stopPropagation();
                           handleToggleWishlist(g.id);
                         }}
-                        className={`p-2 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
+                        className={`p-1.5 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
                           wishlistIds.has(g.id)
                             ? "bg-rose-500/20 border-rose-500/40 text-rose-400"
                             : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-black/80"
                         }`}
                         title="Sotib olish rejasi (Wishlist)ga qo'shish"
                       >
-                        <Heart size={14} className={wishlistIds.has(g.id) ? "fill-rose-500 text-rose-500" : ""} />
+                        <Heart size={13} className={wishlistIds.has(g.id) ? "fill-rose-500 text-rose-500" : ""} />
                       </button>
                     </div>
 
-                    <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-md border border-white/10 px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <Star size={12} className="text-warning fill-warning" />
-                      <span className="text-xs font-bold text-white tabular-nums">{Number(g.rating).toFixed(1)}</span>
+                    {/* Rating badge bottom-right */}
+                    <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                      <Star size={11} className="text-amber-400 fill-amber-400" />
+                      <span className="text-white text-[11px] font-bold tabular-nums">{Number(g.rating).toFixed(1)}</span>
                     </div>
                   </div>
 
                   {/* Body */}
-                  <div className="p-7 flex-1 flex flex-col justify-between">
+                  <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <p className="text-[10px] font-black text-secondary uppercase tracking-widest mb-2">
+                      <p className="text-[10px] font-black text-secondary uppercase tracking-wider mb-1">
                         Dev: @{g.developer_details.username}
                       </p>
-                      <h3 className="font-display text-lg md:text-xl font-bold text-white group-hover:text-primary transition-colors mb-3 line-clamp-1 tracking-tight">
+                      <h3 className="font-display text-base md:text-lg font-bold text-white group-hover:text-violet transition-colors mb-2 line-clamp-1 tracking-tight">
                         {g.title}
                       </h3>
-                      <p className="text-secondary text-xs line-clamp-2 leading-relaxed opacity-85 mb-6">
+                      <p className="text-secondary text-xs line-clamp-2 leading-relaxed opacity-85 mb-4">
                         {g.description}
                       </p>
                     </div>
 
-                    <div className="border-t border-white/5 pt-5 flex items-center justify-between gap-3">
+                    <div className="border-t border-white/5 pt-4 flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-1">{t("prize_label", "Narxi")}</p>
+                        <p className="text-[9px] text-secondary font-bold uppercase tracking-widest mb-0.5">{t("prize_label", "Narxi")}</p>
                         {Number(g.price) > 0 ? (
                           user?.is_premium ? (
                             <div className="space-y-0.5">
-                              <div className="flex items-center gap-1.5">
-                                <p className="font-display text-lg font-black text-amber-400 tabular-nums">
+                              <div className="flex items-center gap-1">
+                                <p className="font-display text-base font-black text-amber-400 tabular-nums">
                                   {g.premium_price ? Number(g.premium_price).toLocaleString() : Math.round(Number(g.price) * 0.8).toLocaleString()} UZS
                                 </p>
                                 <span className="bg-amber-500/15 text-amber-400 text-[8px] font-black px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
@@ -772,7 +512,7 @@ const GamesPage = () => {
                             </div>
                           ) : (
                             <div>
-                              <p className="font-display text-lg font-black text-white tabular-nums">
+                              <p className="font-display text-base font-black text-white tabular-nums">
                                 {Number(g.price).toLocaleString()} UZS
                               </p>
                               <p className="text-[9px] text-amber-400/80 font-bold mt-0.5 flex items-center gap-1 tabular-nums">
@@ -782,7 +522,7 @@ const GamesPage = () => {
                             </div>
                           )
                         ) : (
-                          <p className="font-display text-lg font-black text-success">
+                          <p className="font-display text-base font-black text-emerald-400">
                             {t("free", "BEPUL")}
                           </p>
                         )}
@@ -791,20 +531,20 @@ const GamesPage = () => {
                       {g.platform === "WEB" ? (
                         <Link
                           href={isAuthenticated ? `/games/play/${g.slug}` : `/login?redirect=/games/play/${g.slug}`}
-                          className="px-5 py-3 bg-violet hover:bg-violet/90 text-white border border-violet/30 rounded-xl font-display font-bold uppercase tracking-widest text-[11px] transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap shadow-glow-violet"
+                          className="px-4 py-2.5 bg-violet hover:bg-violet/90 text-white border border-violet/30 rounded-xl font-display font-bold uppercase tracking-widest text-[11px] transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap shadow-glow-violet"
                         >
                           <PlayCircle size={14} />
                           <span>O'ynash</span>
-                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                          <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
                       ) : (
                         <Link
                           href={`/games/${g.id}`}
-                          className="px-5 py-3 bg-white/5 hover:bg-primary text-white border border-white/10 hover:border-primary hover:shadow-glow rounded-xl font-display font-bold uppercase tracking-widest text-[11px] transition-all flex items-center gap-2 active:scale-95 whitespace-nowrap"
+                          className="px-4 py-2.5 bg-white/5 hover:bg-primary text-white border border-white/10 hover:border-primary rounded-xl font-display font-bold uppercase tracking-widest text-[11px] transition-all flex items-center gap-1.5 active:scale-95 whitespace-nowrap"
                         >
-                          <ShoppingCart size={14} />
-                          <span>{t("buy_game", "Sotib olish")}</span>
-                          <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                          <ShoppingCart size={13} />
+                          <span>{Number(g.price) > 0 ? "Sotib olish" : "Ko'rish"}</span>
+                          <ArrowRight size={13} className="group-hover:translate-x-1 transition-transform" />
                         </Link>
                       )}
                     </div>
