@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy, CalendarPlus, Zap } from "lucide-react";
+import { ArrowLeft, Monitor, Smartphone, Star, Shield, Cpu, ChevronRight, Check, ShoppingCart, Key, Crown, Clock, X, Upload, FileText, Download, Gamepad2, Heart, PlayCircle, Eye, Trophy, CalendarPlus, Zap, Bookmark, ShoppingBag } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -980,11 +980,11 @@ const GameDetailPage = () => {
                 disabled={wishlistLoading}
                 className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
                   isWishlisted
-                    ? "bg-rose-500/15 border-rose-500/40 text-rose-400 hover:bg-rose-500/25 shadow-glow"
+                    ? "bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25 shadow-glow"
                     : "bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
                 }`}
               >
-                <Heart size={16} className={isWishlisted ? "fill-rose-500 text-rose-500" : "text-white"} />
+                <Bookmark size={16} className={isWishlisted ? "fill-amber-400 text-amber-400" : "text-white"} />
                 <span>{isWishlisted ? "Sotib olish rejasida (Qo'shilgan)" : "Sotib olish rejasiga qo'shish"}</span>
               </button>
 

@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy, CalendarPlus } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy, CalendarPlus, Bookmark } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -821,17 +821,17 @@ const ProfilePage = () => {
                   <div className="flex bg-white/5 p-1 rounded-xl">
                     <button
                       onClick={() => setActiveWishlistTab("wishlist")}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'wishlist' ? 'bg-rose-500 text-white shadow-lg' : 'text-secondary hover:text-white'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'wishlist' ? 'bg-amber-500 text-black shadow-lg' : 'text-secondary hover:text-white'}`}
                     >
-                      <Heart size={14} className={activeWishlistTab === 'wishlist' ? 'fill-current' : ''} />
+                      <Bookmark size={14} className={activeWishlistTab === 'wishlist' ? 'fill-current' : ''} />
                       Sotib olish rejasi
                     </button>
                     <button
                       onClick={() => setActiveWishlistTab("plan")}
-                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'plan' ? 'bg-amber-500 text-black shadow-lg' : 'text-secondary hover:text-white'}`}
+                      className={`flex-1 py-2 text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeWishlistTab === 'plan' ? 'bg-amber-500/80 text-black shadow-lg' : 'text-secondary hover:text-white'}`}
                     >
                       <CalendarPlus size={14} />
-                      Sotib olish rejasi
+                      Rejalashtirilgan
                     </button>
                   </div>
 
@@ -841,11 +841,11 @@ const ProfilePage = () => {
 
                       {loadingWishlist ? (
                         <div className="py-12 flex items-center justify-center">
-                          <div className="w-8 h-8 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                          <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
                         </div>
                       ) : wishlistGames.length === 0 ? (
                         <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
-                          <Heart size={40} className="text-rose-500/30 mx-auto mb-4" />
+                          <Bookmark size={40} className="text-amber-500/30 mx-auto mb-4" />
                           <p className="text-secondary text-sm">'Sotib olish rejasi' ro'yxatida hali o'yinlar mavjud emas.</p>
                           <Link
                             href="/games"

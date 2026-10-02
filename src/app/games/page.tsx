@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle, CalendarPlus, Layers, ShieldCheck, Flame } from "lucide-react";
+import { Gamepad2, Star, Search, Monitor, Smartphone, ShoppingCart, ArrowRight, Sparkles, Crown, Heart, Globe, PlayCircle, CalendarPlus, Layers, ShieldCheck, Flame, Bookmark, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
@@ -226,7 +226,7 @@ const GamesPage = () => {
   const counts = {
     ALL: games.length,
     WEB: games.filter(g => g.platform === "WEB").length,
-    DEMO: games.filter(g => Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB")).length,
+    DEMO: games.filter(g => g.platform !== "WEB" && (Boolean(g.demo_url) || Number(g.price) === 0)).length,
     PREMIUM: games.filter(g => Number(g.price) > 0).length,
     PC: games.filter(g => g.platform === "PC").length,
     MOBILE: games.filter(g => g.platform === "MOBILE").length,
@@ -247,7 +247,7 @@ const GamesPage = () => {
              g.developer_details.username.toLowerCase().includes(debouncedSearch.toLowerCase());
     }
     if (filter === "WEB") return g.platform === "WEB";
-    if (filter === "DEMO") return Boolean(g.demo_url) || (Number(g.price) === 0 && g.platform !== "WEB");
+    if (filter === "DEMO") return g.platform !== "WEB" && (Boolean(g.demo_url) || Number(g.price) === 0);
     if (filter === "PREMIUM") return Number(g.price) > 0;
     if (filter === "PC") return g.platform === "PC";
     if (filter === "MOBILE") return g.platform === "MOBILE";
@@ -458,12 +458,12 @@ const GamesPage = () => {
                         }}
                         className={`p-1.5 rounded-full backdrop-blur-md border transition-all active:scale-90 ${
                           wishlistIds.has(g.id)
-                            ? "bg-rose-500/20 border-rose-500/40 text-rose-400"
+                            ? "bg-amber-500/20 border-amber-500/40 text-amber-400"
                             : "bg-black/60 border-white/10 text-white/70 hover:text-white hover:bg-black/80"
                         }`}
-                        title="Sotib olish rejasi (Wishlist)ga qo'shish"
+                        title="Sotib olish rejasiga (Wishlist) qo'shish"
                       >
-                        <Heart size={13} className={wishlistIds.has(g.id) ? "fill-rose-500 text-rose-500" : ""} />
+                        <Bookmark size={13} className={wishlistIds.has(g.id) ? "fill-amber-400 text-amber-400" : ""} />
                       </button>
                     </div>
 
