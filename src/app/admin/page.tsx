@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2, KeyRound } from "lucide-react";
+import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2, KeyRound, Bookmark, Search, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -27,6 +28,26 @@ interface AdminUser {
   last_seen?: string;
 }
 
+interface PurchasePlanEntry {
+  id: string;
+  created_at: string;
+  user_id: string;
+  game_id: string;
+  profiles?: {
+    id: string;
+    username: string;
+    full_name: string;
+    phone_number?: string | null;
+    avatar_url?: string | null;
+  };
+  developed_games?: {
+    id: string;
+    title: string;
+    slug: string;
+    price: number | string;
+    cover?: string | null;
+  };
+}
 
 interface ActivityLog {
   id: string;
@@ -38,6 +59,8 @@ interface ActivityLog {
 export default function AdminPage() {
   const router = useRouter();
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
+  const [purchasePlansList, setPurchasePlansList] = useState<PurchasePlanEntry[]>([]);
+  const [planSearch, setPlanSearch] = useState("");
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCustomAdmin, setIsCustomAdmin] = useState(false);
@@ -54,6 +77,8 @@ export default function AdminPage() {
     retentionRate: 0,
     totalGamePlays: 0,
     activePlayersCount: 0,
+    totalPurchasePlans: 0,
+    uniquePlanUsersCount: 0,
   });
 
   // News form state
@@ -254,6 +279,24 @@ export default function AdminPage() {
           console.warn("Tournaments fetch warning:", tErr);
         }
 
+        // 7. Fetch Purchase Plans (Sotib olish rejasiga qo'shganlar)
+        let plansList: PurchasePlanEntry[] = [];
+        try {
+          const { data: pData } = await supabase
+            .from('game_wishlist')
+            .select('id, created_at, user_id, game_id, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
+            .order('created_at', { ascending: false });
+
+          if (pData) {
+            plansList = pData as any;
+          }
+        } catch (pErr) {
+          console.warn("Purchase plans fetch warning:", pErr);
+        }
+        setPurchasePlansList(plansList);
+
+        const uniqueUsersCount = new Set(plansList.map(p => p.user_id)).size;
+
         setStats({
           totalUsers: webUsersCount,
           totalActiveSubs: mappedUsers.filter((u: any) => u.is_premium).length,
@@ -265,6 +308,8 @@ export default function AdminPage() {
           retentionRate: retentionPct,
           totalGamePlays: totalPlaysCount,
           activePlayersCount: activePlayersSet.size,
+          totalPurchasePlans: plansList.length,
+          uniquePlanUsersCount: uniqueUsersCount,
         });
       }
     } catch (err) {
@@ -487,7 +532,15 @@ export default function AdminPage() {
   const recentVisitors = [...usersList]
     .filter(u => u.last_seen)
     .sort((a, b) => new Date(b.last_seen!).getTime() - new Date(a.last_seen!).getTime())
-    .slice(0, 5);
+  // Filter purchase plans list
+  const displayedPurchasePlans = purchasePlansList.filter(p => {
+    if (!planSearch) return true;
+    const q = planSearch.toLowerCase();
+    const username = p.profiles?.username?.toLowerCase() || '';
+    const fullName = p.profiles?.full_name?.toLowerCase() || '';
+    const gameTitle = p.developed_games?.title?.toLowerCase() || '';
+    return username.includes(q) || fullName.includes(q) || gameTitle.includes(q);
+  });
 
   return (
     <main className="min-h-screen bg-background text-white">
@@ -516,11 +569,11 @@ export default function AdminPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-primary/30 transition-all">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="glass-card p-5 border border-white/5 relative overflow-hidden group hover:border-primary/30 transition-all">
             <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Jami Obunachilar</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-white">
-              <Users className="text-primary shrink-0" size={20} /> 
+            <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-white">
+              <Users className="text-primary shrink-0" size={18} /> 
               <span>{stats.totalCombinedSubscribers.toLocaleString()}</span>
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
@@ -529,10 +582,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
-            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Qayta Tashrif Buyurganlar</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-emerald-400">
-              <Activity className="text-emerald-400 shrink-0" size={20} /> 
+          <div className="glass-card p-5 border border-white/5 relative overflow-hidden group hover:border-emerald-500/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Qayta Tashrif</span>
+            <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-emerald-400">
+              <Activity className="text-emerald-400 shrink-0" size={18} /> 
               <span>{stats.returningUsers.toLocaleString()}</span>
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
@@ -542,25 +595,36 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-violet/30 transition-all">
+          <div className="glass-card p-5 border border-white/5 relative overflow-hidden group hover:border-violet/30 transition-all">
             <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">O'yinlar O'ynalishi</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-violet">
-              <Gamepad2 className="text-violet shrink-0" size={20} /> 
+            <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-violet">
+              <Gamepad2 className="text-violet shrink-0" size={18} /> 
               <span>{stats.totalGamePlays.toLocaleString()}</span>
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
-              <span>{stats.activePlayersCount} ta o'yinchi fe'lan o'ynagan</span>
+              <span>{stats.activePlayersCount} o'yinchi</span>
             </div>
           </div>
 
-          <div className="glass-card p-6 border border-white/5 relative overflow-hidden group hover:border-amber-500/30 transition-all">
-            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Faol Premium & Do'kon</span>
-            <h3 className="text-2xl font-extrabold mt-2 flex items-center gap-2 text-amber-400">
-              <Award className="text-amber-400 shrink-0" size={20} /> 
+          <div className="glass-card p-5 border border-white/5 relative overflow-hidden group hover:border-amber-500/30 transition-all">
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Faol Premium</span>
+            <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-amber-400">
+              <Award className="text-amber-400 shrink-0" size={18} /> 
               <span>{stats.totalActiveSubs.toLocaleString()} PRO</span>
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
               <span>{stats.totalGames} ta o'yin mavjud</span>
+            </div>
+          </div>
+
+          <div className="glass-card p-5 border border-cyan-500/20 relative overflow-hidden group hover:border-cyan-500/40 transition-all bg-gradient-to-b from-cyan-500/10 via-transparent to-transparent col-span-2 lg:col-span-1">
+            <span className="text-[10px] text-cyan-300 uppercase font-bold tracking-wider">Sotib Olish Rejalari</span>
+            <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-cyan-400">
+              <Bookmark className="text-cyan-400 shrink-0" size={18} /> 
+              <span>{stats.totalPurchasePlans.toLocaleString()} ta</span>
+            </h3>
+            <div className="flex items-center gap-2 text-[10px] text-cyan-300/80 mt-2">
+              <span className="font-bold text-white">{stats.uniquePlanUsersCount} ta foydalanuvchi</span>
             </div>
           </div>
         </div>
@@ -585,6 +649,109 @@ export default function AdminPage() {
             <RefreshCw size={14} />
             <span>Statistikani Yangilash</span>
           </button>
+        </div>
+
+        {/* Purchase Plans Section (Sotib olish rejasiga qo'shganlar) */}
+        <div className="mb-12">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                <Bookmark className="text-cyan-400" size={22} />
+                <span>Sotib Olish Rejasiga Qo'shganlar ({purchasePlansList.length})</span>
+              </h2>
+              <p className="text-xs text-secondary mt-1">
+                "Sotib olish rejasiga qo'shish" tugmasini bosgan foydalanuvchilar va ularning rejalashtirgan o'yinlari
+              </p>
+            </div>
+
+            <div className="relative w-full sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" size={15} />
+              <input
+                type="text"
+                placeholder="Foydalanuvchi yoki o'yin..."
+                value={planSearch}
+                onChange={(e) => setPlanSearch(e.target.value)}
+                className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white outline-none focus:border-cyan-500/50 transition-colors"
+              />
+            </div>
+          </div>
+
+          <div className="glass-card overflow-x-auto border border-cyan-500/20 rounded-2xl bg-gradient-to-b from-cyan-500/5 via-transparent to-transparent">
+            {displayedPurchasePlans.length === 0 ? (
+              <div className="text-center py-12 text-secondary text-xs">
+                {planSearch ? "Qidiruv bo'yicha hech narsa topilmadi" : "Hali hech kim sotib olish rejasiga o'yin qo'shmadi"}
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10 text-secondary uppercase tracking-wider text-[10px] font-bold">
+                    <th className="p-4">Foydalanuvchi</th>
+                    <th className="p-4">Rejalashtirilgan O'yin</th>
+                    <th className="p-4">Narxi</th>
+                    <th className="p-4">Qo'shilgan Sana va Vaqt</th>
+                    <th className="p-4 text-right">O'yinga o'tish</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {displayedPurchasePlans.map((plan) => (
+                    <tr key={plan.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-xs font-bold text-cyan-300 uppercase shrink-0 overflow-hidden">
+                            {plan.profiles?.avatar_url ? (
+                              <img src={plan.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                              (plan.profiles?.username || "U")[0]
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-white font-bold text-xs">{plan.profiles?.full_name || plan.profiles?.username || "Noma'lum"}</p>
+                            <p className="text-[10px] text-secondary">@{plan.profiles?.username || 'user'}</p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          {plan.developed_games?.cover ? (
+                            <img src={plan.developed_games.cover} alt="Cover" className="w-10 h-7 rounded object-cover shrink-0 border border-white/10" />
+                          ) : (
+                            <div className="w-10 h-7 rounded bg-white/10 flex items-center justify-center shrink-0">
+                              <Gamepad2 size={14} className="text-secondary" />
+                            </div>
+                          )}
+                          <span className="text-white font-semibold">{plan.developed_games?.title || "O'yin"}</span>
+                        </div>
+                      </td>
+
+                      <td className="p-4">
+                        <span className="font-bold text-amber-400">
+                          {Number(plan.developed_games?.price) > 0 
+                            ? `${Number(plan.developed_games?.price).toLocaleString()} UZS` 
+                            : "Bepul"}
+                        </span>
+                      </td>
+
+                      <td className="p-4 text-secondary">
+                        {new Date(plan.created_at).toLocaleString()}
+                      </td>
+
+                      <td className="p-4 text-right">
+                        <Link
+                          href={`/games/${plan.developed_games?.slug || ''}`}
+                          target="_blank"
+                          className="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-white rounded-lg border border-white/10 transition-colors inline-flex items-center gap-1"
+                        >
+                          <span>Ko'rish</span>
+                          <ChevronRight size={14} />
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
         {/* News Management */}

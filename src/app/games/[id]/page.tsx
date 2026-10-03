@@ -299,7 +299,7 @@ const GameDetailPage = () => {
 
           try {
             const { data: planData } = await supabase
-              .from('game_purchase_plan')
+              .from('game_wishlist')
               .select('id')
               .eq('user_id', user.id)
               .eq('game_id', id)
@@ -414,7 +414,7 @@ const GameDetailPage = () => {
       if (isInPurchasePlan) {
         try {
           await supabase
-            .from('game_purchase_plan')
+            .from('game_wishlist')
             .delete()
             .eq('user_id', user.id)
             .eq('game_id', game.id);
@@ -427,7 +427,7 @@ const GameDetailPage = () => {
       } else {
         try {
           await supabase
-            .from('game_purchase_plan')
+            .from('game_wishlist')
             .insert({
               user_id: user.id,
               game_id: game.id

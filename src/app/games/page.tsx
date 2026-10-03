@@ -59,7 +59,7 @@ const GamesPage = () => {
       const fetchPurchasePlan = async () => {
         try {
           const { data } = await supabase
-            .from('game_purchase_plan')
+            .from('game_wishlist')
             .select('game_id')
             .eq('user_id', user.id);
 
@@ -149,7 +149,7 @@ const GamesPage = () => {
       localStorage.setItem(localKey, JSON.stringify(localList));
       try {
         await supabase
-          .from('game_purchase_plan')
+          .from('game_wishlist')
           .delete()
           .eq('user_id', user.id)
           .eq('game_id', gameId);
@@ -163,7 +163,7 @@ const GamesPage = () => {
       localStorage.setItem(localKey, JSON.stringify(localList));
       try {
         await supabase
-          .from('game_purchase_plan')
+          .from('game_wishlist')
           .insert({
             user_id: user.id,
             game_id: gameId
