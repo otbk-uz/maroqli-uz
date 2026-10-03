@@ -653,14 +653,14 @@ const GameDetailPage = () => {
               <div className="glass-card p-6 md:p-8 space-y-4 border-violet/30 bg-gradient-to-br from-violet/10 to-transparent">
                 <h3 className="font-black text-white flex items-center gap-2 text-lg">
                   <PlayCircle size={22} className="text-violet animate-pulse" />
-                  <span>O'yin Demosi (Demo Version)</span>
+                  <span>O'yin Treyleri & Sinov Versiyasi</span>
                 </h3>
                 
                 {getEmbedUrl(game.demo_url) ? (
                   <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black/60 border border-white/10 shadow-2xl">
                     <iframe
                       src={getEmbedUrl(game.demo_url)}
-                      title={`${game.title} Demo Video`}
+                      title={`${game.title} Trailer`}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
@@ -669,8 +669,8 @@ const GameDetailPage = () => {
                 ) : (
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white/5 p-5 rounded-2xl border border-white/10">
                     <div>
-                      <h4 className="font-bold text-white text-base">O'yin bepul demo versiyasi mavjud</h4>
-                      <p className="text-xs text-secondary mt-1">To'liq xarid qilishdan oldin o'yinning demo variantini sinab ko'ring</p>
+                      <h4 className="font-bold text-white text-base">O'yin sinov variantini ko'rish</h4>
+                      <p className="text-xs text-secondary mt-1">To'liq xarid qilishdan oldin o'yinning video va sinov materiallarini ko'rishingiz mumkin</p>
                     </div>
                     <a
                       href={game.demo_url}
@@ -679,7 +679,7 @@ const GameDetailPage = () => {
                       className="px-6 py-3 bg-violet hover:bg-violet/90 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-glow-violet shrink-0"
                     >
                       <Download size={15} />
-                      <span>Demoning yuklab olish</span>
+                      <span>Sinov Variantini Yuklash</span>
                     </a>
                   </div>
                 )}

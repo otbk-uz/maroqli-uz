@@ -226,7 +226,6 @@ const GamesPage = () => {
   const counts = {
     ALL: games.length,
     WEB: games.filter(g => g.platform === "WEB").length,
-    DEMO: games.filter(g => g.platform !== "WEB" && (Boolean(g.demo_url) || Number(g.price) === 0)).length,
     PREMIUM: games.filter(g => Number(g.price) > 0).length,
     PC: games.filter(g => g.platform === "PC").length,
     MOBILE: games.filter(g => g.platform === "MOBILE").length,
@@ -235,10 +234,9 @@ const GamesPage = () => {
   const platformTabs = [
     { value: "ALL", label: "⚡ Barcha O'yinlar", count: counts.ALL },
     { value: "WEB", label: "🌐 Web Onlayn", count: counts.WEB },
-    { value: "DEMO", label: "🎮 Demo & Sinov", count: counts.DEMO },
-    { value: "PREMIUM", label: "💎 Pullik & PRO", count: counts.PREMIUM },
     { value: "PC", label: "💻 PC O'yinlar", count: counts.PC },
     { value: "MOBILE", label: "📱 Mobil O'yinlar", count: counts.MOBILE },
+    { value: "PREMIUM", label: "💎 Pullik & PRO", count: counts.PREMIUM },
   ];
 
   const displayedGames = games.filter(g => {
@@ -247,7 +245,6 @@ const GamesPage = () => {
              g.developer_details.username.toLowerCase().includes(debouncedSearch.toLowerCase());
     }
     if (filter === "WEB") return g.platform === "WEB";
-    if (filter === "DEMO") return g.platform !== "WEB" && (Boolean(g.demo_url) || Number(g.price) === 0);
     if (filter === "PREMIUM") return Number(g.price) > 0;
     if (filter === "PC") return g.platform === "PC";
     if (filter === "MOBILE") return g.platform === "MOBILE";
@@ -420,13 +417,21 @@ const GamesPage = () => {
                         <span className="bg-violet text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow-violet border border-violet/30">
                           <Globe size={10} /> WEB ONLINE
                         </span>
+                      ) : g.platform === "PC" ? (
+                        <span className="bg-blue-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-blue-400/30">
+                          <Monitor size={10} /> PC O'YIN
+                        </span>
+                      ) : g.platform === "MOBILE" ? (
+                        <span className="bg-emerald-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30">
+                          <Smartphone size={10} /> MOBIL O'YIN
+                        </span>
                       ) : Number(g.price) > 0 ? (
                         <span className="bg-amber-500 text-black text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-amber-400/30">
                           <Crown size={10} className="fill-current" /> PULLIK O'YIN
                         </span>
                       ) : (
                         <span className="bg-emerald-500 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-emerald-400/30">
-                          <Gamepad2 size={10} /> DEMO / BEPUL
+                          <Sparkles size={10} /> BEPUL O'YIN
                         </span>
                       )}
                     </div>
