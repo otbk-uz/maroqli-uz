@@ -336,14 +336,14 @@ export function WhiteLabelPlayer({ url, userIdentifier, onEnded }: PlayerProps) 
       setIsYoutube(true);
       setIsBunny(false);
       // Load YouTube Iframe API
-      if (!(window as any).YT) {
+      if (!window.YT) {
         const tag = document.createElement("script");
         tag.src = "https://www.youtube.com/iframe_api";
         const firstScriptTag = document.getElementsByTagName("script")[0];
         firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
 
         // Bind callback
-        (window as any).onYouTubeIframeAPIReady = () => {
+        window.onYouTubeIframeAPIReady = () => {
           initYtPlayer();
         };
       } else {
@@ -379,7 +379,7 @@ export function WhiteLabelPlayer({ url, userIdentifier, onEnded }: PlayerProps) 
   const initYtPlayer = () => {
     if (!ytId) return;
     try {
-      const player = new (window as any).YT.Player(`yt-player-${ytId}`, {
+      const player = new window.YT!.Player(`yt-player-${ytId}`, {
         events: {
           onReady: () => {
             setYtPlayer(player);

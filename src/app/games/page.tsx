@@ -212,7 +212,7 @@ const GamesPage = () => {
             demo_url: g.demo_url || null,
             download_url: g.download_url || null,
           }));
-          setGames(mappedGames as any);
+          setGames(mappedGames);
         }
       } catch (err) {
         console.error("Games store fetch error:", err);

@@ -89,33 +89,33 @@ const GameDetailPage = () => {
   }, []);
 
   useEffect(() => {
-    if (isElectron && game && game.executable_path) {
+    if (isElectron && game && game.executable_path && window.electron) {
       // Check installation status
       const checkStatus = async () => {
-        const installed = await (window as any).electron.checkInstalled(game.slug, game.executable_path);
-        setIsInstalled(installed);
+        const installed = await window.electron?.checkInstalled(game.slug, game.executable_path);
+        setIsInstalled(Boolean(installed));
       };
       checkStatus();
 
       // Listen to download progress
-      const unsubscribe = (window as any).electron.onDownloadProgress((data: any) => {
+      const unsubscribe = window.electron.onDownloadProgress((data) => {
         if (data.slug === game.slug) {
-          setInstallProgress(data.progress);
+          setInstallProgress(data.percent);
         }
       });
 
       return () => {
-        unsubscribe();
+        if (unsubscribe) unsubscribe();
       };
     }
   }, [isElectron, game]);
 
   const handleInstallGame = async () => {
-    if (!game || !game.download_url || !game.executable_path) return;
+    if (!game || !game.download_url || !game.executable_path || !window.electron) return;
     try {
       setInstalling(true);
       setInstallProgress(0);
-      const res = await (window as any).electron.downloadGame(game.slug, game.download_url, game.executable_path);
+      const res = await window.electron.downloadGame(game.slug, game.download_url, game.executable_path);
       if (!res.success) {
         alert(res.error || "O'yinni yuklab olishda xatolik yuz berdi.");
         setInstalling(false);
@@ -126,7 +126,7 @@ const GameDetailPage = () => {
         setInstallProgress(null);
         
         // Avtomatik ravishda o'yinni ishga tushiramiz
-        const launchRes = await (window as any).electron.launchGame(game.slug, game.executable_path);
+        const launchRes = await window.electron.launchGame(game.slug, game.executable_path);
         if (!launchRes.success) {
           alert(launchRes.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
         }
@@ -139,9 +139,9 @@ const GameDetailPage = () => {
   };
 
   const handleLaunchGame = async () => {
-    if (!game || !game.executable_path) return;
+    if (!game || !game.executable_path || !window.electron) return;
     try {
-      const res = await (window as any).electron.launchGame(game.slug, game.executable_path);
+      const res = await window.electron.launchGame(game.slug, game.executable_path);
       if (!res.success) {
         alert(res.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
       }

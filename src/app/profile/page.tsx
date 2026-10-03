@@ -64,14 +64,14 @@ const ProfilePage = () => {
   }, []);
 
   useEffect(() => {
-    if (isElectron && libraryGames.length > 0) {
+    if (isElectron && libraryGames.length > 0 && window.electron) {
       const checkStatuses = async () => {
         const newInstalled: Record<string, boolean> = {};
         for (const item of libraryGames) {
           const gameDetails = item.game_details || {};
-          if (gameDetails.slug && gameDetails.executable_path) {
-            const installed = await (window as any).electron.checkInstalled(gameDetails.slug, gameDetails.executable_path);
-            newInstalled[gameDetails.slug] = installed;
+          if (gameDetails.slug && gameDetails.executable_path && window.electron) {
+            const installed = await window.electron.checkInstalled(gameDetails.slug, gameDetails.executable_path);
+            newInstalled[gameDetails.slug] = Boolean(installed);
           }
         }
         setInstalledGames(newInstalled);
@@ -79,23 +79,23 @@ const ProfilePage = () => {
       checkStatuses();
 
       // Listen to download progress
-      const unsubscribe = (window as any).electron.onDownloadProgress((data: any) => {
-        setInstallProgress(prev => ({ ...prev, [data.slug]: data.progress }));
+      const unsubscribe = window.electron.onDownloadProgress((data) => {
+        setInstallProgress(prev => ({ ...prev, [data.slug]: data.percent }));
       });
 
       return () => {
-        unsubscribe();
+        if (unsubscribe) unsubscribe();
       };
     }
   }, [isElectron, libraryGames]);
 
   const handleInstallLibraryGame = async (gameDetails: any) => {
-    if (!gameDetails.slug || !gameDetails.download_url || !gameDetails.executable_path) return;
+    if (!gameDetails.slug || !gameDetails.download_url || !gameDetails.executable_path || !window.electron) return;
     const slug = gameDetails.slug;
     try {
       setInstallingGames(prev => ({ ...prev, [slug]: true }));
       setInstallProgress(prev => ({ ...prev, [slug]: 0 }));
-      const res = await (window as any).electron.downloadGame(slug, gameDetails.download_url, gameDetails.executable_path);
+      const res = await window.electron.downloadGame(slug, gameDetails.download_url, gameDetails.executable_path);
       if (!res.success) {
         alert(res.error || "O'yinni yuklab olishda xatolik yuz berdi.");
         setInstallingGames(prev => ({ ...prev, [slug]: false }));
@@ -114,7 +114,7 @@ const ProfilePage = () => {
         });
 
         // Avtomatik ravishda o'yinni ishga tushiramiz
-        const launchRes = await (window as any).electron.launchGame(slug, gameDetails.executable_path);
+        const launchRes = await window.electron.launchGame(slug, gameDetails.executable_path);
         if (!launchRes.success) {
           alert(launchRes.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
         }
@@ -126,9 +126,9 @@ const ProfilePage = () => {
   };
 
   const handleLaunchLibraryGame = async (gameDetails: any) => {
-    if (!gameDetails.slug || !gameDetails.executable_path) return;
+    if (!gameDetails.slug || !gameDetails.executable_path || !window.electron) return;
     try {
-      const res = await (window as any).electron.launchGame(gameDetails.slug, gameDetails.executable_path);
+      const res = await window.electron.launchGame(gameDetails.slug, gameDetails.executable_path);
       if (!res.success) {
         alert(res.error || "O'yinni ishga tushirishda xatolik yuz berdi.");
       }

@@ -77,7 +77,7 @@ export default function Home() {
           .limit(5);
           
         if (tData) {
-          setTournaments(tData as any);
+          setTournaments(tData);
           setCachedData("home_tournaments", tData);
         }
 
@@ -96,7 +96,7 @@ export default function Home() {
             category_display: t("news_badge", "YANGILIK"),
             created_at: n.created_at
           }));
-          setNews(mappedNews as any);
+          setNews(mappedNews);
           setCachedData("home_news", mappedNews);
         }
 

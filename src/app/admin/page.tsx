@@ -12,7 +12,7 @@ import { supabase } from "@/lib/supabase";
 import { FileImage } from "lucide-react";
 
 interface AdminUser {
-  id: number;
+  id: string | number;
   username: string;
   email: string;
   full_name: string;
@@ -174,7 +174,7 @@ export default function AdminPage() {
           premium_expires_at: p.premium_expires_at,
           last_seen: p.last_seen
         }));
-        setUsersList(mappedUsers as any);
+        setUsersList(mappedUsers);
 
         // 2. Fetch Telegram Bot Subscribers
         let botUsersCount = 0;
@@ -274,7 +274,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleRoleChange = async (userId: number, newRole: string) => {
+  const handleRoleChange = async (userId: string | number, newRole: string) => {
     try {
       // Direct Supabase update for role
       const { error } = await supabase
@@ -293,7 +293,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleToggleBlock = async (userId: number, currentStatus: boolean) => {
+  const handleToggleBlock = async (userId: string | number, currentStatus: boolean) => {
     const actionWord = currentStatus ? "bloklash" : "blokdan chiqarish";
     if (!confirm(`Haqiqatan ham ushbu foydalanuvchini ${actionWord}ni xohlaysizmi?`)) {
       return;
@@ -310,7 +310,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleToggleVerify = async (userId: number, currentStatus: boolean) => {
+  const handleToggleVerify = async (userId: string | number, currentStatus: boolean) => {
     try {
       await api.patch(`/users/admin/users/${userId}/`, { is_verified: !currentStatus });
       setUsersList((prev) =>
