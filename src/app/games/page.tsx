@@ -226,19 +226,19 @@ const GamesPage = () => {
   const counts = {
     ALL: games.length,
     WEB: games.filter(g => g.platform === "WEB").length,
-    DEMO: games.filter(g => Boolean(g.demo_url)).length,
     PC: games.filter(g => g.platform === "PC").length,
     MOBILE: games.filter(g => g.platform === "MOBILE").length,
     PREMIUM: games.filter(g => Number(g.price) > 0).length,
+    DEMO: games.filter(g => g.slug === 'shiroq-afsonasi' || (g.platform !== "WEB" && Boolean(g.demo_url))).length,
   };
 
   const platformTabs = [
     { value: "ALL", label: "⚡ Barcha O'yinlar", count: counts.ALL },
     { value: "WEB", label: "🌐 Web Onlayn", count: counts.WEB },
-    { value: "DEMO", label: "🎮 Demo O'yinlar", count: counts.DEMO },
     { value: "PC", label: "💻 PC O'yinlar", count: counts.PC },
     { value: "MOBILE", label: "📱 Mobil O'yinlar", count: counts.MOBILE },
     { value: "PREMIUM", label: "💎 Pullik & PRO", count: counts.PREMIUM },
+    { value: "DEMO", label: "🎮 DEMO O'YINLAR", count: counts.DEMO },
   ];
 
   const displayedGames = games.filter(g => {
@@ -247,10 +247,10 @@ const GamesPage = () => {
              g.developer_details.username.toLowerCase().includes(debouncedSearch.toLowerCase());
     }
     if (filter === "WEB") return g.platform === "WEB";
-    if (filter === "DEMO") return Boolean(g.demo_url);
     if (filter === "PREMIUM") return Number(g.price) > 0;
     if (filter === "PC") return g.platform === "PC";
     if (filter === "MOBILE") return g.platform === "MOBILE";
+    if (filter === "DEMO") return g.slug === 'shiroq-afsonasi' || (g.platform !== "WEB" && Boolean(g.demo_url));
     return true;
   });
 
