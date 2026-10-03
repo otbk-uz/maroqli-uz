@@ -226,14 +226,16 @@ const GamesPage = () => {
   const counts = {
     ALL: games.length,
     WEB: games.filter(g => g.platform === "WEB").length,
-    PREMIUM: games.filter(g => Number(g.price) > 0).length,
+    DEMO: games.filter(g => Boolean(g.demo_url)).length,
     PC: games.filter(g => g.platform === "PC").length,
     MOBILE: games.filter(g => g.platform === "MOBILE").length,
+    PREMIUM: games.filter(g => Number(g.price) > 0).length,
   };
 
   const platformTabs = [
     { value: "ALL", label: "⚡ Barcha O'yinlar", count: counts.ALL },
     { value: "WEB", label: "🌐 Web Onlayn", count: counts.WEB },
+    { value: "DEMO", label: "🎮 Demo O'yinlar", count: counts.DEMO },
     { value: "PC", label: "💻 PC O'yinlar", count: counts.PC },
     { value: "MOBILE", label: "📱 Mobil O'yinlar", count: counts.MOBILE },
     { value: "PREMIUM", label: "💎 Pullik & PRO", count: counts.PREMIUM },
@@ -245,6 +247,7 @@ const GamesPage = () => {
              g.developer_details.username.toLowerCase().includes(debouncedSearch.toLowerCase());
     }
     if (filter === "WEB") return g.platform === "WEB";
+    if (filter === "DEMO") return Boolean(g.demo_url);
     if (filter === "PREMIUM") return Number(g.price) > 0;
     if (filter === "PC") return g.platform === "PC";
     if (filter === "MOBILE") return g.platform === "MOBILE";
@@ -412,7 +415,12 @@ const GamesPage = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
 
                     {/* Platform / Tag Badge */}
-                    <div className="absolute top-3 left-3 flex gap-1.5">
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[80%]">
+                      {g.demo_url && (
+                        <span className="bg-cyan-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-cyan-400/30 shadow-md">
+                          <Gamepad2 size={10} /> DEMO O'YIN
+                        </span>
+                      )}
                       {g.platform === "WEB" ? (
                         <span className="bg-violet text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 shadow-glow-violet border border-violet/30">
                           <Globe size={10} /> WEB ONLINE
