@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
-import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2, KeyRound, Bookmark, Search, ChevronRight } from "lucide-react";
+import { ShieldAlert, Users, Award, BarChart3, AlertOctagon, UserCheck, ShieldClose, Lock, Unlock, Check, RefreshCw, Activity, UserPlus, Gamepad2, KeyRound, Bookmark, Search, ChevronRight, CreditCard, CheckCircle2, XCircle, Eye, ExternalLink, ShieldCheck, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
@@ -49,6 +49,32 @@ interface PurchasePlanEntry {
   };
 }
 
+interface PaymentRequestEntry {
+  id: string;
+  created_at: string;
+  user_id: string;
+  item_type: string;
+  item_id?: string | null;
+  amount: number;
+  receipt_url?: string | null;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  approval_type?: 'AUTO' | 'MANUAL' | null;
+  profiles?: {
+    id: string;
+    username: string;
+    full_name: string;
+    phone_number?: string | null;
+    avatar_url?: string | null;
+  };
+  developed_games?: {
+    id: string;
+    title: string;
+    slug: string;
+    price: number | string;
+    cover?: string | null;
+  };
+}
+
 interface ActivityLog {
   id: string;
   type: 'user' | 'game';
@@ -60,7 +86,11 @@ export default function AdminPage() {
   const router = useRouter();
   const [usersList, setUsersList] = useState<AdminUser[]>([]);
   const [purchasePlansList, setPurchasePlansList] = useState<PurchasePlanEntry[]>([]);
+  const [paymentRequestsList, setPaymentRequestsList] = useState<PaymentRequestEntry[]>([]);
+  const [boughtGamesList, setBoughtGamesList] = useState<any[]>([]);
   const [planSearch, setPlanSearch] = useState("");
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [paymentFilterStatus, setPaymentFilterStatus] = useState<"ALL" | "AUTO" | "APPROVED" | "PENDING">("ALL");
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCustomAdmin, setIsCustomAdmin] = useState(false);
@@ -87,11 +117,12 @@ export default function AdminPage() {
   const [newsFile, setNewsFile] = useState<File | null>(null);
   const [savingNews, setSavingNews] = useState(false);
 
-  // Premium modal state
+  // Premium modal & Receipt modal state
   const [premiumModalOpen, setPremiumModalOpen] = useState(false);
   const [selectedUserForPremium, setSelectedUserForPremium] = useState<AdminUser | null>(null);
   const [premiumDuration, setPremiumDuration] = useState<number>(30);
   const [savingPremium, setSavingPremium] = useState(false);
+  const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null);
 
   useEffect(() => {
     // Admin session check
@@ -295,6 +326,38 @@ export default function AdminPage() {
         }
         setPurchasePlansList(plansList);
 
+        // 8. Fetch Payment Requests & Receipts
+        let payReqs: PaymentRequestEntry[] = [];
+        try {
+          const { data: payData } = await supabase
+            .from('payment_requests')
+            .select('id, created_at, user_id, item_type, item_id, amount, receipt_url, status, approval_type, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
+            .order('created_at', { ascending: false });
+
+          if (payData) {
+            payReqs = payData as any;
+          }
+        } catch (payErr) {
+          console.warn("Payment requests fetch warning:", payErr);
+        }
+        setPaymentRequestsList(payReqs);
+
+        // 9. Fetch Bought Games (Keys & Game Purchases)
+        let boughtList: any[] = [];
+        try {
+          const { data: bData } = await supabase
+            .from('bought_games')
+            .select('id, created_at, user_id, game_id, cd_key, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
+            .order('created_at', { ascending: false });
+
+          if (bData) {
+            boughtList = bData as any;
+          }
+        } catch (bErr) {
+          console.warn("Bought games fetch warning:", bErr);
+        }
+        setBoughtGamesList(boughtList);
+
         const uniqueUsersCount = new Set(plansList.map(p => p.user_id)).size;
 
         setStats({
@@ -316,6 +379,77 @@ export default function AdminPage() {
       console.error("Admin ma'lumotlarini yuklashda xatolik:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApprovePayment = async (req: PaymentRequestEntry) => {
+    if (!confirm(`Haqiqatan ham ushbu to'lovni tasdiqlab, o'yinni ochiqlamoqchimisiz?`)) return;
+
+    try {
+      const { error: reqErr } = await supabase
+        .from('payment_requests')
+        .update({ status: 'APPROVED', approval_type: 'MANUAL' })
+        .eq('id', req.id);
+
+      if (reqErr) throw reqErr;
+
+      if (req.item_type === 'game' && req.item_id) {
+        const cdKey = `PN-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+
+        const { error: bErr } = await supabase
+          .from('bought_games')
+          .insert({
+            user_id: req.user_id,
+            game_id: req.item_id,
+            cd_key: cdKey
+          });
+
+        if (bErr) console.warn("Bought games insert warning:", bErr);
+      }
+
+      alert("To'lov muvaffaqiyatli tasdiqlandi va o'yin taqdim etildi!");
+      fetchAdminData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Tasdiqlashda xatolik: " + (err.message || 'Xatolik'));
+    }
+  };
+
+  const handleRejectPayment = async (reqId: string) => {
+    if (!confirm(`Haqiqatan ham ushbu chekni rad etmoqchimisiz?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('payment_requests')
+        .update({ status: 'REJECTED' })
+        .eq('id', reqId);
+
+      if (error) throw error;
+
+      alert("To'lov cheki rad etildi.");
+      fetchAdminData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Rad etishda xatolik: " + (err.message || 'Xatolik'));
+    }
+  };
+
+  const handleRevokeBoughtGame = async (boughtId: string) => {
+    if (!confirm(`Haqiqatan ham ushbu foydalanuvchining o'yin kalitini va ruxsatini bekor qilmoqchimisiz?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('bought_games')
+        .delete()
+        .eq('id', boughtId);
+
+      if (error) throw error;
+
+      alert("O'yin xaridi bekor qilindi.");
+      fetchAdminData();
+    } catch (err: any) {
+      console.error(err);
+      alert("Bekor qilishda xatolik: " + (err.message || 'Xatolik'));
     }
   };
 
@@ -542,6 +676,21 @@ export default function AdminPage() {
     return username.includes(q) || fullName.includes(q) || gameTitle.includes(q);
   });
 
+  // Filter payment requests list
+  const displayedPaymentRequests = paymentRequestsList.filter(p => {
+    if (paymentFilterStatus === 'AUTO' && p.approval_type !== 'AUTO') return false;
+    if (paymentFilterStatus === 'APPROVED' && p.status !== 'APPROVED') return false;
+    if (paymentFilterStatus === 'PENDING' && p.status !== 'PENDING') return false;
+
+    if (!paymentSearch) return true;
+    const q = paymentSearch.toLowerCase();
+    const username = p.profiles?.username?.toLowerCase() || '';
+    const fullName = p.profiles?.full_name?.toLowerCase() || '';
+    const phone = p.profiles?.phone_number?.toLowerCase() || '';
+    const gameTitle = p.developed_games?.title?.toLowerCase() || '';
+    return username.includes(q) || fullName.includes(q) || phone.includes(q) || gameTitle.includes(q);
+  });
+
   return (
     <main className="min-h-screen bg-background text-white">
       <Navbar />
@@ -649,6 +798,214 @@ export default function AdminPage() {
             <RefreshCw size={14} />
             <span>Statistikani Yangilash</span>
           </button>
+        </div>
+
+        {/* Payment Requests & Receipts Section */}
+        <div className="mb-12">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2 text-white">
+                <CreditCard className="text-emerald-400" size={22} />
+                <span>O'yin Xaridlari va Cheklar ({paymentRequestsList.length})</span>
+              </h2>
+              <p className="text-xs text-secondary mt-1">
+                Telegram bot va sayt orqali kelgan to'lov cheklari, avtomatik tasdiqlangan va qo'lda tasdiqlanadigan o'yin xaridlari
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Filter Tabs */}
+              <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 text-xs font-semibold">
+                <button
+                  onClick={() => setPaymentFilterStatus('ALL')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${paymentFilterStatus === 'ALL' ? 'bg-primary text-black font-bold' : 'text-secondary hover:text-white'}`}
+                >
+                  Barchasi ({paymentRequestsList.length})
+                </button>
+                <button
+                  onClick={() => setPaymentFilterStatus('AUTO')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1 ${paymentFilterStatus === 'AUTO' ? 'bg-emerald-500 text-black font-bold' : 'text-secondary hover:text-white'}`}
+                >
+                  <Zap size={13} /> Avtomatik ({paymentRequestsList.filter(p => p.approval_type === 'AUTO').length})
+                </button>
+                <button
+                  onClick={() => setPaymentFilterStatus('APPROVED')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${paymentFilterStatus === 'APPROVED' ? 'bg-blue-500 text-white font-bold' : 'text-secondary hover:text-white'}`}
+                >
+                  Tasdiqlangan ({paymentRequestsList.filter(p => p.status === 'APPROVED').length})
+                </button>
+                <button
+                  onClick={() => setPaymentFilterStatus('PENDING')}
+                  className={`px-3 py-1.5 rounded-lg transition-colors ${paymentFilterStatus === 'PENDING' ? 'bg-amber-500 text-black font-bold' : 'text-secondary hover:text-white'}`}
+                >
+                  Kutilmoqda ({paymentRequestsList.filter(p => p.status === 'PENDING').length})
+                </button>
+              </div>
+
+              {/* Search input */}
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary" size={15} />
+                <input
+                  type="text"
+                  placeholder="Foydalanuvchi yoki tel..."
+                  value={paymentSearch}
+                  onChange={(e) => setPaymentSearch(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-emerald-500/50 transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-card overflow-x-auto border border-emerald-500/20 rounded-2xl bg-gradient-to-b from-emerald-500/5 via-transparent to-transparent">
+            {displayedPaymentRequests.length === 0 ? (
+              <div className="text-center py-12 text-secondary text-xs">
+                {paymentSearch || paymentFilterStatus !== 'ALL' ? "Mos to'lovlar topilmadi" : "Hali to'lov cheklari yuborilmadi"}
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10 text-secondary uppercase tracking-wider text-[10px] font-bold">
+                    <th className="p-4">Xaridor</th>
+                    <th className="p-4">O'yin</th>
+                    <th className="p-4">Summa & Chek</th>
+                    <th className="p-4">Tasdiq Holati</th>
+                    <th className="p-4">CD-Key (Kalit)</th>
+                    <th className="p-4">Sana va Vaqt</th>
+                    <th className="p-4 text-right">Amal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {displayedPaymentRequests.map((req) => {
+                    const boughtMatch = boughtGamesList.find(b => b.user_id === req.user_id && b.game_id === req.item_id);
+                    return (
+                      <tr key={req.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-xs font-bold text-emerald-300 uppercase shrink-0 overflow-hidden">
+                              {req.profiles?.avatar_url ? (
+                                <img src={req.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                              ) : (
+                                (req.profiles?.username || "U")[0]
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-white font-bold text-xs">{req.profiles?.full_name || req.profiles?.username || "Noma'lum"}</p>
+                              <p className="text-[10px] text-secondary">@{req.profiles?.username || 'user'} {req.profiles?.phone_number ? `• ${req.profiles.phone_number}` : ''}</p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            {req.developed_games?.cover ? (
+                              <img src={req.developed_games.cover} alt="Cover" className="w-10 h-7 rounded object-cover shrink-0 border border-white/10" />
+                            ) : (
+                              <div className="w-10 h-7 rounded bg-white/10 flex items-center justify-center shrink-0">
+                                <Gamepad2 size={14} className="text-secondary" />
+                              </div>
+                            )}
+                            <span className="text-white font-semibold">{req.developed_games?.title || "O'yin"}</span>
+                          </div>
+                        </td>
+
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-emerald-400">
+                              {Number(req.amount).toLocaleString()} UZS
+                            </span>
+                            {req.receipt_url ? (
+                              <button
+                                onClick={() => setSelectedReceiptUrl(req.receipt_url || null)}
+                                className="p-1.5 bg-white/5 hover:bg-emerald-500/20 text-emerald-300 rounded-lg border border-white/10 transition-colors flex items-center gap-1 text-[10px]"
+                                title="Chek rasmini ko'rish"
+                              >
+                                <Eye size={12} />
+                                <span>Chek</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] text-secondary italic">(Rasmsiz)</span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="p-4">
+                          {req.status === 'APPROVED' && req.approval_type === 'AUTO' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.2)]">
+                              <Zap size={12} className="fill-emerald-400 text-emerald-400" />
+                              ⚡ Avtomatik
+                            </span>
+                          )}
+                          {req.status === 'APPROVED' && req.approval_type !== 'AUTO' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-blue-500/20 text-blue-300 border border-blue-500/40">
+                              <ShieldCheck size={12} />
+                              👤 Admin (Qo'lda)
+                            </span>
+                          )}
+                          {req.status === 'PENDING' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                              ⏳ Kutilmoqda
+                            </span>
+                          )}
+                          {req.status === 'REJECTED' && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/40">
+                              <XCircle size={12} />
+                              ❌ Rad etilgan
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="p-4">
+                          {boughtMatch?.cd_key ? (
+                            <code className="bg-black/50 border border-white/10 px-2 py-1 rounded font-mono text-[10px] text-amber-300 tracking-wider">
+                              {boughtMatch.cd_key}
+                            </code>
+                          ) : req.status === 'APPROVED' ? (
+                            <span className="text-[10px] text-emerald-400 font-semibold">Ochilgan</span>
+                          ) : (
+                            <span className="text-[10px] text-secondary font-mono">—</span>
+                          )}
+                        </td>
+
+                        <td className="p-4 text-secondary">
+                          {new Date(req.created_at).toLocaleString()}
+                        </td>
+
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {req.status === 'PENDING' && (
+                              <>
+                                <button
+                                  onClick={() => handleApprovePayment(req)}
+                                  className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
+                                >
+                                  <CheckCircle2 size={12} /> Tasdiqlash
+                                </button>
+                                <button
+                                  onClick={() => handleRejectPayment(req.id)}
+                                  className="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-lg text-[10px] font-bold transition-all flex items-center gap-1"
+                                >
+                                  <XCircle size={12} /> Rad Etish
+                                </button>
+                              </>
+                            )}
+                            {req.status === 'APPROVED' && boughtMatch && (
+                              <button
+                                onClick={() => handleRevokeBoughtGame(boughtMatch.id)}
+                                className="px-2.5 py-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-lg text-[10px] font-semibold transition-all"
+                                title="O'yin ruxsatini va kalitini bekor qilish"
+                              >
+                                Revoke (Bekor qilish)
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
         </div>
 
         {/* Purchase Plans Section (Sotib olish rejasiga qo'shganlar) */}
@@ -1137,6 +1494,64 @@ export default function AdminPage() {
                   className="flex-1 py-3 bg-primary hover:bg-primary-hover text-black font-bold rounded-xl transition-colors disabled:opacity-50"
                 >
                   {savingPremium ? "Saqlanmoqda..." : "Saqlash"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Receipt Image Preview Modal */}
+        {selectedReceiptUrl && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedReceiptUrl(null)}
+              className="absolute inset-0 bg-black/85 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative max-w-2xl max-h-[90vh] bg-card border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden flex flex-col items-center justify-center"
+            >
+              <div className="w-full flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <CreditCard className="text-emerald-400" size={18} />
+                  <span>To'lov Cheki Rasmi</span>
+                </h3>
+                <button
+                  onClick={() => setSelectedReceiptUrl(null)}
+                  className="p-2 bg-white/5 rounded-full hover:bg-white/10 text-secondary hover:text-white transition-colors"
+                >
+                  <ShieldClose size={18} />
+                </button>
+              </div>
+
+              <div className="w-full overflow-auto max-h-[70vh] flex items-center justify-center bg-black/50 rounded-2xl p-2 border border-white/5">
+                <img
+                  src={selectedReceiptUrl}
+                  alt="Chek"
+                  className="max-w-full max-h-[65vh] object-contain rounded-xl"
+                />
+              </div>
+
+              <div className="mt-4 flex gap-3 w-full justify-end">
+                <a
+                  href={selectedReceiptUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-semibold rounded-xl text-xs flex items-center gap-2 transition-colors"
+                >
+                  <ExternalLink size={14} /> Asl rasmni yangi oynada ochish
+                </a>
+                <button
+                  onClick={() => setSelectedReceiptUrl(null)}
+                  className="px-4 py-2 bg-primary text-black font-bold rounded-xl text-xs transition-colors"
+                >
+                  Yopish
                 </button>
               </div>
             </motion.div>
