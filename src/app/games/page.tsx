@@ -229,7 +229,7 @@ const GamesPage = () => {
     PC: games.filter(g => g.platform === "PC").length,
     MOBILE: games.filter(g => g.platform === "MOBILE").length,
     PREMIUM: games.filter(g => Number(g.price) > 0).length,
-    DEMO: games.filter(g => g.slug === 'shiroq-afsonasi' || (g.platform !== "WEB" && Boolean(g.demo_url))).length,
+    DEMO: games.filter(g => g.slug === 'shiroq-afsonasi').length,
   };
 
   const platformTabs = [
@@ -250,7 +250,7 @@ const GamesPage = () => {
     if (filter === "PREMIUM") return Number(g.price) > 0;
     if (filter === "PC") return g.platform === "PC";
     if (filter === "MOBILE") return g.platform === "MOBILE";
-    if (filter === "DEMO") return g.slug === 'shiroq-afsonasi' || (g.platform !== "WEB" && Boolean(g.demo_url));
+    if (filter === "DEMO") return g.slug === 'shiroq-afsonasi';
     return true;
   });
 
@@ -416,7 +416,7 @@ const GamesPage = () => {
 
                     {/* Platform / Tag Badge */}
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[80%]">
-                      {g.demo_url && g.platform !== "WEB" && (
+                      {g.slug === 'shiroq-afsonasi' && (
                         <span className="bg-cyan-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-cyan-400/30 shadow-md">
                           <Gamepad2 size={10} /> DEMO O'YIN
                         </span>
