@@ -11,6 +11,15 @@ const PAYMENT_CARD_NUMBER = process.env.PAYMENT_CARD_NUMBER || '';
 const PAYMENT_CARD_HOLDER = process.env.PAYMENT_CARD_HOLDER || '';
 const CHANNEL_USERNAME = '@maroqliku';
 
+// GET request handlers for browser checks
+export async function GET() {
+  return NextResponse.json({
+    status: "ok",
+    message: "Maroqli Telegram Bot Webhook Endpoint Active",
+    bot: "MAROQLI TOLOV (@maroqlitolovrasmiybot)"
+  });
+}
+
 // Helper: Telegram API so'rovlari
 async function sendTelegram(method: string, payload: any) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/${method}`;

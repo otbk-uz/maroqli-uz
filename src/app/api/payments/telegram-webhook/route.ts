@@ -6,6 +6,10 @@ const supabase = supabaseAdmin;
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
 
+export async function GET() {
+  return NextResponse.json({ status: "ok", message: "Telegram Payment Webhook Endpoint Active" });
+}
+
 export async function POST(req: Request) {
   try {
     // XAVFSIZLIK 1: so'rov haqiqatan Telegram'dan kelganini tekshirish.
