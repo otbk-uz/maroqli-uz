@@ -83,15 +83,23 @@ bot.onText(/\/start/, async (msg) => {
   
   delete userStates[chatId];
   
-  bot.sendMessage(chatId, `👋 *Assalomu alaykum! Maroqli.uz kibersport botiga xush kelibsiz!*\n\nBotdan foydalanish uchun iltimos rasmiy kanalimizga a'zo bo'ling va obunani tasdiqlang:`, {
+  bot.sendMessage(chatId, `👋 *Assalomu alaykum! Maroqli.uz rasmiy to'lov va yordamchi botiga xush kelibsiz!* 🎮\n\n` +
+    `✨ *Ushbu bot orqali siz quyidagilarni bajarishingiz mumkin:*\n\n` +
+    `1️⃣ 💳 *O'yinlar xaridi va chek yuborish*:\n` +
+    `Sayt yoki bot orqali o'yin xarid qilishda plastik kartadan to'lov o'tkazib, to'lov cheki (skrinshot)ni ushbu botga yuborasiz. Tizim summani tekshirib, **1 soniya ichida o'yinni va CD-Key'ni avtomatik faollashtiradi**.\n\n` +
+    `2️⃣ 🏆 *Kibersport Turnirlari*:\n` +
+    `Maroqli platformasidagi o'yinlar hamda turnirlar uchun ro'yxatdan o'tishingiz va turnir chiptalarini olishingiz mumkin.\n\n` +
+    `3️⃣ 📢 *Rasmiy Kanal va Yangiliklar*:\n` +
+    `Rasmiy Telegram kanalimizga a'zo bo'lib eng so'nggi yangiliklardan va aksiyalardan xabardor bo'lasiz.\n\n` +
+    `👇 *Tushungan bo'lsangiz va davom etish uchun quyidagi tugmani bosing:*`, {
     parse_mode: 'Markdown',
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "📢 Kanalga obuna bo'lish", url: `https://t.me/${channelUsername.replace('@', '')}` }
+          { text: "📢 Rasmiy kanalimizga a'zo bo'lish", url: `https://t.me/${channelUsername.replace('@', '')}` }
         ],
         [
-          { text: "✅ Obunani tasdiqlash", callback_data: 'check_subscription' }
+          { text: "✅ TUSHUNDIM, RAXMAT", callback_data: 'understand_thanks' }
         ]
       ]
     }
@@ -104,7 +112,7 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   
-  if (data === 'check_subscription') {
+  if (data === 'understand_thanks' || data === 'check_subscription') {
     const isSubscribed = await checkSubscription(chatId, userId);
     if (!isSubscribed) {
       bot.answerCallbackQuery(query.id, {

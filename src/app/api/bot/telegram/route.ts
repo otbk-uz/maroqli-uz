@@ -102,18 +102,18 @@ export async function POST(req: Request) {
       const data = callbackQuery.data;
       const callbackQueryId = callbackQuery.id;
 
-      if (data === 'check_subscription') {
+      if (data === 'understand_thanks' || data === 'check_subscription') {
         const isSubscribed = await checkSubscription(userId);
         if (!isSubscribed) {
           await sendTelegram('answerCallbackQuery', {
             callback_query_id: callbackQueryId,
-            text: "❌ Siz hali kanalga a'zo bo'lmadingiz. Iltimos a'zo bo'lib keyin tasdiqlang.",
+            text: "❌ Iltimos, rasmiy kanalimizga a'zo bo'ling va keyin qayta bosing!",
             show_alert: true
           });
         } else {
           await sendTelegram('answerCallbackQuery', {
             callback_query_id: callbackQueryId,
-            text: "✅ Obuna tasdiqlandi!"
+            text: "✅ Tushunganingiz uchun rahmat!"
           });
           
           await sendTelegram('deleteMessage', {
@@ -276,15 +276,23 @@ export async function POST(req: Request) {
 
         await sendTelegram('sendMessage', {
           chat_id: chatId,
-          text: `👋 *Assalomu alaykum! Maroqli.uz kibersport botiga xush kelibsiz!*\n\nBotdan foydalanish uchun iltimos rasmiy kanalimizga a'zo bo'ling va obunani tasdiqlang:`,
+          text: `👋 *Assalomu alaykum! Maroqli.uz rasmiy to'lov va yordamchi botiga xush kelibsiz!* 🎮\n\n` +
+            `✨ *Ushbu bot orqali siz quyidagilarni bajarishingiz mumkin:*\n\n` +
+            `1️⃣ 💳 *O'yinlar xaridi va chek yuborish*:\n` +
+            `Sayt yoki bot orqali o'yin xarid qilishda plastik kartadan to'lov o'tkazib, to'lov cheki (skrinshot)ni ushbu botga yuborasiz. Tizim summani tekshirib, **1 soniya ichida o'yinni va CD-Key'ni avtomatik faollashtiradi**.\n\n` +
+            `2️⃣ 🏆 *Kibersport Turnirlari*:\n` +
+            `Maroqli platformasidagi o'yinlar hamda turnirlar uchun ro'yxatdan o'tishingiz va turnir chiptalarini olishingiz mumkin.\n\n` +
+            `3️⃣ 📢 *Rasmiy Kanal va Yangiliklar*:\n` +
+            `Rasmiy Telegram kanalimizga a'zo bo'lib eng so'nggi yangiliklardan va aksiyalardan xabardor bo'lasiz.\n\n` +
+            `👇 *Tushungan bo'lsangiz va davom etish uchun quyidagi tugmani bosing:*`,
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [
-                { text: "📢 Kanalga obuna bo'lish", url: `https://t.me/${CHANNEL_USERNAME.replace('@', '')}` }
+                { text: "📢 Rasmiy kanalimizga a'zo bo'lish", url: `https://t.me/${CHANNEL_USERNAME.replace('@', '')}` }
               ],
               [
-                { text: "✅ Obunani tasdiqlash", callback_data: 'check_subscription' }
+                { text: "✅ TUSHUNDIM, RAXMAT", callback_data: 'understand_thanks' }
               ]
             ]
           }
