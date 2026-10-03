@@ -416,7 +416,7 @@ const GamesPage = () => {
 
                     {/* Platform / Tag Badge */}
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 max-w-[80%]">
-                      {g.demo_url && (
+                      {g.demo_url && g.platform !== "WEB" && (
                         <span className="bg-cyan-600 text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full flex items-center gap-1 border border-cyan-400/30 shadow-md">
                           <Gamepad2 size={10} /> DEMO O'YIN
                         </span>
