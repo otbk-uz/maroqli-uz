@@ -331,7 +331,7 @@ export default function AdminPage() {
         try {
           const { data: payData } = await supabase
             .from('payment_requests')
-            .select('id, created_at, user_id, item_type, item_id, amount, receipt_url, status, approval_type, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
+            .select('id, created_at, user_id, item_type, item_id, amount, receipt_url, status, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
             .order('created_at', { ascending: false });
 
           if (payData) {

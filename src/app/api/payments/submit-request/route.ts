@@ -110,70 +110,63 @@ export async function POST(req: Request) {
       ? process.env.TELEGRAM_BOT_TOKEN
       : NEW_BOT_TOKEN;
 
-    let rawAdminId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
-    if (rawAdminId && !rawAdminId.startsWith('-')) {
-      rawAdminId = rawAdminId.length >= 10 ? `-100${rawAdminId}` : `-${rawAdminId}`;
-    }
-    const adminChatId = rawAdminId;
+    const adminTargets = [
+      '8647586001',
+      '1493433394',
+      process.env.TELEGRAM_ADMIN_CHAT_ID,
+      '5116279804'
+    ].filter((v, idx, arr) => v && arr.indexOf(v) === idx);
 
-    if (botToken && adminChatId) {
-      let caption = "";
-      let inlineKeyboard: any = { inline_keyboard: [] };
+    if (botToken && adminTargets.length > 0) {
+      const isHttpUrl = receiptUrl && (receiptUrl.startsWith('http://') || receiptUrl.startsWith('https://'));
+      const safeUsername = username ? username.replace(/[<>&]/g, '') : 'foydalanuvchi';
+      const safeItemName = cleanItemName ? cleanItemName.replace(/[<>&]/g, '') : "O'yin";
 
-      if (isAutoApprovable) {
-        caption = `⚡ *AVTOMATIK TO'LOV TASDIQLANDI!*\n\n` +
-                  `👤 *Foydalanuvchi:* @${username || 'foydalanuvchi'}\n` +
-                  `🎮 *Mahsulot:* ${cleanItemName}\n` +
-                  `💰 *Summa:* ${reqAmount.toLocaleString()} UZS\n` +
-                  `🤖 *Tizim:* Avtomatik tekshirildi va CD-Key berildi!\n` +
-                  `🔑 *CD-Key:* \`${generatedCdKey || 'FAOL'}\`\n` +
-                  `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}`;
-      } else {
-        caption = `🔔 *YANGI TO'LOV SO'ROVI (Qo'lda tekshirish)*\n\n` +
-                  `👤 *Foydalanuvchi:* @${username || 'foydalanuvchi'}\n` +
-                  `🎮 *Mahsulot:* ${cleanItemName}\n` +
-                  `💰 *Summa:* ${reqAmount.toLocaleString()} UZS\n` +
-                  `📅 *Sana:* ${new Date().toLocaleString('uz-UZ')}\n\n` +
-                  `To'lovni tekshiring va quyidagi amallardan birini tanlang:`;
+      const htmlCaption = `🛒 <b>YANGI BUYURTMA (TO'LOV SO'ROVI)</b>\n\n` +
+        `👤 <b>Foydalanuvchi:</b> @${safeUsername}\n` +
+        `🎮 <b>Mahsulot:</b> ${safeItemName}\n` +
+        `💰 <b>Summa:</b> ${reqAmount.toLocaleString()} UZS\n` +
+        `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}\n\n` +
+        `To'lovni tekshiring va quyidagi amallardan birini tanlang:`;
 
-        inlineKeyboard = {
-          inline_keyboard: [
-            [
-              { text: "✅ Tasdiqlash", callback_data: `approve:${finalRequestId}` },
-              { text: "Rad etish ❌", callback_data: `reject:${finalRequestId}` }
-            ]
+      const inlineKeyboard = {
+        inline_keyboard: [
+          [
+            { text: "✅ Tasdiqlash", callback_data: `approve:${finalRequestId}` },
+            { text: "Rad etish ❌", callback_data: `reject:${finalRequestId}` }
           ]
-        };
-      }
+        ]
+      };
 
-      // Check if receiptUrl is a valid http link vs data url for Telegram
-      const isHttpUrl = receiptUrl.startsWith('http://') || receiptUrl.startsWith('https://');
-
-      if (isHttpUrl) {
-        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-        await fetch(telegramUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: adminChatId,
-            photo: receiptUrl,
-            caption: caption,
-            parse_mode: 'Markdown',
-            reply_markup: inlineKeyboard
-          })
-        }).catch(err => console.error("Telegram sendPhoto error:", err));
-      } else {
-        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
-        await fetch(telegramUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: adminChatId,
-            text: caption + `\n\n🖼 *Chek skrinshoti:* (Sayt/Admin Paneldan ko'ring)`,
-            parse_mode: 'Markdown',
-            reply_markup: inlineKeyboard
-          })
-        }).catch(err => console.error("Telegram sendMessage error:", err));
+      for (const targetChatId of adminTargets) {
+        try {
+          if (isHttpUrl) {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: targetChatId,
+                photo: receiptUrl,
+                caption: htmlCaption,
+                parse_mode: 'HTML',
+                reply_markup: inlineKeyboard
+              })
+            });
+          } else {
+            await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                chat_id: targetChatId,
+                text: htmlCaption + `\n\n🖼 <b>Chek skrinshoti:</b> (Sayt / Admin Paneldan ko'ring)`,
+                parse_mode: 'HTML',
+                reply_markup: inlineKeyboard
+              })
+            });
+          }
+        } catch (tErr) {
+          console.error(`Telegram notification error for ${targetChatId}:`, tErr);
+        }
       }
     }
 
