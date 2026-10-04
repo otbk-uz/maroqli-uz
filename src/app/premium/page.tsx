@@ -242,6 +242,29 @@ export default function PremiumPage() {
                     <p className="text-sm text-secondary">
                       Siz yuborgan to'lov cheki admin tomonidan tasdiqlanish jarayonida. Tasdiqlangach, Premium obuna avtomatik faollashadi.
                     </p>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch('/api/payments/reset-pending', {
+                            method: 'POST',
+                            headers: {
+                              'Content-Type': 'application/json',
+                              'Authorization': `Bearer ${useAuthStore.getState().token}`
+                            },
+                            body: JSON.stringify({ itemType: 'PREMIUM' })
+                          });
+                          if (res.ok) {
+                            setPaymentRequest(null);
+                          }
+                        } catch (e) {
+                          console.error(e);
+                        }
+                      }}
+                      className="mt-2 text-xs text-amber-300 underline font-bold hover:text-amber-200 text-left transition-colors flex items-center gap-1"
+                    >
+                      <span>🔄 Bekor qilish va qayta so'rov yuborish</span>
+                    </button>
                   </div>
                 </div>
                 <div className="bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-bold px-4 py-2 rounded-lg uppercase tracking-wider">

@@ -917,6 +917,30 @@ const GameDetailPage = () => {
                   <p className="text-[11px] text-secondary leading-relaxed">
                     Siz yuborgan to'lov cheki admin tomonidan tasdiqlanish jarayonida. Tasdiqlangach, o'yin kaliti shu yerda faollashadi.
                   </p>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        const res = await fetch('/api/payments/reset-pending', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${useAuthStore.getState().token}`
+                          },
+                          body: JSON.stringify({ gameId: id, itemType: 'GAME' })
+                        });
+                        if (res.ok) {
+                          setPaymentRequest(null);
+                          setIsPaymentModalOpen(true);
+                        }
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    className="mt-2 text-xs text-amber-300 underline font-bold hover:text-amber-200 text-left transition-colors flex items-center gap-1"
+                  >
+                    <span>🔄 Bekor qilish va qayta so'rov yuborish</span>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-4">
