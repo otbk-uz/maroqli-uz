@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const supabase = supabaseAdmin;
@@ -266,6 +267,118 @@ export async function POST(req: Request) {
           chat_id: targetUserId,
           text: "❌ Kechirasiz, siz yuborgan to'lov cheki adminlar tomonidan rad etildi. Muammo bo'lsa, adminlar bilan bog'laning."
         });
+      }
+      else if (data.startsWith('approve:') || data.startsWith('reject:')) {
+        const [action, requestId] = data.split(':');
+
+        const { data: reqRow, error: fetchErr } = await supabase
+          .from('payment_requests')
+          .select('*, profiles:user_id(username, full_name)')
+          .eq('id', requestId)
+          .maybeSingle();
+
+        if (fetchErr || !reqRow) {
+          await sendTelegram('answerCallbackQuery', {
+            callback_query_id: callbackQueryId,
+            text: "❌ Ariza topilmadi yoki xatolik!"
+          });
+          return NextResponse.json({ success: true });
+        }
+
+        if (reqRow.status !== 'PENDING') {
+          await sendTelegram('answerCallbackQuery', {
+            callback_query_id: callbackQueryId,
+            text: "ℹ️ Ushbu ariza allaqachon ko'rib chiqilgan!"
+          });
+          return NextResponse.json({ success: true });
+        }
+
+        let itemTitle = "Mahsulot";
+        if (reqRow.item_type === 'GAME' && reqRow.item_id) {
+          const { data: gData } = await supabase
+            .from('developed_games')
+            .select('title')
+            .eq('id', reqRow.item_id)
+            .maybeSingle();
+          if (gData) itemTitle = gData.title;
+        } else if (reqRow.item_type === 'PREMIUM') {
+          itemTitle = "Premium Obuna";
+        }
+
+        const adminName = callbackQuery.from.username ? `@${callbackQuery.from.username}` : callbackQuery.from.first_name;
+
+        if (action === 'approve') {
+          const { data: approvedRows } = await supabase
+            .from('payment_requests')
+            .update({ status: 'APPROVED' })
+            .eq('id', requestId)
+            .eq('status', 'PENDING')
+            .select('id');
+
+          if (approvedRows && approvedRows.length > 0) {
+            if (reqRow.item_type === 'GAME' && reqRow.item_id) {
+              const segment = () => {
+                const bytes = crypto.getRandomValues(new Uint8Array(3));
+                return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').substring(0, 4).toUpperCase();
+              };
+              const cdKey = `PN-${segment()}-${segment()}-${segment()}`;
+
+              await supabase
+                .from('bought_games')
+                .upsert({
+                  game_id: reqRow.item_id,
+                  user_id: reqRow.user_id,
+                  cd_key: cdKey
+                }, { onConflict: 'user_id,game_id' });
+            } else if (reqRow.item_type === 'PREMIUM') {
+              await supabase
+                .from('profiles')
+                .update({ is_premium: true })
+                .eq('id', reqRow.user_id);
+            }
+
+            await sendTelegram('answerCallbackQuery', {
+              callback_query_id: callbackQueryId,
+              text: "✅ To'lov tasdiqlandi va saytda faollashtirildi!"
+            });
+
+            await sendTelegram('editMessageCaption', {
+              chat_id: chatId,
+              message_id: callbackQuery.message.message_id,
+              caption: `✅ <b>TO'LOV TASDIQLANDI!</b>\n\n` +
+                       `👤 <b>Foydalanuvchi:</b> @${reqRow.profiles?.username || 'foydalanuvchi'}\n` +
+                       `🎮 <b>Mahsulot:</b> ${itemTitle}\n` +
+                       `💰 <b>Summa:</b> ${parseFloat(reqRow.amount).toLocaleString()} UZS\n` +
+                       `✍️ <b>Tasdiqladi:</b> ${adminName}\n` +
+                       `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}`,
+              parse_mode: 'HTML',
+              reply_markup: { inline_keyboard: [] }
+            });
+          }
+        } else if (action === 'reject') {
+          await supabase
+            .from('payment_requests')
+            .update({ status: 'REJECTED' })
+            .eq('id', requestId);
+
+          await sendTelegram('answerCallbackQuery', {
+            callback_query_id: callbackQueryId,
+            text: "❌ To'lov rad etildi."
+          });
+
+          await sendTelegram('editMessageCaption', {
+            chat_id: chatId,
+            message_id: callbackQuery.message.message_id,
+            caption: `❌ <b>TO'LOV RAD ETILDI!</b>\n\n` +
+                     `👤 <b>Foydalanuvchi:</b> @${reqRow.profiles?.username || 'foydalanuvchi'}\n` +
+                     `🎮 <b>Mahsulot:</b> ${itemTitle}\n` +
+                     `💰 <b>Summa:</b> ${parseFloat(reqRow.amount).toLocaleString()} UZS\n` +
+                     `✍️ <b>Rad etdi:</b> ${adminName}\n` +
+                     `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}`,
+            parse_mode: 'HTML',
+            reply_markup: { inline_keyboard: [] }
+          });
+        }
       }
       else if (data === 'remind_me_tournaments') {
         try {

@@ -152,6 +152,25 @@ export async function POST(req: Request) {
                 reply_markup: inlineKeyboard
               })
             });
+          } else if (receiptUrl && receiptUrl.startsWith('data:image/')) {
+            const matches = receiptUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+            if (matches && matches.length === 3) {
+              const mimeType = matches[1];
+              const buffer = Buffer.from(matches[2], 'base64');
+              const blob = new Blob([buffer], { type: mimeType });
+
+              const formData = new FormData();
+              formData.append('chat_id', String(targetChatId));
+              formData.append('photo', blob, 'receipt.png');
+              formData.append('caption', htmlCaption);
+              formData.append('parse_mode', 'HTML');
+              formData.append('reply_markup', JSON.stringify(inlineKeyboard));
+
+              await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                method: 'POST',
+                body: formData
+              });
+            }
           } else {
             await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
               method: 'POST',
