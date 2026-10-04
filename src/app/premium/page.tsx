@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import PaymentModal from "@/components/PaymentModal";
 import { Check, X, Award, Star, Sparkles, Crown, Zap, Upload, FileText, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
@@ -22,6 +23,8 @@ export default function PremiumPage() {
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentRequest, setPaymentRequest] = useState<any>(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<{ id: string; title: string; price: number } | null>(null);
 
   const PLANS = [
     {
@@ -122,38 +125,21 @@ export default function PremiumPage() {
     }
   };
 
-  const handlePurchaseClick = async (planKey: string) => {
+  const handlePurchaseClick = (planKey: string) => {
     if (!isAuthenticated || !user) {
       router.push("/login?redirect=/premium");
       return;
     }
-    const plan = PLANS.find(p => p.key === planKey);
+    const plan = PLANS.find((p) => p.key === planKey);
     if (!plan) return;
 
-    try {
-      const amountVal = parseFloat(plan.price.replace(/[^\d]/g, '') || '0');
-
-      const res = await fetch('/api/payments/wlcm/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          itemType: 'PREMIUM',
-          itemId: null,
-          amount: amountVal,
-          itemName: plan.name
-        })
-      });
-
-      const data = await res.json();
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        alert(data.error || "WLCM to'lov shlyuzida xatolik.");
-      }
-    } catch (err: any) {
-      alert(err.message || "To'lovga yo'naltirishda xatolik.");
-    }
+    const amountVal = parseFloat(plan.price.replace(/[^\d]/g, "") || "0");
+    setSelectedPlan({
+      id: plan.key,
+      title: plan.name,
+      price: amountVal,
+    });
+    setIsPaymentModalOpen(true);
   };
 
   return (
@@ -387,11 +373,22 @@ export default function PremiumPage() {
                 </div>
               ))}
             </div>
-          </div>
         </div>
       </div>
 
-
+      {selectedPlan && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          itemType="PREMIUM"
+          itemId={selectedPlan.id}
+          itemTitle={selectedPlan.title}
+          price={selectedPlan.price}
+          onSuccess={() => {
+            fetchSubscription();
+          }}
+        />
+      )}
     </div>
   );
 }

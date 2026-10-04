@@ -10,6 +10,7 @@ import { useAuthStore } from "@/lib/store";
 import api from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
+import PaymentModal from "@/components/PaymentModal";
 
 interface Review {
   id: number;
@@ -490,42 +491,15 @@ const GameDetailPage = () => {
     }
   };
 
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
   const handleBuyGame = async () => {
     if (!isAuthenticated || !user) {
       router.push("/login");
       return;
     }
     if (!game) return;
-
-    setPurchaseLoading(true);
-    try {
-      const finalPrice = user.is_premium
-        ? (game.premium_price ? Number(game.premium_price) : Math.round(Number(game.price) * 0.8))
-        : Number(game.price);
-
-      const res = await fetch('/api/payments/wlcm/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.id,
-          itemType: 'GAME',
-          itemId: game.id,
-          amount: finalPrice,
-          itemName: game.title
-        })
-      });
-
-      const data = await res.json();
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        alert(data.error || "WLCM to'lov shlyuzida xatolik.");
-      }
-    } catch (err: any) {
-      alert(err.message || "To'lovga yo'naltirishda xatolik.");
-    } finally {
-      setPurchaseLoading(false);
-    }
+    setIsPaymentModalOpen(true);
   };
 
   if (loading) {
@@ -1131,6 +1105,22 @@ const GameDetailPage = () => {
             <img src={selectedImageModal} alt="Enlarged screenshot" className="max-w-full max-h-[85vh] object-contain rounded-2xl border border-white/10 shadow-2xl" />
           </div>
         </div>
+      {/* Payment Modal */}
+      {game && (
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          itemType="GAME"
+          itemId={game.id}
+          itemName={game.title}
+          itemPrice={user?.is_premium ? (game.premium_price ? Number(game.premium_price) : Math.round(Number(game.price) * 0.8)) : Number(game.price)}
+          onSuccess={(cdKey) => {
+            if (cdKey) setBoughtCdKey(cdKey);
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
+          }}
+        />
       )}
     </main>
   );
