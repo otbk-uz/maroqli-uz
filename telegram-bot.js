@@ -282,16 +282,18 @@ bot.on('message', async (msg) => {
   } else {
     // Oddiy menyu tugmalari
     if (text === "🏆 Turnirlar") {
-      bot.sendMessage(chatId, `🏆 *BRONZA TURNIRI*\n\n` +
-        `🎮 *O'yin:* CS2, PUBG yoki Mobile Legends\n` +
-        `💰 *Mukofot jamg'armasi:* 1 000 000 so'm\n` +
-        `📅 *Boshlanish sanasi:* Tez kunda\n\n` +
-        `Ushbu turnirda ishtirok etish uchun chipta xarid qilishingiz kerak.`, {
+      bot.sendMessage(chatId, `🏆 *Maroqli Kibersport Turnirlari*\n\n` +
+        `⏳ *Hozircha faol turnirlar mavjud emas.*\n` +
+        `Yangi katta turnirlar va mukofotli musobaqalar tez kunda e'lon qilinadi!\n\n` +
+        `📢 Turnirlar boshlanganda birinchilardan bo'lib xabardor bo'lish va eslatma olish uchun quyidagi *"🔔 Eslatib qo'yish"* tugmasini bosing:`, {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [
-                { text: "🎫 Bronza ticket xarid qilish", callback_data: 'buy_bronze_ticket' }
+                { text: "🔔 Eslatib qo'yish (Obuna bo'lish)", callback_data: 'remind_me_tournaments' }
+              ],
+              [
+                { text: "📢 Rasmiy kanalimiz", url: `https://t.me/${channelUsername.replace('@', '')}` }
               ]
             ]
           }

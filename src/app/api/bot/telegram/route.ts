@@ -267,6 +267,38 @@ export async function POST(req: Request) {
           text: "❌ Kechirasiz, siz yuborgan to'lov cheki adminlar tomonidan rad etildi. Muammo bo'lsa, adminlar bilan bog'laning."
         });
       }
+      else if (data === 'remind_me_tournaments') {
+        try {
+          await supabase.from('bot_users').upsert({
+            telegram_id: userId,
+            wants_tournament_reminders: true
+          }, { onConflict: 'telegram_id' });
+        } catch (rErr) {
+          console.warn("Tournament reminder upsert warning:", rErr);
+        }
+
+        await sendTelegram('answerCallbackQuery', {
+          callback_query_id: callbackQueryId,
+          text: "🔔 Rahmat! Yangi turnirlar e'lon qilinishi bilanoq sizga shaxsiy xabar yuboramiz!",
+          show_alert: true
+        });
+
+        await sendTelegram('editMessageText', {
+          chat_id: chatId,
+          message_id: callbackQuery.message.message_id,
+          text: `✅ <b>Eslatib qo'yish faollashtirildi!</b>\n\n` +
+            `Yangi kibersport turniri e'lon qilinishi bilanoq ushbu bot orqali sizga shaxsiy bildirishnoma yuboriladi. 🏆\n\n` +
+            `📢 Rasmiy kanalimizni ham kuzatib boring: ${CHANNEL_USERNAME}`,
+          parse_mode: 'HTML',
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: "📢 Rasmiy kanalimiz", url: `https://t.me/${CHANNEL_USERNAME.replace('@', '')}` }
+              ]
+            ]
+          }
+        });
+      }
       return NextResponse.json({ success: true });
     }
 
@@ -461,16 +493,18 @@ export async function POST(req: Request) {
       if (text === "🏆 Turnirlar") {
         await sendTelegram('sendMessage', {
           chat_id: chatId,
-          text: `🏆 *BRONZA TURNIRI*\n\n` +
-            `🎮 *O'yin:* CS2, PUBG yoki Mobile Legends\n` +
-            `💰 *Mukofot jamg'armasi:* 1 000 000 so'm\n` +
-            `📅 *Boshlanish sanasi:* Tez kunda\n\n` +
-            `Ushbu turnirda ishtirok etish uchun chipta xarid qilishingiz kerak.`,
-          parse_mode: 'Markdown',
+          text: `🏆 <b>Maroqli Kibersport Turnirlari</b>\n\n` +
+            `⏳ <b>Hozircha faol turnirlar mavjud emas.</b>\n` +
+            `Yangi katta turnirlar va mukofotli musobaqalar tez kunda e'lon qilinadi!\n\n` +
+            `📢 Turnirlar boshlanganda birinchilardan bo'lib xabardor bo'lish va eslatma olish uchun quyidagi <b>"🔔 Eslatib qo'yish"</b> tugmasini bosing:`,
+          parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
-                { text: "🎫 Bronza ticket xarid qilish", callback_data: 'buy_bronze_ticket' }
+                { text: "🔔 Eslatib qo'yish (Obuna bo'lish)", callback_data: 'remind_me_tournaments' }
+              ],
+              [
+                { text: "📢 Rasmiy kanalimiz", url: `https://t.me/${CHANNEL_USERNAME.replace('@', '')}` }
               ]
             ]
           }
