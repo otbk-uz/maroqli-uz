@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getUserFromRequest } from '@/lib/authServer';
-
-const supabase = supabaseAdmin;
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +12,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Avtorizatsiya talab qilinadi" }, { status: 401 });
     }
     const userId = authedUser.id;
+
+    // Direct auth client setup so RLS accepts user insert if service role key is absent
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization') || '';
+    const supabase = process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? supabaseAdmin
+      : createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          { global: { headers: { Authorization: authHeader } } }
+        );
 
     const { requestId, itemType, itemId, amount, receiptUrl, itemName, username } = await req.json();
 
@@ -29,7 +38,7 @@ export async function POST(req: Request) {
     let isAutoApprovable = false;
 
     if (itemType === 'GAME' && itemId) {
-      const { data: gameData } = await supabase
+      const { data: gameData } = await supabaseAdmin
         .from('developed_games')
         .select('id, title, price, premium_price')
         .eq('id', itemId)
@@ -53,7 +62,7 @@ export async function POST(req: Request) {
     let initialStatus = isAutoApprovable ? 'APPROVED' : 'PENDING';
     let generatedCdKey: string | null = null;
 
-    // 2. Insert request into payment_requests table
+    // 2. Insert request into payment_requests table (NO non-existent approval_type column)
     const { data: requestData, error: insertError } = await supabase
       .from('payment_requests')
       .insert({
@@ -62,19 +71,18 @@ export async function POST(req: Request) {
         item_id: itemId || null,
         amount: reqAmount,
         receipt_url: receiptUrl,
-        status: initialStatus,
-        approval_type: isAutoApprovable ? 'AUTO' : 'MANUAL'
+        status: initialStatus
       })
       .select()
       .single();
 
     if (insertError) {
       console.error("Supabase payment request insert error:", insertError);
-      return NextResponse.json({ error: "To'lov arizasini bazada yaratishda xatolik yuz berdi." }, { status: 500 });
+      return NextResponse.json({ error: insertError.message || "To'lov arizasini bazada yaratishda xatolik yuz berdi." }, { status: 500 });
     }
     finalRequestId = requestData.id;
 
-    // 3. If AUTO APPROVED, grant game access or premium immediately
+    // 3. If AUTO APPROVED, grant game access or premium immediately using admin client
     if (isAutoApprovable) {
       if (itemType === 'GAME' && itemId) {
         // Generate CD Key
@@ -85,7 +93,7 @@ export async function POST(req: Request) {
         generatedCdKey = `PN-${segment()}-${segment()}-${segment()}`;
 
         // Insert into bought_games table
-        await supabase
+        await supabaseAdmin
           .from('bought_games')
           .upsert({
             game_id: itemId,
@@ -93,7 +101,7 @@ export async function POST(req: Request) {
             cd_key: generatedCdKey
           }, { onConflict: 'user_id,game_id' });
       } else if (itemType === 'PREMIUM') {
-        await supabase
+        await supabaseAdmin
           .from('profiles')
           .update({ is_premium: true })
           .eq('id', userId);
@@ -142,22 +150,34 @@ export async function POST(req: Request) {
         };
       }
 
-      const telegramUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
-      const res = await fetch(telegramUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: adminChatId,
-          photo: receiptUrl.startsWith('http') ? receiptUrl : `https://${receiptUrl}`,
-          caption: caption,
-          parse_mode: 'Markdown',
-          reply_markup: inlineKeyboard
-        })
-      });
+      // Check if receiptUrl is a valid http link vs data url for Telegram
+      const isHttpUrl = receiptUrl.startsWith('http://') || receiptUrl.startsWith('https://');
 
-      if (!res.ok) {
-        const errText = await res.text();
-        console.error("Telegram sendPhoto API failed:", errText);
+      if (isHttpUrl) {
+        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendPhoto`;
+        await fetch(telegramUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: adminChatId,
+            photo: receiptUrl,
+            caption: caption,
+            parse_mode: 'Markdown',
+            reply_markup: inlineKeyboard
+          })
+        }).catch(err => console.error("Telegram sendPhoto error:", err));
+      } else {
+        const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+        await fetch(telegramUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: adminChatId,
+            text: caption + `\n\n🖼 *Chek skrinshoti:* (Sayt/Admin Paneldan ko'ring)`,
+            parse_mode: 'Markdown',
+            reply_markup: inlineKeyboard
+          })
+        }).catch(err => console.error("Telegram sendMessage error:", err));
       }
     }
 
