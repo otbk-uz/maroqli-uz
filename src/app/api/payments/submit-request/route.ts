@@ -35,6 +35,9 @@ export async function POST(req: Request) {
     // 1. Fetch item details for verification & price check
     let targetPrice = reqAmount;
     let cleanItemName = itemName || (itemType === 'PREMIUM' ? 'Premium Obuna' : "O'yin");
+
+    // XAVFSIZLIK: soxta chek skrinshotlari orqali o'yinlarni tekinga olib ketmaslik uchun
+    // barcha cheklar Telegram Bot (admin) va Admin Panel orqali 1-bosish bilan tekshirilib tasdiqlanadi.
     let isAutoApprovable = false;
 
     if (itemType === 'GAME' && itemId) {
@@ -47,16 +50,9 @@ export async function POST(req: Request) {
       if (gameData) {
         cleanItemName = gameData.title;
         targetPrice = Number(gameData.price) || 0;
-        // Check if submitted amount matches required price (or premium price)
-        if (reqAmount >= targetPrice || reqAmount >= Number(gameData.premium_price || targetPrice)) {
-          isAutoApprovable = true;
-        }
       }
     } else if (itemType === 'PREMIUM') {
       targetPrice = 29000; // Standard premium price in UZS
-      if (reqAmount >= 15000) {
-        isAutoApprovable = true;
-      }
     }
 
     let initialStatus = isAutoApprovable ? 'APPROVED' : 'PENDING';

@@ -238,8 +238,8 @@ export default function PaymentModal({
                   </h4>
                 </div>
                 <div className="text-right">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-full">
-                    <Zap size={11} className="fill-amber-400" /> Instant Avto-Aktivlash
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
+                    <ShieldCheck size={12} /> Xavfsiz Chek Tekshiruvi
                   </span>
                 </div>
               </div>
