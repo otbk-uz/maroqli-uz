@@ -8,6 +8,7 @@ export interface PendingPayment {
   item_id: string | null;
   amount: number;
   username: string;
+  userToken?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   created_at: string;
 }
@@ -27,7 +28,8 @@ export function registerPendingPayment(
   itemType: 'GAME' | 'PREMIUM',
   itemId: string | null,
   amount: number,
-  username: string
+  username: string,
+  userToken?: string
 ): string {
   // Generate short 6-char unique code e.g. P7A9B2
   const code = 'P' + Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -38,6 +40,7 @@ export function registerPendingPayment(
     item_id: itemId,
     amount: amount,
     username: username,
+    userToken: userToken,
     status: 'PENDING',
     created_at: new Date().toISOString()
   };

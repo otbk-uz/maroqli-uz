@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
+import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getPendingPayment, updatePendingPaymentStatus } from '@/lib/paymentsStore';
 
@@ -328,8 +329,14 @@ export async function POST(req: Request) {
         }
 
         if (action === 'approve') {
+          const dbClient = storeItem?.userToken
+            ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+                global: { headers: { Authorization: storeItem.userToken.startsWith('Bearer ') ? storeItem.userToken : `Bearer ${storeItem.userToken}` } }
+              })
+            : supabase;
+
           // Update status in database
-          await supabase
+          await dbClient
             .from('payment_requests')
             .update({ status: 'APPROVED' })
             .eq('id', targetId);
@@ -343,7 +350,7 @@ export async function POST(req: Request) {
             };
             const cdKey = `PN-${segment()}-${segment()}-${segment()}`;
 
-            await supabase
+            await dbClient
               .from('bought_games')
               .upsert({
                 game_id: itemId,
@@ -351,7 +358,7 @@ export async function POST(req: Request) {
                 cd_key: cdKey
               }, { onConflict: 'user_id,game_id' });
           } else if (itemType === 'PREMIUM') {
-            await supabase
+            await dbClient
               .from('profiles')
               .update({ is_premium: true })
               .eq('id', userId);

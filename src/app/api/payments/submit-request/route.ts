@@ -86,7 +86,8 @@ export async function POST(req: Request) {
       itemType,
       itemId || null,
       reqAmount,
-      username || 'foydalanuvchi'
+      username || 'foydalanuvchi',
+      authHeader
     );
 
     // 3. If AUTO APPROVED, grant game access or premium immediately using admin client
