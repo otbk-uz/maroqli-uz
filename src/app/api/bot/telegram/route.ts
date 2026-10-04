@@ -270,9 +270,12 @@ export async function POST(req: Request) {
       const contact = message.contact;
 
       // /start komandasi
-      if (text === '/start') {
-        // Holatni o'chirish
-        await supabase.from('bot_states').delete().eq('telegram_id', userId);
+      if (text && text.trim().startsWith('/start')) {
+        try {
+          await supabase.from('bot_states').delete().eq('telegram_id', userId);
+        } catch (sErr) {
+          console.warn("bot_states delete warning:", sErr);
+        }
 
         await sendTelegram('sendMessage', {
           chat_id: chatId,
