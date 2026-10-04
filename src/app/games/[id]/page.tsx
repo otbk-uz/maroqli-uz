@@ -856,7 +856,15 @@ const GameDetailPage = () => {
                     </div>
                   )
                 ) : (
-                  <p className="text-3xl font-black text-emerald-400 font-display">BEPUL</p>
+                  <div className="space-y-2">
+                    <p className="text-3xl font-black text-emerald-400 font-display">BEPUL (DEMO)</p>
+                    <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl flex items-center gap-2">
+                      <Clock size={14} className="text-amber-400 shrink-0" />
+                      <p className="text-[10px] text-amber-300 font-bold leading-normal">
+                        To'liq versiya relizi: <span className="underline">2027-yil</span>
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -987,7 +995,11 @@ const GameDetailPage = () => {
               </button>
 
               <div className="text-[10px] text-secondary leading-normal text-center opacity-75">
-                Tasdiqlangandan so'ng o'yin CD-keyi taqdim etiladi va kutubxonangizga (/profile/library) qo'shiladi.
+                {Number(game.price) === 0 ? (
+                  "Hozirgi versiya demo hisoblanadi (BEPUL). To'liq o'yin relizi 2027-yilda rejalashtirilgan. To'liq versiyani o'tkazib yubormaslik uchun rejangizga qo'shib qo'ying."
+                ) : (
+                  "Tasdiqlangandan so'ng o'yin CD-keyi taqdim etiladi va kutubxonangizga (/profile/library) qo'shiladi."
+                )}
               </div>
 
               {/* Developer Social Links */}
