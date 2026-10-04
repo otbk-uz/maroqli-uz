@@ -1,15 +1,9 @@
-const TOKEN = '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
+const botToken = "8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM";
 
-async function check() {
-  console.log("Checking Bot info...");
-  const meRes = await fetch(`https://api.telegram.org/bot${TOKEN}/getMe`);
-  const meData = await meRes.json();
-  console.log("Bot getMe:", JSON.stringify(meData, null, 2));
-
-  console.log("\nChecking Webhook info...");
-  const hookRes = await fetch(`https://api.telegram.org/bot${TOKEN}/getWebhookInfo`);
-  const hookData = await hookRes.json();
-  console.log("Webhook Info:", JSON.stringify(hookData, null, 2));
+async function checkInfo() {
+  const infoRes = await fetch(`https://api.telegram.org/bot${botToken}/getWebhookInfo`);
+  const data = await infoRes.json();
+  console.log("getWebhookInfo FULL:", JSON.stringify(data, null, 2));
 }
 
-check().catch(console.error);
+checkInfo();

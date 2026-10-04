@@ -117,10 +117,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Notify Telegram Bot Admin
-    const NEW_BOT_TOKEN = '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
-    const botToken = (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN.startsWith('8917394976'))
-      ? process.env.TELEGRAM_BOT_TOKEN
-      : NEW_BOT_TOKEN;
+    const botToken = '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
 
     const adminTargets = [
       '8647586001',

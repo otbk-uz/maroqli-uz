@@ -7,8 +7,7 @@ import { getPendingPayment, updatePendingPaymentStatus } from '@/lib/paymentsSto
 const supabase = supabaseAdmin;
 
 // Telegram Bot Token & Admin Group Chat ID
-const NEW_BOT_TOKEN = '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || NEW_BOT_TOKEN;
+const TELEGRAM_BOT_TOKEN = '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
 
 let rawAdminId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
 if (rawAdminId && !rawAdminId.startsWith('-')) {
