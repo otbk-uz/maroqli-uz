@@ -279,16 +279,16 @@ export async function POST(req: Request) {
 
         await sendTelegram('sendMessage', {
           chat_id: chatId,
-          text: `👋 *Assalomu alaykum! Maroqli.uz rasmiy to'lov va yordamchi botiga xush kelibsiz!* 🎮\n\n` +
-            `✨ *Ushbu bot orqali siz quyidagilarni bajarishingiz mumkin:*\n\n` +
-            `1️⃣ 💳 *O'yinlar xaridi va chek yuborish*:\n` +
-            `Sayt yoki bot orqali o'yin xarid qilishda plastik kartadan to'lov o'tkazib, to'lov cheki (skrinshot)ni ushbu botga yuborasiz. Tizim summani tekshirib, **1 soniya ichida o'yinni va CD-Key'ni avtomatik faollashtiradi**.\n\n` +
-            `2️⃣ 🏆 *Kibersport Turnirlari*:\n` +
+          text: `👋 <b>Assalomu alaykum! Maroqli.uz rasmiy to'lov va yordamchi botiga xush kelibsiz!</b> 🎮\n\n` +
+            `✨ <b>Ushbu bot orqali siz quyidagilarni bajarishingiz mumkin:</b>\n\n` +
+            `1️⃣ 💳 <b>O'yinlar xaridi va chek yuborish</b>:\n` +
+            `Sayt yoki bot orqali o'yin xarid qilishda plastik kartadan to'lov o'tkazib, to'lov cheki (skrinshot)ni ushbu botga yuborasiz. Tizim summani tekshirib, <b>1 soniya ichida o'yinni va CD-Key'ni avtomatik faollashtiradi</b>.\n\n` +
+            `2️⃣ 🏆 <b>Kibersport Turnirlari</b>:\n` +
             `Maroqli platformasidagi o'yinlar hamda turnirlar uchun ro'yxatdan o'tishingiz va turnir chiptalarini olishingiz mumkin.\n\n` +
-            `3️⃣ 📢 *Rasmiy Kanal va Yangiliklar*:\n` +
+            `3️⃣ 📢 <b>Rasmiy Kanal va Yangiliklar</b>:\n` +
             `Rasmiy Telegram kanalimizga a'zo bo'lib eng so'nggi yangiliklardan va aksiyalardan xabardor bo'lasiz.\n\n` +
-            `👇 *Tushungan bo'lsangiz va davom etish uchun quyidagi tugmani bosing:*`,
-          parse_mode: 'Markdown',
+            `👇 <b>Tushungan bo'lsangiz va davom etish uchun quyidagi tugmani bosing:</b>`,
+          parse_mode: 'HTML',
           reply_markup: {
             inline_keyboard: [
               [
