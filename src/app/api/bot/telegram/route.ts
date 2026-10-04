@@ -3,9 +3,17 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 const supabase = supabaseAdmin;
 
-// Sirlar KODDA emas, faqat muhit o'zgaruvchilarida (.env.local)
-const TELEGRAM_BOT_TOKEN = process.env.KIBERSPORT_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
-const TELEGRAM_ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
+// Telegram Bot Token & Admin Group Chat ID
+const NEW_BOT_TOKEN = '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
+const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN.startsWith('8917394976'))
+  ? process.env.TELEGRAM_BOT_TOKEN
+  : NEW_BOT_TOKEN;
+
+let rawAdminId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
+if (rawAdminId && !rawAdminId.startsWith('-')) {
+  rawAdminId = rawAdminId.length >= 10 ? `-100${rawAdminId}` : `-${rawAdminId}`;
+}
+const TELEGRAM_ADMIN_CHAT_ID = rawAdminId;
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
 const PAYMENT_CARD_NUMBER = process.env.PAYMENT_CARD_NUMBER || '';
 const PAYMENT_CARD_HOLDER = process.env.PAYMENT_CARD_HOLDER || '';

@@ -101,8 +101,16 @@ export async function POST(req: Request) {
     }
 
     // 4. Notify Telegram Bot Admin
-    const botToken = process.env.TELEGRAM_BOT_TOKEN;
-    const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+    const NEW_BOT_TOKEN = '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
+    const botToken = (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN.startsWith('8917394976'))
+      ? process.env.TELEGRAM_BOT_TOKEN
+      : NEW_BOT_TOKEN;
+
+    let rawAdminId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
+    if (rawAdminId && !rawAdminId.startsWith('-')) {
+      rawAdminId = rawAdminId.length >= 10 ? `-100${rawAdminId}` : `-${rawAdminId}`;
+    }
+    const adminChatId = rawAdminId;
 
     if (botToken && adminChatId) {
       let caption = "";
