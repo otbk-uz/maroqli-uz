@@ -93,7 +93,7 @@ export default function AdminPage() {
   const [paymentFilterStatus, setPaymentFilterStatus] = useState<"ALL" | "AUTO" | "APPROVED" | "PENDING">("ALL");
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCustomAdmin, setIsCustomAdmin] = useState(false);
+  const [isCustomAdmin, setIsCustomAdmin] = useState(true);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [stats, setStats] = useState({
@@ -125,21 +125,9 @@ export default function AdminPage() {
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Admin session check
-    (async () => {
-      try {
-        const res = await fetch('/api/admin/session');
-        const data = await res.json();
-        if (data.authenticated) {
-          setIsCustomAdmin(true);
-          fetchAdminData();
-        } else {
-          setLoading(false);
-        }
-      } catch {
-        setLoading(false);
-      }
-    })();
+    // Open Admin Panel directly (login/password check removed)
+    setIsCustomAdmin(true);
+    fetchAdminData();
   }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
