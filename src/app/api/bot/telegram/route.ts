@@ -7,10 +7,8 @@ import { getPendingPayment, updatePendingPaymentStatus } from '@/lib/paymentsSto
 const supabase = supabaseAdmin;
 
 // Telegram Bot Token & Admin Group Chat ID
-const NEW_BOT_TOKEN = '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
-const TELEGRAM_BOT_TOKEN = (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_BOT_TOKEN.startsWith('8917394976'))
-  ? process.env.TELEGRAM_BOT_TOKEN
-  : NEW_BOT_TOKEN;
+const NEW_BOT_TOKEN = '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || NEW_BOT_TOKEN;
 
 let rawAdminId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
 if (rawAdminId && !rawAdminId.startsWith('-')) {
@@ -101,7 +99,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'bot not configured' }, { status: 503 });
     }
 
-    const body = await req.json();
+    let body: any = {};
+    try {
+      body = await req.json();
+    } catch (jsonErr) {
+      return NextResponse.json({ ok: true, message: 'Empty or invalid JSON' });
+    }
+
+    if (!body || Object.keys(body).length === 0) {
+      return NextResponse.json({ ok: true });
+    }
 
     // 1. Message yoki Callback Query ekanini aniqlash
     const message = body.message;

@@ -24,7 +24,7 @@ function loadEnv() {
 loadEnv();
 
 // 2. Konfiguratsiyalar
-const token = process.env.TELEGRAM_BOT_TOKEN || '8917394976:AAFmQ8dwmSs2yTs8IudHSQ1WzlahLL02_4U';
+const token = process.env.TELEGRAM_BOT_TOKEN || '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
 const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID || '5116279804';
 const channelUsername = '@maroqliku'; // Kanal username
 
