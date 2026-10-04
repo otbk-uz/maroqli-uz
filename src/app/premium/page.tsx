@@ -373,6 +373,7 @@ export default function PremiumPage() {
                 </div>
               ))}
             </div>
+          </div>
         </div>
       </div>
 
@@ -382,8 +383,8 @@ export default function PremiumPage() {
           onClose={() => setIsPaymentModalOpen(false)}
           itemType="PREMIUM"
           itemId={selectedPlan.id}
-          itemTitle={selectedPlan.title}
-          price={selectedPlan.price}
+          itemName={selectedPlan.title}
+          itemPrice={selectedPlan.price}
           onSuccess={() => {
             fetchSubscription();
           }}

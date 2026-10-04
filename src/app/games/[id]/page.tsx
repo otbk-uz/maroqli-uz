@@ -1105,6 +1105,8 @@ const GameDetailPage = () => {
             <img src={selectedImageModal} alt="Enlarged screenshot" className="max-w-full max-h-[85vh] object-contain rounded-2xl border border-white/10 shadow-2xl" />
           </div>
         </div>
+      )}
+
       {/* Payment Modal */}
       {game && (
         <PaymentModal
