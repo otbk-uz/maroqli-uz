@@ -1074,7 +1074,7 @@ const ProfilePage = () => {
 
                               {gameDetails.download_url && (
                                 <a
-                                  href={gameDetails.download_url}
+                                  href={gameDetails.download_url.startsWith('http') ? gameDetails.download_url : `https://github.com/otbk-uz/maroqli-uz/releases/download/v1.0.0/${gameDetails.download_url.startsWith('/') ? gameDetails.download_url.slice(1) : gameDetails.download_url}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                   className="mt-3 w-full py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-primary/20"

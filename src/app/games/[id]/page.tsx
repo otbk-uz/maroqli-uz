@@ -898,7 +898,7 @@ const GameDetailPage = () => {
                     </Link>
                   ) : game.download_url && (
                     <a
-                      href={game.download_url}
+                      href={game.download_url.startsWith('http') ? game.download_url : `https://github.com/otbk-uz/maroqli-uz/releases/download/v1.0.0/${game.download_url.startsWith('/') ? game.download_url.slice(1) : game.download_url}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="w-full py-3.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20"
