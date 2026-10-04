@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { getUserFromRequest } from '@/lib/authServer';
+import { registerPendingPayment } from '@/lib/paymentsStore';
 
 export async function POST(req: Request) {
   try {
@@ -78,6 +79,16 @@ export async function POST(req: Request) {
     }
     finalRequestId = requestData.id;
 
+    // Fast in-memory registration so Telegram callbacks find payment details reliably
+    const paymentCode = registerPendingPayment(
+      finalRequestId,
+      userId,
+      itemType,
+      itemId || null,
+      reqAmount,
+      username || 'foydalanuvchi'
+    );
+
     // 3. If AUTO APPROVED, grant game access or premium immediately using admin client
     if (isAutoApprovable) {
       if (itemType === 'GAME' && itemId) {
@@ -132,8 +143,8 @@ export async function POST(req: Request) {
       const inlineKeyboard = {
         inline_keyboard: [
           [
-            { text: "✅ Tasdiqlash", callback_data: `approve:${finalRequestId}` },
-            { text: "Rad etish ❌", callback_data: `reject:${finalRequestId}` }
+            { text: "✅ Tasdiqlash", callback_data: `approve:${paymentCode}` },
+            { text: "Rad etish ❌", callback_data: `reject:${paymentCode}` }
           ]
         ]
       };

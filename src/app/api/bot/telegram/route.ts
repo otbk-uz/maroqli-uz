@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { getPendingPayment, updatePendingPaymentStatus } from '@/lib/paymentsStore';
 
 const supabase = supabaseAdmin;
 
@@ -269,97 +270,117 @@ export async function POST(req: Request) {
         });
       }
       else if (data.startsWith('approve:') || data.startsWith('reject:')) {
-        const [action, requestId] = data.split(':');
+        const [action, codeOrId] = data.split(':');
+        const adminName = callbackQuery.from.username ? `@${callbackQuery.from.username}` : callbackQuery.from.first_name;
 
-        const { data: reqRow, error: fetchErr } = await supabase
-          .from('payment_requests')
-          .select('*, profiles:user_id(username, full_name)')
-          .eq('id', requestId)
-          .maybeSingle();
+        // 1. Try memory store lookup first for 100% reliable execution
+        let targetId = codeOrId;
+        let userId = '';
+        let itemType = 'GAME';
+        let itemId: string | null = null;
+        let amount = 0;
+        let username = 'foydalanuvchi';
 
-        if (fetchErr || !reqRow) {
-          await sendTelegram('answerCallbackQuery', {
-            callback_query_id: callbackQueryId,
-            text: "❌ Ariza topilmadi yoki xatolik!"
-          });
-          return NextResponse.json({ success: true });
+        const storeItem = getPendingPayment(codeOrId);
+        if (storeItem) {
+          targetId = storeItem.id;
+          userId = storeItem.user_id;
+          itemType = storeItem.item_type;
+          itemId = storeItem.item_id;
+          amount = storeItem.amount;
+          username = storeItem.username;
+        } else {
+          // Fallback to Supabase
+          const { data: dbRow } = await supabase
+            .from('payment_requests')
+            .select('*, profiles:user_id(username)')
+            .eq('id', codeOrId)
+            .maybeSingle();
+
+          if (dbRow) {
+            targetId = dbRow.id;
+            userId = dbRow.user_id;
+            itemType = dbRow.item_type;
+            itemId = dbRow.item_id;
+            amount = Number(dbRow.amount) || 0;
+            username = dbRow.profiles?.username || 'foydalanuvchi';
+          }
         }
 
-        if (reqRow.status !== 'PENDING') {
+        if (!userId) {
           await sendTelegram('answerCallbackQuery', {
             callback_query_id: callbackQueryId,
-            text: "ℹ️ Ushbu ariza allaqachon ko'rib chiqilgan!"
+            text: "❌ Ariza topilmadi!"
           });
           return NextResponse.json({ success: true });
         }
 
         let itemTitle = "Mahsulot";
-        if (reqRow.item_type === 'GAME' && reqRow.item_id) {
+        if (itemType === 'GAME' && itemId) {
           const { data: gData } = await supabase
             .from('developed_games')
             .select('title')
-            .eq('id', reqRow.item_id)
+            .eq('id', itemId)
             .maybeSingle();
           if (gData) itemTitle = gData.title;
-        } else if (reqRow.item_type === 'PREMIUM') {
+        } else if (itemType === 'PREMIUM') {
           itemTitle = "Premium Obuna";
         }
 
-        const adminName = callbackQuery.from.username ? `@${callbackQuery.from.username}` : callbackQuery.from.first_name;
-
         if (action === 'approve') {
-          const { data: approvedRows } = await supabase
+          // Update status in database
+          await supabase
             .from('payment_requests')
             .update({ status: 'APPROVED' })
-            .eq('id', requestId)
-            .eq('status', 'PENDING')
-            .select('id');
+            .eq('id', targetId);
 
-          if (approvedRows && approvedRows.length > 0) {
-            if (reqRow.item_type === 'GAME' && reqRow.item_id) {
-              const segment = () => {
-                const bytes = crypto.getRandomValues(new Uint8Array(3));
-                return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').substring(0, 4).toUpperCase();
-              };
-              const cdKey = `PN-${segment()}-${segment()}-${segment()}`;
+          updatePendingPaymentStatus(codeOrId, 'APPROVED');
 
-              await supabase
-                .from('bought_games')
-                .upsert({
-                  game_id: reqRow.item_id,
-                  user_id: reqRow.user_id,
-                  cd_key: cdKey
-                }, { onConflict: 'user_id,game_id' });
-            } else if (reqRow.item_type === 'PREMIUM') {
-              await supabase
-                .from('profiles')
-                .update({ is_premium: true })
-                .eq('id', reqRow.user_id);
-            }
+          if (itemType === 'GAME' && itemId) {
+            const segment = () => {
+              const bytes = crypto.getRandomValues(new Uint8Array(3));
+              return Array.from(bytes, (b) => b.toString(36).padStart(2, '0')).join('').substring(0, 4).toUpperCase();
+            };
+            const cdKey = `PN-${segment()}-${segment()}-${segment()}`;
 
-            await sendTelegram('answerCallbackQuery', {
-              callback_query_id: callbackQueryId,
-              text: "✅ To'lov tasdiqlandi va saytda faollashtirildi!"
-            });
-
-            await sendTelegram('editMessageCaption', {
-              chat_id: chatId,
-              message_id: callbackQuery.message.message_id,
-              caption: `✅ <b>TO'LOV TASDIQLANDI!</b>\n\n` +
-                       `👤 <b>Foydalanuvchi:</b> @${reqRow.profiles?.username || 'foydalanuvchi'}\n` +
-                       `🎮 <b>Mahsulot:</b> ${itemTitle}\n` +
-                       `💰 <b>Summa:</b> ${parseFloat(reqRow.amount).toLocaleString()} UZS\n` +
-                       `✍️ <b>Tasdiqladi:</b> ${adminName}\n` +
-                       `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}`,
-              parse_mode: 'HTML',
-              reply_markup: { inline_keyboard: [] }
-            });
+            await supabase
+              .from('bought_games')
+              .upsert({
+                game_id: itemId,
+                user_id: userId,
+                cd_key: cdKey
+              }, { onConflict: 'user_id,game_id' });
+          } else if (itemType === 'PREMIUM') {
+            await supabase
+              .from('profiles')
+              .update({ is_premium: true })
+              .eq('id', userId);
           }
+
+          await sendTelegram('answerCallbackQuery', {
+            callback_query_id: callbackQueryId,
+            text: "✅ To'lov tasdiqlandi va o'yin/premium berildi!"
+          });
+
+          await sendTelegram('editMessageCaption', {
+            chat_id: chatId,
+            message_id: callbackQuery.message.message_id,
+            caption: `✅ <b>TO'LOV TASDIQLANDI!</b>\n\n` +
+                     `👤 <b>Foydalanuvchi:</b> @${username}\n` +
+                     `🎮 <b>Mahsulot:</b> ${itemTitle}\n` +
+                     `💰 <b>Summa:</b> ${amount.toLocaleString()} UZS\n` +
+                     `✍️ <b>Tasdiqladi:</b> ${adminName}\n` +
+                     `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}`,
+            parse_mode: 'HTML',
+            reply_markup: { inline_keyboard: [] }
+          });
         } else if (action === 'reject') {
           await supabase
             .from('payment_requests')
             .update({ status: 'REJECTED' })
-            .eq('id', requestId);
+            .eq('id', targetId);
+
+          updatePendingPaymentStatus(codeOrId, 'REJECTED');
 
           await sendTelegram('answerCallbackQuery', {
             callback_query_id: callbackQueryId,
@@ -370,9 +391,9 @@ export async function POST(req: Request) {
             chat_id: chatId,
             message_id: callbackQuery.message.message_id,
             caption: `❌ <b>TO'LOV RAD ETILDI!</b>\n\n` +
-                     `👤 <b>Foydalanuvchi:</b> @${reqRow.profiles?.username || 'foydalanuvchi'}\n` +
+                     `👤 <b>Foydalanuvchi:</b> @${username}\n` +
                      `🎮 <b>Mahsulot:</b> ${itemTitle}\n` +
-                     `💰 <b>Summa:</b> ${parseFloat(reqRow.amount).toLocaleString()} UZS\n` +
+                     `💰 <b>Summa:</b> ${amount.toLocaleString()} UZS\n` +
                      `✍️ <b>Rad etdi:</b> ${adminName}\n` +
                      `📅 <b>Sana:</b> ${new Date().toLocaleString('uz-UZ')}`,
             parse_mode: 'HTML',
