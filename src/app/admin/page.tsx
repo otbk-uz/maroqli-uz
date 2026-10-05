@@ -1051,7 +1051,7 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <p className="text-white font-bold text-xs">{plan.profiles?.full_name || plan.profiles?.username || "Noma'lum"}</p>
-                            <p className="text-[10px] text-secondary">@{plan.profiles?.username || 'user'}</p>
+                            <p className="text-[10px] text-secondary">@{plan.profiles?.username || 'user'} {plan.profiles?.phone_number ? `• 📞 ${plan.profiles.phone_number}` : ''}</p>
                           </div>
                         </div>
                       </td>

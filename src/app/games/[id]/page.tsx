@@ -74,6 +74,7 @@ const GameDetailPage = () => {
 
   // Wishlist and modal states
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistCount, setWishlistCount] = useState(0);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [isInPurchasePlan, setIsInPurchasePlan] = useState(false);
   const [purchasePlanLoading, setPurchasePlanLoading] = useState(false);
@@ -280,6 +281,20 @@ const GameDetailPage = () => {
           } catch (sErr) {
             console.warn("Top scores fetch warning:", sErr);
           }
+
+          // Fetch total wishlist count for game
+          try {
+            const { count: wCount } = await supabase
+              .from('game_wishlist')
+              .select('*', { count: 'exact', head: true })
+              .eq('game_id', id);
+
+            if (wCount !== null) {
+              setWishlistCount(wCount);
+            }
+          } catch (wCountErr) {
+            console.warn("Wishlist count fetch warning:", wCountErr);
+          }
         }
         
         if (isAuthenticated && user) {
@@ -380,16 +395,18 @@ const GameDetailPage = () => {
 
         if (error) throw error;
         setIsWishlisted(false);
+        setWishlistCount(prev => Math.max(0, prev - 1));
       } else {
         const { error } = await supabase
           .from('game_wishlist')
-          .insert({
+          .upsert({
             user_id: user.id,
             game_id: game.id
-          });
+          }, { onConflict: 'user_id,game_id' });
 
         if (error) throw error;
         setIsWishlisted(true);
+        setWishlistCount(prev => prev + 1);
       }
     } catch (err: any) {
       console.error("Wishlist toggle error:", err);
@@ -980,19 +997,31 @@ const GameDetailPage = () => {
                 </div>
               )}
 
-              {/* "Sotib olish rejasi" Toggle Button */}
-              <button
-                onClick={handleToggleWishlist}
-                disabled={wishlistLoading}
-                className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
-                  isWishlisted
-                    ? "bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25 shadow-glow"
-                    : "bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
-                }`}
-              >
-                <Bookmark size={16} className={isWishlisted ? "fill-amber-400 text-amber-400" : "text-white"} />
-                <span>{isWishlisted ? "Sotib olish rejasida (Qo'shilgan)" : "Sotib olish rejasiga qo'shish"}</span>
-              </button>
+              {/* "Sotib olish rejasi" Toggle Button & Live Counter */}
+              <div className="space-y-2">
+                <button
+                  onClick={handleToggleWishlist}
+                  disabled={wishlistLoading}
+                  className={`w-full py-3.5 px-4 rounded-xl font-display font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 border ${
+                    isWishlisted
+                      ? "bg-amber-500/15 border-amber-500/40 text-amber-400 hover:bg-amber-500/25 shadow-glow"
+                      : "bg-white/5 border-white/10 text-white hover:bg-white/10 hover:border-white/20"
+                  }`}
+                >
+                  <Bookmark size={16} className={isWishlisted ? "fill-amber-400 text-amber-400" : "text-white"} />
+                  <span>{isWishlisted ? `Sotib olish rejasida (${wishlistCount})` : `Sotib olish rejasiga qo'shish (${wishlistCount})`}</span>
+                </button>
+
+                <div className="bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl flex items-center justify-between text-xs text-amber-300 font-bold">
+                  <div className="flex items-center gap-2">
+                    <Bookmark size={14} className="fill-amber-400 text-amber-400 shrink-0" />
+                    <span>Rejaga qo'shganlar:</span>
+                  </div>
+                  <span className="font-display font-black text-xs bg-amber-400/20 px-2.5 py-0.5 rounded-md border border-amber-400/30 tabular-nums">
+                    {wishlistCount} kishi
+                  </span>
+                </div>
+              </div>
 
               <div className="text-[10px] text-secondary leading-normal text-center opacity-75">
                 {Number(game.price) === 0 ? (

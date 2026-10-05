@@ -15,7 +15,7 @@ if (rawAdminId && !rawAdminId.startsWith('-')) {
 }
 const TELEGRAM_ADMIN_CHAT_ID = rawAdminId;
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || '';
-const PAYMENT_CARD_NUMBER = process.env.PAYMENT_CARD_NUMBER || '';
+const PAYMENT_CARD_NUMBER = process.env.PAYMENT_CARD_NUMBER || '5614688706762274';
 const PAYMENT_CARD_HOLDER = process.env.PAYMENT_CARD_HOLDER || '';
 const CHANNEL_USERNAME = '@maroqliku';
 

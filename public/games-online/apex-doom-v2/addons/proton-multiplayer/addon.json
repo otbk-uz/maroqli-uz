@@ -1,0 +1,8 @@
+{
+  "id": "proton-multiplayer",
+  "name": "Proton Multiplayer",
+  "icon": "🛰",
+  "version": "0.1.0",
+  "author": "APEX",
+  "description": "2 va undan ortiq o'yinchini bitta o'yinga yig'adi: nik, spawn nuqtalari, modellar, boshqa o'yinchilar, nik va jon, chat, to'qnashuv. Hozircha Node.js + WebSocket serveri bilan (tools/proton-server)."
+}

@@ -182,6 +182,8 @@ const GamesPage = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
+  const [wishlistCountsMap, setWishlistCountsMap] = useState<Record<string, number>>({});
+
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
@@ -213,6 +215,25 @@ const GamesPage = () => {
             download_url: g.download_url || null,
           }));
           setGames(mappedGames);
+        }
+
+        // Fetch wishlist counts for all games
+        try {
+          const { data: wishData } = await supabase
+            .from('game_wishlist')
+            .select('game_id');
+
+          if (wishData) {
+            const countsMap: Record<string, number> = {};
+            wishData.forEach((w: any) => {
+              if (w.game_id) {
+                countsMap[w.game_id] = (countsMap[w.game_id] || 0) + 1;
+              }
+            });
+            setWishlistCountsMap(countsMap);
+          }
+        } catch (wErr) {
+          console.warn("Wishlist counts map fetch warning:", wErr);
         }
       } catch (err) {
         console.error("Games store fetch error:", err);
@@ -480,10 +501,18 @@ const GamesPage = () => {
                       </button>
                     </div>
 
-                    {/* Rating badge bottom-right */}
-                    <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
-                      <Star size={11} className="text-amber-400 fill-amber-400" />
-                      <span className="text-white text-[11px] font-bold tabular-nums">{Number(g.rating).toFixed(1)}</span>
+                    {/* Rating & Wishlist count badge bottom-right */}
+                    <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+                      {(wishlistCountsMap[g.id] || 0) > 0 && (
+                        <div className="bg-amber-500/20 backdrop-blur-md border border-amber-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 text-amber-300">
+                          <Bookmark size={10} className="fill-amber-400 text-amber-400" />
+                          <span className="text-[10px] font-black tabular-nums">{wishlistCountsMap[g.id]}</span>
+                        </div>
+                      )}
+                      <div className="bg-black/70 backdrop-blur-md border border-white/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <Star size={11} className="text-amber-400 fill-amber-400" />
+                        <span className="text-white text-[11px] font-bold tabular-nums">{Number(g.rating).toFixed(1)}</span>
+                      </div>
                     </div>
                   </div>
 

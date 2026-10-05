@@ -139,7 +139,7 @@ bot.on('callback_query', async (query) => {
     bot.answerCallbackQuery(query.id);
     bot.sendMessage(chatId, `💳 *CHIPTA XARID QILISH*\n\n` +
       `Turnir chiptasini olish uchun quyidagi kartaga to'lovni amalga oshiring:\n\n` +
-      `💳 *Karta raqami:* \`9860010137992664\`\n` +
+      `💳 *Karta raqami:* \`5614688706762274\`\n` +
       `👤 *Karta egasi:* Zokirjonov Isfandiyor\n` +
       `💰 *Summa:* 10 000 UZS\n\n` +
       `To'lovni amalga oshirgach, to'lov chekining (skrinshotini) rasmini ushbu botga yuboring.`, {
@@ -339,7 +339,7 @@ bot.on('photo', async (msg) => {
                  `📍 *Hudud:* ${userData.region || 'Noma\'lum'}\n` +
                  `🆔 *Telegram ID:* ${userId}\n` +
                  `💰 *Summa:* 10 000 UZS\n\n` +
-                 `Karta: Isfandiyor Zokirjonov (\`9860010137992664\`)`,
+                 `Karta: Isfandiyor Zokirjonov (\`5614688706762274\`)`,
         parse_mode: 'Markdown'
       });
       

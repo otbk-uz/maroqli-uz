@@ -1,0 +1,39 @@
+[
+  {
+    "id": 4,
+    "type": "ambient",
+    "name": "Ambient 1",
+    "color": "#334488",
+    "intensity": 0.9,
+    "position": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    }
+  },
+  {
+    "id": 5,
+    "type": "directional",
+    "name": "Directional 2",
+    "color": "#fff0dd",
+    "intensity": 2.5,
+    "position": {
+      "x": 10,
+      "y": 15,
+      "z": 8
+    }
+  },
+  {
+    "id": 6,
+    "type": "point",
+    "name": "Point 3",
+    "color": "#4466ff",
+    "intensity": 1.8,
+    "position": {
+      "x": -8,
+      "y": 3,
+      "z": -6
+    },
+    "distance": 35
+  }
+]

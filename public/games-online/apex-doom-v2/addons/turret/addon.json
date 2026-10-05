@@ -1,0 +1,8 @@
+{
+  "id": "turret",
+  "name": "Turret Kit",
+  "icon": "🔫",
+  "version": "1.0.0",
+  "author": "APEX",
+  "description": "O'yinchini ko'rsa o't ochadigan post. Ikki rejim: 🗿 statik (faqat oldiga kelsa) va 🎯 funksional (qarab turadi, masofadan chiqmaguncha otadi). Head-look va animatsiya bilan urishmaydi."
+}

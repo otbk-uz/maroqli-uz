@@ -1,0 +1,45 @@
+doom-2v
+=======
+Qurilgan: 2026-09-20 11:00
+
+ISHGA TUSHIRISH
+---------------
+  1. Shu papkada terminal oching
+  2. node server.js
+  3. Brauzerda: http://localhost:8080
+
+MULTIPLAYER
+-----------
+  Bu arxivda multiplayer BOR. Tekshirish uchun brauzer
+  konsolini oching (F12) — u yerda shunday yozuv turadi:
+
+      🎮 APEX o'yin — qurilgan: 2026-09-20 11:00
+         🌐 Multiplayer: bor
+
+  Agar bu yozuv KO'RINMASA — arxiv eski, qaytadan eksport qiling.
+
+  Ulanish uchun eksportdan OLDIN muharrirda:
+    • 🌐 Multiplayer panelini oching
+    • backend va sozlamalarni kiriting
+    • "▶ Play bosilganda o'zi ulansin" ni YOQING
+
+  Busiz o'yin ulanmaydi: o'yinda multiplayer paneli YO'Q va
+  o'yinchi manzilni qo'lda kirita olmaydi.
+
+NEGA server kerak?
+------------------
+  O'yin sahnani fetch('jsons/scene.zip') orqali yuklaydi.
+  Brauzer file:// protokolida fetch'ni CORS bilan bloklaydi.
+  Istalgan web-server bo'ladi (python3 -m http.server 8080 ham).
+
+TUZILISHI
+---------
+  index.html        o'yin
+  engine/           APEX dvigateli (scripts/ + libs/)
+  jsons/scene.zip   sahna — O'YIN SHUNI O'QIYDI
+  jsons/*.json      yorug'lik/triggerlar — faqat KO'RISH uchun
+  map/              Map Loader kartalari
+  sound/ video/ texture/ models/ html/ maps/
+                    aktivlar — ko'rish/tahrirlash uchun (o'yin ularni o'qimaydi)
+  timeline/         animatsiya treklari
+  game-boot.js      UI ni yashiradi, sahnani yuklaydi, Play bosadi

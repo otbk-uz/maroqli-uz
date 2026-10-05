@@ -35,7 +35,7 @@ export default function PaymentModal({
   const [successStatus, setSuccessStatus] = useState<'APPROVED' | 'PENDING' | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const cardNumber = "9860010137992664";
+  const cardNumber = "5614688706762274";
   const cardHolder = "Isfandiyor Zokirjonov";
 
   const handleCopyCard = () => {

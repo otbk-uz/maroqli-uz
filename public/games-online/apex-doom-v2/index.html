@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>doom-2v</title>
+
+<style>
+  /* ⚠ Redaktor UI YASHIRILADI, DOM O'CHIRILMAYDI. Dvigatel butun boshi
+     $('inspector-content'), $('fps-d'), $('tl-dur-inp') kabi elementlarga
+     murojaat qiladi — o'chirsak $() null qaytarib, o'nlab joyda TypeError
+     bo'lardi.
+
+     HAQIQIY tuzilish (tekshirilgan):
+        <body>
+        ├── #topbar
+        └── #main
+            ├── #left-col  #left-resizer
+            ├── #center-col          ← #cvp SHU YERDA
+            │   ├── #toolbar
+            │   ├── #cvp             ← viewport
+            │   ├── #console-resize-handle
+            │   └── #console-wrap
+            └── #right-col …
+
+     ⚠ #cvp — #main ning BEVOSITA bolasi EMAS. Ilgari "#main > *:not(#cvp)"
+       yozgandim — u #center-col ni yashirib, viewport'ni ham yo'q qilardi.
+       Shuning uchun ikki bosqichda: #main dan faqat #center-col qoladi,
+       #center-col dan faqat #cvp. Bu qo'shni elementlar id'siga bog'liq
+       emas — kelajakda panel qo'shilsa ham ishlayveradi. */
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#080b12}
+  #topbar{display:none!important}
+  #main{position:fixed!important;inset:0!important;margin:0!important;padding:0!important;display:flex!important}
+  #main > *:not(#center-col){display:none!important}
+  #center-col{flex:1!important;width:100vw!important;height:100vh!important;display:flex!important;flex-direction:column!important}
+  #center-col > *:not(#cvp){display:none!important}
+  #cvp{flex:1!important;width:100%!important;height:100%!important}
+  #three-canvas{width:100%!important;height:100%!important}
+  /* ── Redaktor artefaktlari — o'yinda kerak emas ──────────────
+     ⚠ Bular #cvp ICHIDA turadi, ya'ni yuqoridagi
+       "#center-col > *:not(#cvp)" qoidasi ularni YASHIRMAYDI —
+       har birini alohida aytish kerak.
+
+       #fps-ov   — FPS / Obj / Tri / Vaqt hisoblagichi
+       #mode-ov  — CAM: Perspektiv, RMB+Sichq: Aylantir …
+       #gizmo-svg, #multi-sel-bar, #gltf-drop — tanlov/tortish asboblari
+
+     ⚠ TEGILMAYDI (bular O'YINNIKI, redaktorniki emas):
+       #crosshair, #ibtn-prompt, #gaze-timer-hud,
+       #fps-grab-hint, #fps-held-lbl */
+  #gizmo-svg,#multi-sel-bar,#gltf-drop,#fps-ov,#mode-ov{display:none!important}
+  /* ── 🎮 PC yordamchi paneli — o'yinda KERAK EMAS ──────────────
+     "👁 1-SHAXS | WASD yur | Space sakra | V kamera | Shift tez"
+     Bu PlayerController._createHUD() (scripts/entities/player.js)
+     tomonidan Play bosilganda document.body ga qo'shiladi, ya'ni
+     #main dan TASHQARIDA — yuqoridagi qoidalar uni yashirmaydi.
+     ⚠ Faylning o'zidan olib tashlamaymiz: redaktorda u foydali
+       (kamera almashtirish tugmasi). Faqat eksportda yashiriladi.
+       Kamera baribir V tugmasi bilan almashadi. */
+  #pc-hud{display:none!important}
+  /* 🐞 Ishlab chiquvchi uchun: manzilga ?fps=1 qo'shilsa hisoblagich qaytadi */
+  body.apex-dbg #fps-ov{display:block!important}
+  /* Kanvasда matn tanlanmasin (ikki marta bosganда ko'k belgilanish) */
+  #cvp{user-select:none;-webkit-user-select:none}
+  #game-load{position:fixed;inset:0;background:#080b12;color:var(--accent);z-index:99999;
+    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+    font-family:'Share Tech Mono',monospace}
+  #game-load .b{width:220px;height:3px;background:rgba(var(--accent-rgb),.15);border-radius:2px;overflow:hidden}
+  #game-load .b i{display:block;height:100%;width:30%;background:var(--accent);animation:gl 1s infinite}
+  @keyframes gl{0%{margin-left:-30%}100%{margin-left:100%}}
+</style>
+</head>
+<body>
+<div id="game-load"><div style="font-size:15px;letter-spacing:2px">DOOM-2V</div>
+  <div class="b"><i></i></div><div id="game-load-t" style="font-size:10px;opacity:.6">yuklanmoqda…</div></div>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<symbol id="i-hand" viewBox="0 0 16 16"><path d="M5.5 9V4.2a1 1 0 012 0V8"></path><path d="M7.5 8V3.2a1 1 0 012 0V8"></path><path d="M9.5 8.2V4.6a1 1 0 012 0V10c0 2.2-1.5 3.6-3.6 3.6-2.1 0-3.4-1.3-3.4-3.4V7.4a1 1 0 012 0"></path></symbol>
+<symbol id="i-flag" viewBox="0 0 16 16"><path d="M4 14V2.5"></path><path d="M4 3h8l-1.6 2.6L12 8.4H4z"></path></symbol>
+<symbol id="i-stop" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8"></rect></symbol>
+<symbol id="i-pause" viewBox="0 0 16 16"><path d="M6 4v8M10 4v8"></path></symbol>
+<symbol id="i-skip-b" viewBox="0 0 16 16"><path d="M11.5 4v8L5 8z"></path><path d="M4 4v8"></path></symbol>
+<symbol id="i-keyboard" viewBox="0 0 16 16"><rect x="1.5" y="5" width="13" height="7" rx="1"></rect><path d="M4 7.5h.01M6.5 7.5h.01M9 7.5h.01M11.5 7.5h.01M5 10h6"></path></symbol>
+<symbol id="i-mouse" viewBox="0 0 16 16"><rect x="4.5" y="2" width="7" height="12" rx="3.5"></rect><path d="M8 4.5v2.5"></path></symbol>
+<symbol id="i-ruler" viewBox="0 0 16 16"><path d="M2 10.5l8.5-8.5 3.5 3.5L5.5 14z"></path><path d="M5.5 5.5l1.5 1.5M8 3l1.5 1.5M3.5 8l1.5 1.5"></path></symbol>
+<symbol id="i-gauge" viewBox="0 0 16 16"><path d="M2.5 11.5a6 6 0 1111 0"></path><path d="M8 11.5L11 6.5"></path></symbol>
+<symbol id="i-code" viewBox="0 0 16 16"><path d="M5.5 5L2.5 8l3 3M10.5 5l3 3-3 3"></path></symbol>
+<symbol id="i-key" viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2.8"></circle><path d="M7.5 7.5L13 13M10.5 11l1.4-1.4"></path></symbol>
+<symbol id="i-arrow-out" viewBox="0 0 16 16"><path d="M3 8h9M9 5l3 3-3 3"></path><path d="M3 3.5v9"></path></symbol>
+<symbol id="i-ban" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"></circle><path d="M4.5 11.5l7-7"></path></symbol>
+<symbol id="i-stars" viewBox="0 0 16 16"><path d="M5 2.5l.8 1.7 1.7.8-1.7.8L5 7.5l-.8-1.7L2.5 5l1.7-.8z"></path><path d="M11 8l.6 1.3 1.4.7-1.4.7L11 12l-.6-1.3L9 10l1.4-.7z"></path></symbol>
+<symbol id="i-cube-half" viewBox="0 0 16 16"><path d="M8 2l6 3v6l-6 3-6-3V5z"></path><path d="M8 2v12"></path></symbol>
+<symbol id="i-x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"></path></symbol>
+<symbol id="i-box" viewBox="0 0 16 16"><path d="M8 2l6 3v6l-6 3-6-3V5z"></path><path d="M2 5l6 3 6-3M8 8v6"></path></symbol>
+<symbol id="i-save" viewBox="0 0 16 16"><path d="M3 3h8l2 2v8H3z"></path><path d="M6 3v4h4V3M6 13v-3h4v3"></path></symbol>
+<symbol id="i-folder-open" viewBox="0 0 16 16"><path d="M2 5h4l1.5 2H14v6H2z"></path><path d="M2 5V4h4"></path></symbol>
+<symbol id="i-folder" viewBox="0 0 16 16"><path d="M2 4h4l1.5 2H14v7H2z"></path></symbol>
+<symbol id="i-video" viewBox="0 0 16 16"><rect x="2" y="4.5" width="8" height="7" rx="1"></rect><path d="M10 7.5l4-2v5l-4-2z"></path></symbol>
+<symbol id="i-clapper" viewBox="0 0 16 16"><rect x="2" y="6" width="12" height="7.5" rx="1"></rect><path d="M2 6l1.6-3 10.4 1.4L14 6"></path></symbol>
+<symbol id="i-volume" viewBox="0 0 16 16"><path d="M3 6.5h2L8 4v8L5 9.5H3z"></path><path d="M10.5 6a3.2 3.2 0 010 4"></path></symbol>
+<symbol id="i-search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4"></circle><path d="M10 10l4 4"></path></symbol>
+<symbol id="i-star" viewBox="0 0 16 16"><path d="M8 2.5l1.8 3.7 4 .6-2.9 2.8.7 4-3.6-1.9-3.6 1.9.7-4L2.2 6.8l4-.6z"></path></symbol>
+<symbol id="i-download" viewBox="0 0 16 16"><path d="M8 2v8M4.5 7l3.5 3.5L11.5 7M3 13.5h10"></path></symbol>
+<symbol id="i-upload" viewBox="0 0 16 16"><path d="M8 12V4M4.5 7.5L8 4l3.5 3.5M3 13.5h10"></path></symbol>
+<symbol id="i-eye" viewBox="0 0 16 16"><path d="M1.5 8S4 4 8 4s6.5 4 6.5 4S12 12 8 12 1.5 8 1.5 8z"></path><circle cx="8" cy="8" r="1.8"></circle></symbol>
+<symbol id="i-palette" viewBox="0 0 16 16"><path d="M8 2a6 6 0 100 12c1 0 1.2-.7.7-1.3-.6-.8-.2-1.7.8-1.7H12a2.5 2.5 0 002.5-2.5A6 6 0 008 2z"></path><circle cx="5.5" cy="7" r=".9"></circle><circle cx="8" cy="5" r=".9"></circle></symbol>
+<symbol id="i-timer" viewBox="0 0 16 16"><circle cx="8" cy="9" r="5"></circle><path d="M8 9V6.5M6.5 2h3"></path></symbol>
+<symbol id="i-globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"></circle><path d="M2 8h12M8 2c1.8 2 1.8 10 0 12M8 2c-1.8 2-1.8 10 0 12"></path></symbol>
+<symbol id="i-camera" viewBox="0 0 16 16"><path d="M2 6h2.5L6 4.2h4L11.5 6H14v7.5H2z"></path><circle cx="8" cy="9.5" r="2.3"></circle></symbol>
+<symbol id="i-maximize" viewBox="0 0 16 16"><path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10"></path></symbol>
+<symbol id="i-sky" viewBox="0 0 16 16"><path d="M2 11h12"></path><circle cx="5.5" cy="6" r="2"></circle><path d="M9 8.5a2.5 2.5 0 015 0"></path></symbol>
+<symbol id="i-fog" viewBox="0 0 16 16"><path d="M2.5 6h11M4 9h9M2.5 12h11"></path></symbol>
+<symbol id="i-image" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1"></rect><circle cx="5.8" cy="7" r="1.1"></circle><path d="M2.6 11.5l3.4-3 3 2.4 2-1.7 2.4 2.3"></path></symbol>
+<symbol id="i-run" viewBox="0 0 16 16"><circle cx="9.5" cy="3.5" r="1.4"></circle><path d="M9 6l-2 2.5 2 1.5.8 3.5M7 8.5L4 8M9 10l3 1.5"></path></symbol>
+<symbol id="i-bulb" viewBox="0 0 16 16"><path d="M8 2a4 4 0 00-2.2 7.3V11h4.4V9.3A4 4 0 008 2z"></path><path d="M6.6 13h2.8"></path></symbol>
+<symbol id="i-sparkle" viewBox="0 0 16 16"><path d="M8 2.5v3M8 10.5v3M3.5 8h3M9.5 8h3M5 5l1.6 1.6M9.4 9.4L11 11M11 5L9.4 6.6M6.6 9.4L5 11"></path></symbol>
+<symbol id="i-magnet" viewBox="0 0 16 16"><path d="M4 3v5a4 4 0 008 0V3h-3v5a1 1 0 01-2 0V3z"></path></symbol>
+<symbol id="i-gamepad" viewBox="0 0 16 16"><rect x="1.5" y="5.5" width="13" height="6.5" rx="3"></rect><path d="M5 7.5v3M3.5 9h3M10.5 9h.01M12 10.4h.01"></path></symbol>
+<symbol id="i-layers" viewBox="0 0 16 16"><path d="M8 2l6 3-6 3-6-3z"></path><path d="M2 9l6 3 6-3"></path></symbol>
+<symbol id="i-puzzle" viewBox="0 0 16 16"><path d="M6 2.5h4v2a1.3 1.3 0 100 2.6v4.4H6V9.1a1.3 1.3 0 100-2.6z"></path></symbol>
+<symbol id="i-person" viewBox="0 0 16 16"><circle cx="8" cy="4.2" r="2"></circle><path d="M4 13.5c0-2.4 1.8-4.3 4-4.3s4 1.9 4 4.3"></path></symbol>
+<symbol id="i-car" viewBox="0 0 16 16"><path d="M2 10.5h12v-2l-1.5-3h-9L2 8.5z"></path><circle cx="4.8" cy="11.6" r="1.3"></circle><circle cx="11.2" cy="11.6" r="1.3"></circle></symbol>
+<symbol id="i-pet" viewBox="0 0 16 16"><circle cx="4.5" cy="5.5" r="1.4"></circle><circle cx="11.5" cy="5.5" r="1.4"></circle><circle cx="6" cy="10.6" r="1.2"></circle><circle cx="10" cy="10.6" r="1.2"></circle><path d="M8 6.6c1.9 0 3 1.6 3 3.1S9.9 13 8 13s-3-1.8-3-3.3S6.1 6.6 8 6.6z"></path></symbol>
+<symbol id="i-robot" viewBox="0 0 16 16"><rect x="3" y="5.5" width="10" height="7" rx="1.5"></rect><path d="M8 5.5V3"></path><circle cx="6" cy="9" r=".9"></circle><circle cx="10" cy="9" r=".9"></circle></symbol>
+<symbol id="i-path" viewBox="0 0 16 16"><path d="M3 12.5c0-4 4-2 4-5S3 5.5 3 3.5"></path><circle cx="3" cy="3.5" r="1.3"></circle><circle cx="12.5" cy="12.5" r="1.3"></circle><path d="M7 7.5c0 3 4.5 1 5.5 4"></path></symbol>
+<symbol id="i-edit" viewBox="0 0 16 16"><path d="M11 2.5l2.5 2.5L6 12.5H3.5V10z"></path></symbol>
+<symbol id="i-import" viewBox="0 0 16 16"><path d="M8 2.5v7M5 7l3 3 3-3M3 13h10"></path><path d="M3 10v3M13 10v3"></path></symbol>
+<symbol id="i-square-f" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1" fill="currentColor" stroke="none"></rect></symbol>
+<symbol id="i-square" viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1"></rect></symbol>
+<symbol id="i-crosshair" viewBox="0 0 16 16"><path d="M8 1.5v13M1.5 8h13"></path><circle cx="8" cy="8" r="3.2"></circle></symbol>
+<symbol id="i-wave" viewBox="0 0 16 16"><path d="M1.5 8c1.6-2.6 3.2-2.6 4.8 0s3.2 2.6 4.8 0 3.2-2.6 3.4 0"></path></symbol>
+<symbol id="i-type" viewBox="0 0 16 16"><path d="M3 4h10M8 4v9M6 13h4"></path></symbol>
+<symbol id="i-trash" viewBox="0 0 16 16"><path d="M3 5h10M6 5V3.5h4V5M4.5 5l.7 8.5h5.6L11.5 5"></path></symbol>
+<symbol id="i-cut" viewBox="0 0 16 16"><circle cx="4.5" cy="11.5" r="1.7"></circle><circle cx="11.5" cy="11.5" r="1.7"></circle><path d="M5.6 10.3L11 3M10.4 10.3L5 3"></path></symbol>
+<symbol id="i-check" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"></path></symbol>
+<symbol id="i-note" viewBox="0 0 16 16"><circle cx="6" cy="11.5" r="2"></circle><path d="M8 11.5V3l4.5 1.5"></path></symbol>
+<symbol id="i-bone" viewBox="0 0 16 16"><path d="M4 12l8-8"></path><circle cx="3.2" cy="12.8" r="1.7"></circle><circle cx="12.8" cy="3.2" r="1.7"></circle><circle cx="4.8" cy="14.2" r="1.4"></circle><circle cx="14.2" cy="4.8" r="1.4"></circle></symbol>
+<symbol id="i-play" viewBox="0 0 16 16"><path d="M5 3.2l7.5 4.8L5 12.8z"></path></symbol>
+<symbol id="i-chev-r" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5"></path></symbol>
+<symbol id="i-chev-d" viewBox="0 0 16 16"><path d="M3.5 6L8 10.5 12.5 6"></path></symbol>
+<symbol id="i-arrow-r" viewBox="0 0 16 16"><path d="M2.5 8h11M9.5 4.5L13 8l-3.5 3.5"></path></symbol>
+<symbol id="i-undo" viewBox="0 0 16 16"><path d="M3 7.5h7a3.2 3.2 0 010 6.4H6"></path><path d="M5.5 4.5L3 7.5l2.5 3"></path></symbol>
+<symbol id="i-redo" viewBox="0 0 16 16"><path d="M13 7.5H6a3.2 3.2 0 000 6.4h4"></path><path d="M10.5 4.5L13 7.5l-2.5 3"></path></symbol>
+<symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13 8a5 5 0 11-1.6-3.7"></path><path d="M13 2.5V5h-2.5"></path></symbol>
+<symbol id="i-diamond" viewBox="0 0 16 16"><path d="M8 2l5 6-5 6-5-6z"></path></symbol>
+<symbol id="i-diamond-f" viewBox="0 0 16 16"><path d="M8 2l5 6-5 6-5-6z" fill="currentColor" stroke="none"></path></symbol>
+<symbol id="i-resize-h" viewBox="0 0 16 16"><path d="M1.5 8h13M4.5 5L1.5 8l3 3M11.5 5l3 3-3 3"></path></symbol>
+<symbol id="i-resize-v" viewBox="0 0 16 16"><path d="M8 1.5v13M5 4.5L8 1.5l3 3M5 11.5l3 3 3-3"></path></symbol>
+</svg>
+
+<style>
+  /* Google Fonts offline - system fonts fallback */
+  /* Offline font fallback */
+  
+/* ── Ikonkalar ─────────────────────────────────────────────────
+   Emoji o'rniga chiziqli SVG. Nega: emoji har OS da boshqacha
+   chiziladi (Windows rangli, Linux tekis, ba'zilari umuman
+   yo'q), o'lchamini boshqarib bo'lmaydi va rangni MERAS QILMAYDI
+   — ya'ni o'chirilgan tugmada ham yorqin turadi.
+   SVG `currentColor` oladi: holat o'zgarsa ikonka ham o'zgaradi. */
+.ic{width:13px;height:13px;flex-shrink:0;vertical-align:-2px;
+  fill:none;stroke:currentColor;stroke-width:1.6;
+  stroke-linecap:round;stroke-linejoin:round}
+.ic.sm{width:11px;height:11px}
+.ic.lg{width:17px;height:17px;stroke-width:1.5}
+:root {
+    --font-mono: 'Share Tech Mono', 'Courier New', monospace;
+    --font-ui:   'Rajdhani', 'Segoe UI', Arial, sans-serif;
+  }
+
+:root {
+  /* ── Och qora asos ───────────────────────────────────────────
+     Sof qora emas: 8–10% yorug'lik, neytral-salqin. Qat'iy qora
+     (#000) panellar orasidagi chegarani yo'q qiladi va ekranda
+     "chuqur teshik" bo'lib ko'rinadi. Uch pog'ona yetarli:
+     fon → panel → ichki maydon.                                */
+  --bg:#14161a;--panel:#191c21;--panel2:#20242a;--border:#2a2f36;
+  --hover:#23272e;
+  /* ── Matn ────────────────────────────────────────────────────
+     `--muted` ataylab yoritildi (#4a5568 → #79818c): eski qiymat
+     och qora fonda o'qilmasdi.                                  */
+  --text:#d6dae0;--muted:#79818c;
+  /* ── Aksentlar: BITTA oila, past to'yinganlik ────────────────
+     Eski to'plam to'rt xil neon edi (siyan/apelsin/kislotali
+     yashil/binafsha) — har biri e'tibor tortib, ko'z tinardi.
+     Endi hammasi ~45% to'yinganlikda va bir xil yorqinlikda:
+     ko'k asosiy, qolganlari faqat MA'NO uchun (ogohlantirish,
+     tasdiq, alohida).
+     ⚠ To'rttasi SAQLANDI — loyihada yuzlab joyda ishlatiladi,
+       o'chirilsa ular rangsiz qolardi.                          */
+  /* RGB komponentlar — shaffof tuslar uchun (`rgba(var(--accent-rgb),.1)`).
+     ⚠ Kerak: CSS da hex o'zgaruvchiga alfa qo'shib bo'lmaydi, `color-mix`
+       esa eski brauzerlarda yo'q. Ilgari bu joylarda ESKI neon rangi
+       (0,229,255) qotib qolgan edi — panel fonlari va chegaralar yangi
+       muted palitraga urishardi. */
+  --accent-rgb:120,180,232; --accent2-rgb:212,154,106;
+  --accent3-rgb:124,196,155; --accent4-rgb:171,151,216; --red-rgb:221,123,123;
+  --accent:#78b4e8;--accent2:#d49a6a;--accent3:#7cc49b;--accent4:#ab97d8;
+  --red:#dd7b7b;
+  /* Burchak radiusi — bitta token. Minimal: 2px, "deyarli tekis" */
+  --r:2px;
+}
+
+/* ══ 🎨 APEX SARLAVHASI — minimalizm ═══════════════════════════
+   Oq yozuv, keng harf oralig'i, bezaksiz. Ilgari uch xil rang
+   (ko'k + apelsin + binafsha "v1.0") ishlatilardi — u e'tiborni
+   bo'lar va interfeysning eng tinch joyi bo'lishi kerak bo'lgan
+   burchakni shovqinli qilardi.                                  */
+#apex-logo{display:flex;align-items:center;gap:5px;background:none;border:none;
+  cursor:pointer;padding:4px 8px;border-radius:var(--r);transition:background .15s;
+  font-family:'Rajdhani','Segoe UI',Arial,sans-serif}
+#apex-logo:hover{background:var(--hover)}
+#apex-logo.open{background:var(--hover)}
+#apex-logo .lg-tx{color:var(--text);font-size:14px;font-weight:600;letter-spacing:4px}
+#apex-logo .lg-3d{color:var(--muted);font-size:14px;font-weight:300;letter-spacing:2px}
+#apex-logo .lg-ar{width:9px;height:6px;color:var(--muted);margin-left:1px;
+  transition:transform .18s}
+#apex-logo.open .lg-ar{transform:rotate(180deg)}
+
+/* ══ 📂 APEX MENYUSI ══════════════════════════════════════════ */
+#apex-menu{display:none;position:fixed;top:38px;left:8px;z-index:9000;
+  min-width:250px;background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--r);padding:6px;
+  box-shadow:0 10px 34px rgba(0,0,0,.45)}
+[data-theme="light"] #apex-menu{box-shadow:0 10px 28px rgba(0,0,0,.14)}
+.apex-sec{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;
+  letter-spacing:2px;color:var(--muted);padding:8px 8px 4px}
+.apex-item{display:flex;align-items:center;gap:9px;width:100%;background:none;
+  border:none;color:var(--text);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;
+  font-size:13px;font-weight:600;padding:7px 8px;cursor:pointer;
+  border-radius:var(--r);transition:background .12s;text-align:left}
+.apex-item:hover{background:var(--hover)}
+.apex-item .ai-ic{width:16px;text-align:center;font-size:13px}
+.apex-item .ai-tx{flex:1}
+.apex-item .ai-hint{font-family:'Share Tech Mono','Courier New',monospace;
+  font-size:9px;color:var(--muted)}
+
+/* Palitra tanlash */
+.apex-pal{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:2px 4px 6px}
+.pal-chip{display:flex;align-items:center;gap:6px;background:var(--panel2);
+  border:1px solid var(--border);border-radius:var(--r);padding:5px 6px;
+  cursor:pointer;transition:border-color .12s;
+  font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:10px;
+  font-weight:600;color:var(--muted)}
+.pal-chip:hover{border-color:var(--muted)}
+.pal-chip.on{border-color:var(--accent);color:var(--text)}
+.pal-dots{display:flex;gap:2px;flex-shrink:0}
+.pal-dots i{width:8px;height:8px;border-radius:50%;
+  border:1px solid rgba(128,128,128,.35)}
+.pal-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Til tanlash */
+.apex-langs{display:flex;gap:4px;padding:2px 4px 6px}
+.lang-chip{flex:1;background:var(--panel2);border:1px solid var(--border);
+  border-radius:var(--r);padding:6px 4px;cursor:pointer;
+  font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;
+  color:var(--muted);transition:border-color .12s;line-height:1.5}
+.lang-chip:hover{border-color:var(--muted)}
+.lang-chip.on{border-color:var(--accent);color:var(--text)}
+.lang-chip span{display:block;font-family:'Rajdhani',Arial,sans-serif;
+  font-size:9px;opacity:.75}
+
+/* ══ 🌗 YORUG' MAVZU — soyalar va aralashuv ═══════════════════
+   Qorong'i temada oq shaffoflik (`rgba(255,255,255,.06)`) yorug'lik
+   qo'shadi. Oq fonda esa u KO'RINMAYDI — chegaralar yo'qoladi.
+   Shuning uchun yorug' temada teskarisiga — qora shaffoflik.     */
+[data-theme="light"] body{
+  --shadow-1:rgba(0,0,0,.08); --shadow-2:rgba(0,0,0,.14);
+}
+[data-theme="light"] .modal,[data-theme="light"] .panel,
+[data-theme="light"] #ham-menu{box-shadow:0 8px 24px rgba(0,0,0,.12)}
+[data-theme="light"] #console{background:var(--panel2)}
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Rajdhani','Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;height:100vh;overflow:hidden;user-select:none}
+
+/* TOP BAR */
+#topbar{height:36px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 10px;gap:12px;flex-shrink:0}
+/* ⚠ ESKI `.logo` qoidalari OLIB TASHLANDI. Sarlavha endi tugma
+   (`#apex-logo`) va o'z uslubiga ega. Bu uch qator undan KEYIN
+   turgani uchun `color:var(--accent)` ni bosib qolardi — oq yozuv
+   yana ko'k bo'lib chiqardi. */
+.sep{width:1px;height:18px;background:var(--border)}
+.menu-btn{background:none;border:none;color:var(--muted);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;padding:3px 7px;cursor:pointer;border-radius:var(--r);transition:all .15s;letter-spacing:.5px}
+.menu-btn:hover{background:var(--hover);color:var(--text)}
+.spacer{flex:1}
+.tstat{font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--muted)}
+.tstat .v{color:var(--accent3)}
+/* MULTI-SELECT BAR */
+#multi-sel-bar { pointer-events:all; }
+#multi-sel-bar button:hover { filter:brightness(1.3); }
+
+/* MAIN */
+#main{display:flex;flex:1;overflow:hidden}
+
+/* PANELS */
+#left-col{width:185px;display:flex;flex-direction:column;border-right:1px solid var(--border);flex-shrink:0}
+#right-col{width:300px;display:flex;flex-direction:column;border-left:1px solid var(--border);flex-shrink:0;overflow:hidden}
+#inspector-content{flex:1;overflow-y:auto}
+#center-col{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+.ph{height:28px;display:flex;align-items:center;padding:0 9px;border-bottom:1px solid var(--border);font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;gap:5px;flex-shrink:0}
+.ph .dot{width:5px;height:5px;border-radius:50%}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.ptab{padding:5px 10px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s}
+.ptab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* HIERARCHY */
+#hier-toolbar{display:flex;align-items:center;gap:3px;padding:4px 6px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--panel)}
+.hier-search-wrap{flex:1;position:relative;display:flex;align-items:center;min-width:0}
+.hier-search-ic{position:absolute;left:5px;width:11px;height:11px;color:var(--muted);pointer-events:none}
+#hier-search{flex:1;padding-left:20px !important;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;padding:3px 6px;border-radius:var(--r);outline:none;min-width:0}
+#hier-search:focus{border-color:var(--accent)}
+#hier-search::placeholder{color:var(--muted)}
+.hier-tb-btn{background:none;border:1px solid var(--border);color:var(--muted);font-size:11px;width:22px;height:22px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.hier-tb-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-rgb),.07)}
+.hier-tb-btn.red:hover{border-color:var(--red);color:var(--red);background:rgba(var(--red-rgb),.07)}
+#hier-obj-count{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--muted);padding:0 2px;flex-shrink:0;white-space:nowrap}
+.hier-list{flex:1;overflow-y:auto;padding:2px 0;user-select:none}
+.hier-list::-webkit-scrollbar{width:3px}
+.hier-list::-webkit-scrollbar-track{background:transparent}
+.hier-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r)}
+/* ⚠ Bu qoida scrollbar-thumb bilan QO'SHILIB ketgan edi: `.h-item`
+   selektori va `display:flex` yo'qolib, iyerarxiya elementlarining
+   uslubi scrollbar'ga tushib qolgandi. Element esa uslubsiz qolib,
+   ikonka va nom bir qatorga terilmasdi. */
+.h-item{display:flex;align-items:center;gap:4px;padding:4px 6px;font-size:11px;cursor:pointer;border-left:2px solid transparent;transition:background .1s;position:relative;border-radius:var(--r);overflow:hidden;min-width:0}
+.h-item:hover{background:var(--hover)}
+.h-item.sel{background:rgba(var(--accent-rgb),.1);border-left-color:var(--accent);color:var(--accent)}
+.h-item.sel .ico{color:var(--accent)}
+.h-item.multi-sel{background:rgba(68,187,255,.1);border-left-color:#44bbff;color:#88ddff}
+.h-item.drag-over{background:rgba(var(--accent3-rgb),.12);border-left-color:var(--accent3)}
+.h-item.drag-src{opacity:.4}
+.h-item .h-arrow{font-size:9px;color:var(--muted);width:11px;flex-shrink:0;transition:transform .15s;text-align:center}
+.h-item .h-arrow.open{transform:rotate(0deg)}
+.h-item .h-arrow.closed{transform:rotate(-90deg)}
+.h-item .ico{font-size:10px;color:var(--muted);width:14px;flex-shrink:0;text-align:center;transition:color .1s}
+.h-item .h-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;min-width:0}
+.h-item .h-actions{display:flex;align-items:center;gap:1px;opacity:0;transition:opacity .1s;flex-shrink:0;margin-left:auto}
+.h-item:hover .h-actions{opacity:1}
+.h-item.sel .h-actions{opacity:1}
+.h-action-btn{background:none;border:none;color:var(--muted);font-size:9px;width:16px;height:16px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .1s;padding:0;flex-shrink:0}
+.h-action-btn:hover{background:var(--border)}
+.h-action-btn.del:hover{color:var(--red)}
+.h-action-btn.vis-btn:hover{color:var(--accent)}
+.h-scene{font-size:9px;color:var(--muted);padding:3px 8px;letter-spacing:1px;font-family:'Share Tech Mono','Courier New',monospace;border-bottom:1px solid var(--border);margin-bottom:2px;display:flex;align-items:center;gap:4px;background:rgba(var(--accent-rgb),.03)}
+.h-item-hidden .h-name{opacity:0.45}
+.h-item-hidden .ico{opacity:0.45}
+/* Context menu */
+#hier-ctx{position:fixed;z-index:9999;background:var(--panel2);border:1px solid var(--border);border-radius:var(--r);padding:3px 0;min-width:180px;box-shadow:0 8px 24px rgba(0,0,0,.5);font-family:'Share Tech Mono','Courier New',monospace;font-size:11px;display:none}
+#hier-ctx .cm-item{padding:5px 14px;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text);white-space:nowrap}
+#hier-ctx .cm-item:hover{background:var(--hover);color:var(--accent)}
+#hier-ctx .cm-item.red:hover{color:var(--red)}
+#hier-ctx .cm-item .cm-ico{width:14px;text-align:center;font-size:11px}
+#hier-ctx .cm-item .cm-key{margin-left:auto;color:var(--muted);font-size:9px}
+#hier-ctx .cm-sep{height:1px;background:var(--border);margin:3px 0}
+.add-btn{margin:6px;background:none;border:1px dashed var(--border);color:var(--muted);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;padding:5px;cursor:pointer;border-radius:var(--r);transition:all .2s;width:calc(100% - 12px);letter-spacing:.5px}
+.add-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-rgb),.05)}
+
+/* ASSET panel */
+.asset-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px}
+.asset-item{background:var(--panel2);border:1px solid var(--border);border-radius:var(--r);padding:6px;cursor:pointer;text-align:center;font-size:10px;color:var(--muted);transition:all .15s}
+.asset-item:hover{border-color:var(--accent);color:var(--accent);background:rgba(var(--accent-rgb),.05)}
+.asset-item .ai{font-size:18px;display:block;margin-bottom:2px}
+.asset-cat-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:9px;font-weight:700;padding:3px 4px;border-radius:var(--r);cursor:pointer;transition:all .15s;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.asset-cat-btn:hover{border-color:var(--accent);color:var(--accent)}
+.asset-cat-btn.active{background:rgba(var(--accent-rgb),.1);border-color:var(--accent);color:var(--accent)}
+.asset-entity-item{display:flex;align-items:center;gap:8px;padding:6px 7px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;margin-bottom:3px;background:var(--panel2);transition:all .15s}
+.asset-entity-item:hover{background:rgba(255,255,255,.04);filter:brightness(1.1)}
+.ae-icon{font-size:20px;flex-shrink:0;width:26px;text-align:center}
+.ae-info{flex:1;min-width:0}
+.ae-name{font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+.ae-desc{font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;color:var(--muted);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.asset-spawn-badge{font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);padding:2px 4px;border-radius:var(--r);white-space:nowrap;flex-shrink:0}
+.asset-section-label{padding:4px 8px 5px;font-size:8px;color:var(--accent3);font-family:'Share Tech Mono','Courier New',monospace;border-bottom:1px solid var(--border);margin-bottom:5px;letter-spacing:1.5px;text-transform:uppercase}
+.asset-model-item{display:flex;align-items:center;gap:6px;padding:5px 6px;border:1px solid var(--border);border-radius:var(--r);background:var(--panel2);cursor:pointer;transition:all .15s}
+.asset-model-item:hover{border-color:var(--accent2);background:rgba(255,107,53,.05)}
+.ami-name{font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ami-spawn{background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.2);color:var(--accent);font-size:9px;padding:1px 5px;border-radius:var(--r);cursor:pointer;font-family:'Share Tech Mono','Courier New',monospace;white-space:nowrap}
+.ami-spawn:hover{background:rgba(var(--accent-rgb),.2)}
+
+/* TOOLBAR */
+#toolbar{height:34px;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 8px;gap:4px;flex-shrink:0}
+.tool-btn{background:none;border:1px solid transparent;color:var(--muted);font-size:13px;width:26px;height:24px;border-radius:var(--r);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;font-family:'Share Tech Mono','Courier New',monospace}
+.tool-btn:hover{background:var(--hover);color:var(--text);border-color:var(--border)}
+.tool-btn.active{background:rgba(var(--accent-rgb),.12);color:var(--accent);border-color:rgba(var(--accent-rgb),.3)}
+.tool-lbl{font-size:10px;color:var(--muted);font-family:'Share Tech Mono','Courier New',monospace;margin-left:3px}
+.play-btn{margin-left:auto;background:var(--accent);color:#000;border:none;padding:3px 12px;border-radius:var(--r);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;transition:all .2s}
+.play-btn:hover{background:#fff}
+.play-btn.playing{background:var(--accent2);color:#fff}
+
+/* Play mode */
+body.play-mode #left-col,
+body.play-mode #right-col {
+  pointer-events: none;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+body.play-mode #topbar .menu-btn:not(#play-btn):not(#fullscreen-btn) {
+  pointer-events: none;
+  opacity: 0.35;
+}
+body.play-mode #toolbar {
+  pointer-events: none;
+  opacity: 0.35;
+}
+body.play-mode #three-canvas {
+  cursor: crosshair;
+}
+.stop-btn{background:none;border:1px solid var(--muted);color:var(--muted);padding:3px 8px;border-radius:var(--r);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s}
+.stop-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* VIEWPORT */
+#cvp{flex:1;position:relative;z-index:0;overflow:hidden;background:#080b12}
+#three-canvas{display:block;width:100%;height:100%}
+#fps-ov{position:absolute;top:8px;left:8px;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--accent3);background:rgba(0,0,0,.55);padding:3px 7px;border-radius:var(--r);border:1px solid rgba(var(--accent3-rgb),.2);line-height:1.7;pointer-events:none}
+#mode-ov{position:absolute;top:8px;right:8px;font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--muted);background:rgba(0,0,0,.55);padding:3px 7px;border-radius:var(--r);text-align:right;line-height:1.7;pointer-events:none}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:none;color:rgba(255,255,255,.75);font-size:20px;line-height:1;text-shadow:0 0 6px rgba(var(--accent-rgb),.8)}
+/* 🔤 Interaktiv tugma yozuvi */
+#ibtn-prompt{position:absolute;pointer-events:none;display:none;z-index:40;
+  font-family:'Share Tech Mono',monospace;font-size:15px;color:#eaf6ff;
+  background:rgba(8,12,18,.82);border:1px solid rgba(var(--accent-rgb),.45);
+  border-radius:var(--r);padding:7px 13px;letter-spacing:.4px;white-space:nowrap;
+  box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 14px rgba(var(--accent-rgb),.15);
+  text-shadow:0 0 8px rgba(var(--accent-rgb),.4);transition:opacity .12s ease}
+#ibtn-prompt .ib-key{display:inline-block;margin-right:7px;padding:1px 7px;
+  background:rgba(var(--accent-rgb),.16);border:1px solid rgba(var(--accent-rgb),.5);border-radius:var(--r);
+  color:var(--accent);font-weight:700}
+/* HTML rejimi — default fon/ramka olib tashlanadi, foydalanuvchi o'zi bezaydi */
+#ibtn-prompt.ib-raw{background:none;border:none;box-shadow:none;padding:0;
+  text-shadow:none;color:inherit;font-family:inherit;font-size:inherit}
+/* 9 pozitsiya — margin markazdan chekkalarga suradi */
+#ibtn-prompt.pos-tl{top:14%;left:8%}
+#ibtn-prompt.pos-tc{top:14%;left:50%;transform:translateX(-50%)}
+#ibtn-prompt.pos-tr{top:14%;right:8%}
+#ibtn-prompt.pos-ml{top:50%;left:8%;transform:translateY(-50%)}
+#ibtn-prompt.pos-mc{top:calc(50% + 26px);left:50%;transform:translateX(-50%)}
+#ibtn-prompt.pos-mr{top:50%;right:8%;transform:translateY(-50%)}
+#ibtn-prompt.pos-bl{bottom:14%;left:8%}
+#ibtn-prompt.pos-bc{bottom:14%;left:50%;transform:translateX(-50%)}
+#ibtn-prompt.pos-br{bottom:14%;right:8%}
+/* ⏱ Qarash taymeri — sanoq ko'rsatkichi.
+   #cvp `position:relative; overflow:hidden` — shuning uchun absolute
+   joylashuv HAR DOIM viewport ichida qoladi, ekrandan chiqib ketmaydi. */
+#gaze-timer-hud{position:absolute;pointer-events:none;display:none;z-index:41;
+  font-family:'Share Tech Mono',monospace;text-align:center;
+  background:rgba(8,12,18,.78);border:1px solid rgba(var(--accent-rgb),.5);
+  border-radius:var(--r);padding:7px 16px;color:var(--accent);
+  box-shadow:0 4px 18px rgba(0,0,0,.5),0 0 14px rgba(var(--accent-rgb),.15);
+  text-shadow:0 0 8px rgba(var(--accent-rgb),.5)}
+#gaze-timer-hud .gt-lbl{font-size:10px;color:#7fe9ff;margin-bottom:2px;white-space:nowrap}
+#gaze-timer-hud .gt-num{font-size:26px;font-weight:700;letter-spacing:1px;line-height:1.1}
+#gaze-timer-hud .gt-u{font-size:13px;opacity:.7}
+#gaze-timer-hud.pos-tl{top:14%;left:8%}
+#gaze-timer-hud.pos-tc{top:14%;left:50%;transform:translateX(-50%)}
+#gaze-timer-hud.pos-tr{top:14%;right:8%}
+#gaze-timer-hud.pos-ml{top:50%;left:8%;transform:translateY(-50%)}
+#gaze-timer-hud.pos-mc{top:50%;left:50%;transform:translate(-50%,-50%)}
+#gaze-timer-hud.pos-mr{top:50%;right:8%;transform:translateY(-50%)}
+#gaze-timer-hud.pos-bl{bottom:14%;left:8%}
+#gaze-timer-hud.pos-bc{bottom:14%;left:50%;transform:translateX(-50%)}
+#gaze-timer-hud.pos-br{bottom:14%;right:8%}
+#fps-grab-hint{position:absolute;top:calc(50% + 20px);left:50%;transform:translateX(-50%);pointer-events:none;display:none;font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--accent);background:rgba(0,0,0,.6);padding:2px 8px;border-radius:var(--r);white-space:nowrap}
+#fps-held-lbl{position:absolute;top:calc(50% - 38px);left:50%;transform:translateX(-50%);pointer-events:none;display:none;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--accent3);background:rgba(0,0,0,.7);padding:2px 10px;border-radius:var(--r);border:1px solid rgba(var(--accent3-rgb),.3)}
+
+/* CONSOLE */
+#console-wrap{height:160px;background:var(--panel);border-top:1px solid var(--border);flex-shrink:0}
+#console-body{height:132px;overflow-y:auto;padding:3px 8px;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;line-height:1.65}
+.lg{color:var(--text)}.lw{color:#ffcc00}.le{color:var(--red)}.lok{color:var(--accent3)}
+.lt{color:var(--muted);margin-right:6px}
+
+/* TIMELINE */
+#timeline-panel{display:none;height:160px;overflow:hidden;flex-direction:column}
+#tl-toolbar{height:28px;display:flex;align-items:center;gap:3px;padding:0 6px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:nowrap}
+.tl-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;padding:2px 6px;border-radius:var(--r);cursor:pointer;transition:all .15s;white-space:nowrap}
+.tl-btn:hover{border-color:var(--accent);color:var(--accent)}
+.tl-btn.active{background:rgba(var(--accent-rgb),.12);color:var(--accent);border-color:rgba(var(--accent-rgb),.4)}
+.tl-btn.vis{border-color:rgba(var(--accent4-rgb),.3);color:var(--accent4)}
+.tl-btn.vis:hover{border-color:var(--accent4);color:var(--accent4)}
+#tl-ease-select{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:2px 4px;border-radius:var(--r);outline:none;cursor:pointer}
+#tl-time-lbl{font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--accent);margin-left:2px;min-width:46px}
+#tl-dur-inp{width:34px;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:1px 3px;border-radius:var(--r);outline:none}
+#tl-body{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+#tl-scrubber-row{height:18px;position:relative;background:var(--panel2);border-bottom:1px solid var(--border);cursor:col-resize;flex-shrink:0}
+#tl-playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--accent2);pointer-events:none;z-index:5}
+#tl-playhead::before{content:'▼';position:absolute;top:-1px;left:-4px;font-size:9px;color:var(--accent2)}
+.tl-tick{position:absolute;top:0;bottom:0;width:1px;background:var(--border)}
+.tl-tick-lbl{position:absolute;top:2px;font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;color:var(--muted)}
+#tl-tracks{flex:1;overflow-y:auto;overflow-x:hidden;position:relative}
+.tl-track{height:22px;display:flex;align-items:center;border-bottom:1px solid var(--border);position:relative}
+.tl-track-lbl{width:90px;font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;padding:0 5px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:3px}
+.tl-track-lbl .tl-track-type{font-size:8px;padding:0 3px;border-radius:var(--r);flex-shrink:0}
+.tl-track-type-snd{background:rgba(var(--accent3-rgb),.12);color:var(--accent3)}
+.tl-kf-snd{position:absolute;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:var(--accent3);border:1.5px solid rgba(255,255,255,.8);cursor:pointer;z-index:3;display:flex;align-items:center;justify-content:center;font-size:8px;color:#000;line-height:1;transition:transform .1s}
+.tl-kf-snd::after{content:'♪';pointer-events:none}
+.tl-kf-snd:hover{transform:translate(-50%,-50%) scale(1.35);background:#fff}
+.tl-kf-snd.selected{box-shadow:0 0 6px var(--accent3);border-color:var(--accent3)}
+#tl-snd-popup{position:fixed;background:var(--panel);border:1px solid var(--accent3);border-radius:var(--r);padding:8px 10px;z-index:9999;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;display:none;min-width:180px;box-shadow:0 4px 14px rgba(0,0,0,.7)}
+#tl-snd-popup .sp-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0}
+#tl-snd-popup .sp-lbl{color:var(--muted);font-size:9px;flex-shrink:0}
+.tl-track-type-rot{background:rgba(255,107,53,.12);color:var(--accent2)}
+.tl-track-type-vis{background:rgba(var(--accent4-rgb),.12);color:var(--accent4)}
+.tl-track-lane{flex:1;position:relative;height:100%;cursor:pointer}
+.tl-segment{position:absolute;top:4px;bottom:4px;background:rgba(var(--accent-rgb),.12);border-left:2px solid var(--accent);border-right:2px solid var(--accent);pointer-events:none}
+.tl-segment.ease-linear{background:rgba(var(--accent-rgb),.08)}
+.tl-segment.ease-smooth{background:rgba(var(--accent3-rgb),.08);border-color:var(--accent3)}
+.tl-segment.ease-bounce{background:rgba(255,107,53,.1);border-color:var(--accent2)}
+.tl-segment.ease-elastic{background:rgba(var(--accent4-rgb),.1);border-color:var(--accent4)}
+.tl-segment.ease-back{background:rgba(255,204,0,.08);border-color:#ffcc00}
+.tl-kf{position:absolute;top:50%;transform:translate(-50%,-50%) rotate(45deg);width:8px;height:8px;background:var(--accent);border:1px solid #fff;cursor:pointer;z-index:3}
+.tl-kf:hover{background:#fff;transform:translate(-50%,-50%) rotate(45deg) scale(1.3)}
+.tl-kf.selected{background:var(--accent2);border-color:var(--accent2);box-shadow:0 0 4px var(--accent2)}
+.tl-kf.ease-linear{background:#88aacc}
+.tl-kf.ease-smooth{background:var(--accent3)}
+.tl-kf.ease-bounce{background:var(--accent2)}
+.tl-kf.ease-elastic{background:var(--accent4)}
+.tl-kf.ease-back{background:#ffcc00}
+.tl-kf-vis{position:absolute;top:50%;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;border:2px solid var(--accent4);cursor:pointer;z-index:3}
+.tl-kf-vis.vis-on{background:var(--accent4)}
+.tl-kf-vis.vis-off{background:transparent}
+.tl-kf-vis:hover{transform:translate(-50%,-50%) scale(1.3)}
+.tl-kf-vis.selected{box-shadow:0 0 5px var(--accent4)}
+.tl-tangent{position:absolute;top:50%;width:5px;height:5px;background:#ffcc00;border:1px solid #fff;border-radius:50%;cursor:ew-resize;z-index:4;transform:translateY(-50%)}
+#tl-kf-popup{position:fixed;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:6px 10px;z-index:9999;font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;display:none;min-width:130px;box-shadow:0 4px 12px rgba(0,0,0,.6)}
+#tl-kf-popup .kfp-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:3px 0}
+#tl-kf-popup .kfp-label{color:var(--muted);font-size:9px}
+#tl-kf-popup select{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:1px 3px;border-radius:var(--r);outline:none;cursor:pointer}
+
+/* COL RESIZERS */
+.col-resizer{width:4px;background:var(--border);cursor:col-resize;flex-shrink:0;transition:background .15s;position:relative;z-index:10}
+.col-resizer:hover,.col-resizer.dragging{background:var(--accent)}
+.col-resizer::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:2px;height:20px;background:currentColor;border-radius:var(--r);opacity:.5}
+#left-col.collapsed,#right-col.collapsed{width:0!important;overflow:hidden;border:none}
+#left-col,#right-col,#center-col{transition:none}
+
+/* SCRIPT EDITOR */
+.script-api-tag{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--accent);background:rgba(var(--accent-rgb),.07);border:1px solid rgba(var(--accent-rgb),.15);padding:1px 5px;border-radius:var(--r);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.script-api-tag:hover{background:rgba(var(--accent-rgb),.18);border-color:var(--accent)}
+#script-editor::selection{background:rgba(var(--accent-rgb),.25)}
+#script-editor::-webkit-scrollbar{width:4px}
+
+/* PHYSICS PANEL */
+#physics-panel{display:none;padding:8px;overflow-y:auto}
+
+/* CONSOLE WRAP height resize handle */
+#console-resize-handle{height:4px;background:var(--border);cursor:row-resize;flex-shrink:0;transition:background .15s}
+#console-resize-handle:hover{background:var(--accent)}
+
+#curve-editor-panel{display:none;flex-shrink:0;border-top:1px solid var(--border);background:var(--panel2);flex-direction:column}
+#curve-editor-header{height:26px;display:flex;align-items:center;padding:0 8px;gap:6px;border-bottom:1px solid var(--border);flex-shrink:0;cursor:pointer;user-select:none}
+#curve-editor-header:hover{background:var(--hover)}
+#curve-editor-title{font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;color:var(--accent4);letter-spacing:1px;flex:1}
+#curve-editor-close{font-size:11px;color:var(--muted);cursor:pointer;padding:0 4px}
+#curve-editor-close:hover{color:var(--red)}
+#curve-editor-body{padding:6px 8px;display:flex;flex-direction:column;gap:6px}
+#curve-canvas-wrap{position:relative;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:crosshair}
+#curve-canvas{display:block}
+.ce-ease-row{display:flex;gap:3px;flex-wrap:wrap}
+.ce-ease-btn{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;padding:3px 7px;border-radius:var(--r);cursor:pointer;transition:all .15s;flex:1;min-width:50px;text-align:center}
+.ce-ease-btn:hover{border-color:var(--accent4);color:var(--accent4)}
+.ce-ease-btn.active{background:rgba(var(--accent4-rgb),.15);border-color:var(--accent4);color:var(--accent4)}
+.ce-info{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--muted);text-align:center;line-height:1.6}
+.ce-track-tabs{display:flex;gap:3px;margin-bottom:2px}
+.ce-tab{font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;padding:2px 8px;border-radius:var(--r);border:1px solid var(--border);cursor:pointer;color:var(--muted);transition:all .15s}
+.ce-tab:hover{color:var(--text)}
+.ce-tab.active{background:rgba(var(--accent-rgb),.1);border-color:var(--accent);color:var(--accent)}
+.ce-tab.vis-tab.active{background:rgba(var(--accent4-rgb),.1);border-color:var(--accent4);color:var(--accent4)}
+
+.comp-block{border-bottom:1px solid var(--border);padding:7px 9px}
+.comp-title{font-size:10px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:5px;margin-bottom:5px;cursor:pointer}
+.comp-title .tag{font-size:8px;padding:1px 4px;background:rgba(var(--accent-rgb),.1);color:var(--accent);border-radius:var(--r);letter-spacing:.3px}
+.comp-title .tag2{background:rgba(var(--accent4-rgb),.1);color:var(--accent4)}
+.comp-title .tag3{background:rgba(255,107,53,.1);color:var(--accent2)}
+.comp-title .tag4{background:rgba(var(--accent3-rgb),.1);color:var(--accent3)}
+.fr{display:flex;align-items:center;margin:3px 0;gap:5px}
+.fl{font-size:10px;color:var(--muted);width:52px;flex-shrink:0;font-family:'Share Tech Mono','Courier New',monospace}
+.fv{font-size:11px;font-family:'Share Tech Mono','Courier New',monospace;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:2px 4px;flex:1;width:0;outline:none;transition:border-color .15s}
+.fv:focus{border-color:var(--accent);color:var(--accent)}
+.xyzr{display:flex;gap:3px}
+.xi{flex:1;width:50px;font-size:10px;font-family:'Share Tech Mono','Courier New',monospace;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:2px 4px;color:var(--text);outline:none;transition:border-color .15s}
+.xi:focus{border-color:var(--accent);color:var(--accent)}
+.xl{font-size:9px;color:var(--muted);text-align:center;margin-top:1px;font-family:'Share Tech Mono','Courier New',monospace}
+.action-btn{width:100%;margin-bottom:4px;background:rgba(var(--accent-rgb),.06);border:1px solid rgba(var(--accent-rgb),.18);color:var(--accent);padding:4px;border-radius:var(--r);cursor:pointer;font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:.5px;transition:all .15s}
+.action-btn:hover{background:rgba(var(--accent-rgb),.15)}
+.del-btn{background:rgba(var(--red-rgb),.06);border-color:rgba(var(--red-rgb),.18);color:var(--red)}
+.del-btn:hover{background:rgba(var(--red-rgb),.15)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;margin:3px 0}
+.tgl{position:relative;width:28px;height:15px;flex-shrink:0}
+.tgl input{opacity:0;width:0;height:0;position:absolute}
+.tgl-track{position:absolute;inset:0;background:var(--border);border-radius:var(--r);transition:background .2s;cursor:pointer}
+.tgl input:checked+.tgl-track{background:var(--accent)}
+.tgl-thumb{position:absolute;top:2px;left:2px;width:11px;height:11px;background:#fff;border-radius:50%;transition:transform .2s;pointer-events:none}
+.tgl input:checked~.tgl-thumb{transform:translateX(13px)}
+
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:var(--r);stroke-width:3.5}
+#gizmo-y:hover line, #gizmo-y.drag line{stroke:#88ff88;stroke-width:3.5}
+#gizmo-z:hover line, #gizmo-z.drag line{stroke:#88aaff;stroke-width:3.5}
+
+/* ROTATE RINGS hover */
+#rot-ring-y:hover #rot-y-ellipse{stroke:#66eeff;stroke-width:4;filter:drop-shadow(0 0 5px #00ccff)}
+#rot-ring-x:hover #rot-x-ellipse{stroke:#aaffaa;stroke-width:4;filter:drop-shadow(0 0 5px #44ff44)}
+#rot-ring-z:hover #rot-z-ellipse{stroke:#ffee44;stroke-width:4;filter:drop-shadow(0 0 5px #ffdd00)}
+
+/* Screenshot flash */
+@keyframes ssFlash{0%{opacity:.8}100%{opacity:0}}
+#ss-flash{position:fixed;inset:0;background:#fff;pointer-events:none;opacity:0;z-index:99999}
+
+/* GLTF import drop zone */
+#gltf-drop{position:absolute;inset:0;background:rgba(var(--accent-rgb),.07);border:2px dashed var(--accent);z-index:50;display:none;align-items:center;justify-content:center;font-size:18px;color:var(--accent);font-weight:700;letter-spacing:2px;flex-direction:column;gap:8px}
+
+/* Undo/Redo toast */
+#undo-toast{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--accent);color:var(--accent);font-family:'Share Tech Mono','Courier New',monospace;font-size:11px;padding:5px 14px;border-radius:var(--r);z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none}
+
+/* Material editor extra fields */
+.fv-color{width:22px;height:20px;border:1px solid var(--border);border-radius:var(--r);cursor:pointer;background:none;padding:0}
+
+/* Nested hierarchy */
+.h-item.depth-1{padding-left:28px}
+.h-item.depth-2{padding-left:42px}
+.h-item.depth-3{padding-left:56px}
+.h-item .nest-line{position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--border)}
+.h-item.sel .nest-line{background:var(--accent)}
+
+/* Physics mode badges */
+.phys-badge{display:inline-block;font-size:8px;padding:1px 5px;border-radius:var(--r);font-family:'Share Tech Mono','Courier New',monospace;font-weight:700;letter-spacing:.5px;margin-left:4px}
+.pb-solid{background:rgba(var(--accent-rgb),.12);color:var(--accent)}
+.pb-jelly{background:rgba(var(--accent3-rgb),.12);color:var(--accent3)}
+.pb-liquid{background:rgba(0,100,255,.18);color:#66aaff}
+.pb-break{background:rgba(var(--red-rgb),.12);color:var(--red)}
+.pb-cloth{background:rgba(var(--accent4-rgb),.12);color:var(--accent4)}
+
+/* Deform panel */
+.deform-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px 0}
+.deform-btn{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);padding:5px 4px;border-radius:var(--r);cursor:pointer;font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;transition:all .15s;text-align:center}
+.deform-btn:hover{border-color:var(--accent4);color:var(--accent4);background:rgba(var(--accent4-rgb),.08)}
+.deform-btn.active-mode{border-color:var(--accent3);color:var(--accent3);background:rgba(var(--accent3-rgb),.08)}
+
+/* HAMBURGER MENU */
+#ham-btn{background:none;border:1px solid var(--border);border-radius:var(--r);width:30px;height:26px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;transition:border-color .15s,background .15s;flex-shrink:0}
+#ham-btn span{display:block;width:14px;height:1.5px;background:var(--muted);border-radius:var(--r);transition:background .15s}
+#ham-btn:hover{border-color:var(--accent);background:rgba(var(--accent-rgb),.07)}
+#ham-btn:hover span,#ham-btn.open span{background:var(--accent)}
+#ham-btn.open{border-color:var(--accent);background:rgba(var(--accent-rgb),.07)}
+#ham-menu{display:none;position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:6px 4px;min-width:170px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,.5);flex-direction:column;gap:1px}
+#ham-menu.open{display:flex}
+.ham-item{background:none;border:none;color:var(--text);font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;padding:6px 10px;text-align:left;cursor:pointer;border-radius:var(--r);transition:background .1s,color .1s;display:flex;align-items:center;gap:7px;white-space:nowrap;width:100%}
+.ham-item:hover{background:rgba(var(--accent-rgb),.1);color:var(--accent)}
+.ham-section-title{font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;letter-spacing:1.5px;color:var(--muted);padding:4px 10px 2px;text-transform:uppercase}
+.ham-sep{height:1px;background:var(--border);margin:4px 6px}
+
+.cam-mode-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:"Share Tech Mono",monospace;font-size:9px;padding:2px 6px;border-radius:var(--r);cursor:pointer;transition:all .15s;white-space:nowrap}
+.cam-mode-btn:hover{border-color:var(--accent4);color:var(--accent4)}
+.cam-mode-btn.active{background:rgba(var(--accent4-rgb),.15);border-color:var(--accent4);color:var(--accent4)}
+.cam-tool-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:"Share Tech Mono",monospace;font-size:9px;padding:2px 6px;border-radius:var(--r);cursor:pointer;transition:all .15s;white-space:nowrap}
+.cam-tool-btn:hover{border-color:var(--accent);color:var(--accent)}
+.cam-sec-title{font-family:"Share Tech Mono",monospace;font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;margin-top:2px}
+.cam-field-row{display:flex;align-items:center;gap:4px;margin:3px 0}
+.cam-lbl{font-family:"Share Tech Mono",monospace;font-size:9px;color:var(--muted);width:46px;flex-shrink:0}
+.cam-val{font-family:"Share Tech Mono",monospace;font-size:9px;color:var(--accent);min-width:24px;text-align:right}
+.cam-num{font-family:"Share Tech Mono",monospace;font-size:9px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:1px 4px;border-radius:var(--r);outline:none}
+.cam-kf{position:absolute;top:50%;transform:translate(-50%,-50%) rotate(45deg);width:8px;height:8px;background:var(--accent4);border:1px solid #fff;cursor:pointer;z-index:3}
+.cam-kf:hover{background:#fff}
+.cam-kf.selected{background:var(--accent2);border-color:var(--accent2)}
+
+/* UI UTILITY CLASSES */
+.ui-modal{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:var(--r);padding:14px 16px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.85);font-family:'Rajdhani','Segoe UI',Arial,sans-serif}
+.ui-modal-scroll{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--panel);border-radius:var(--r);padding:14px 16px;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,.85);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;max-height:80vh;overflow-y:auto}
+.ui-popup{position:fixed;background:var(--panel);border:1px solid var(--border);border-radius:var(--r);padding:5px 0;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.7);font-family:'Share Tech Mono','Courier New',monospace}
+.ui-menu-item{display:block;width:100%;background:none;border:none;color:var(--text);padding:7px 14px;cursor:pointer;font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:13px;font-weight:600;text-align:left;transition:background .1s}
+.ui-menu-item:hover{background:var(--hover)}
+.ui-overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;display:flex;align-items:center;justify-content:center}
+.ui-section-label{padding:5px 14px;font-size:9px;color:var(--accent3);font-family:'Share Tech Mono','Courier New',monospace;border-bottom:1px solid var(--border);margin-bottom:3px;letter-spacing:1px}
+.ui-panel-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.asset-lib-item{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--panel2);border:1px solid var(--border);border-radius:var(--r);cursor:pointer;transition:border-color .15s}
+.asset-lib-item:hover{border-color:var(--accent)}
+</style>
+<!-- TOP BAR -->
+<div id="topbar">
+  <!-- ⚠ SARLAVHA endi TUGMA: saqlash · ochish · yuklash · mavzu · til
+       hammasi shu dropdownда. Ilgari ular alohida tugmalar edi va
+       yuqori panelni to'ldirib turardi.
+       ⚠ 🗺 "Kartani kutubxonaga saqlash" (`openMapSave`/`openMapLoad`)
+         OLIB TASHLANDI: u IndexedDB ga — ya'ni FAQAT shu brauzerga —
+         yozardi. Foydalanuvchi uni "saqlandi" deb tushunib, boshqa
+         kompyuterda ochmoqchi bo'lganda karta yo'q bo'lardi.
+         Haqiqiy saqlash — `saveScene()` (fayl) va 💾 Loyiha papkasi. -->
+  <button id="apex-logo" class="logo" onclick="toggleApexMenu()" title="Menyu">
+    <span class="lg-tx">APEX</span><span class="lg-3d">3D</span>
+    <svg class="lg-ar" viewBox="0 0 10 6"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path></svg>
+  </button>
+  <div class="sep"></div>
+  <button class="menu-btn" onclick="undo()"><svg class="ic"><use href="#i-undo"></use></svg> Bekor</button>
+  <button class="menu-btn" onclick="redo()"><svg class="ic"><use href="#i-redo"></use></svg> Qayta</button>
+  <button class="menu-btn" onclick="takeScreenshot()"><svg class="ic"><use href="#i-camera"></use></svg> Screenshot</button>
+  <button class="menu-btn" id="fullscreen-btn" onclick="toggleFullscreen()" title="To'liq ekran (F11)"><svg class="ic"><use href="#i-maximize"></use></svg> Fullscreen</button>
+  <!--  ⌨🖥 EKRAN TUGMALARI — muharrirda ko'rsatish / yashirish.
+        ⚠ Suyak gizmosi bilan bir xil naqsh: bu KO'RINISH tugmasi,
+          sahna mazmuniga tegmaydi. ▶ Play da tugmalar baribir
+          ko'rinadi — bu faqat muharrir ko'rinishini boshqaradi. -->
+  <button class="menu-btn" id="skeys-btn" onclick="toggleScreenKeysView()" title="⌨ Ekran tugmalarini muharrirda ko'rsatish / yashirish">⌨🖥 Tugmalar</button>
+  <div class="spacer"></div>
+  <!-- HAMBURGER MENU -->
+  <div id="ham-wrap" style="position:relative;flex-shrink:0">
+    <button id="ham-btn" onclick="toggleHamMenu()" title="Qo'shimcha vositalar">
+      <span></span><span></span><span></span>
+    </button>
+    <div id="ham-menu">
+      <div class="ham-section-title">SAHNA</div>
+      <button class="ham-item" onclick="showProjectPanel();closeHamMenu()"><svg class="ic"><use href="#i-save"></use></svg> Loyiha papkasi</button>
+      <button class="ham-item" onclick="showNoScriptPanel();closeHamMenu()"><svg class="ic"><use href="#i-layers"></use></svg> NoScript</button>
+      <!--  🌐 MULTIPLAYER — bir nechta o'yinchi bitta sahnada.
+            ⚠ Server RELE: aldovga qarshi himoya bermaydi —
+              hamkorlikdagi o'yin uchun, raqobat uchun emas. -->
+      <button class="ham-item" onclick="showMultiplayerPanel();closeHamMenu()"><svg class="ic"><use href="#i-globe"></use></svg> Multiplayer</button>
+      <button class="ham-item" onclick="toggleSkybox();closeHamMenu()"><svg class="ic"><use href="#i-sky"></use></svg> Skybox</button>
+      <button class="ham-item" onclick="showFogPanel();closeHamMenu()"><svg class="ic"><use href="#i-fog"></use></svg> Tuman</button>
+      <button class="ham-item" onclick="CameraRigSystem.editGlobal();closeHamMenu()"><svg class="ic"><use href="#i-video"></use></svg> Global Camera FX</button>
+      <button class="ham-item" onclick="CameraStateSystem.editGlobal();closeHamMenu()"><svg class="ic"><use href="#i-run"></use></svg> Locomotion FX</button>
+      <button class="ham-item" onclick="addLight();closeHamMenu()"><svg class="ic"><use href="#i-bulb"></use></svg> Yorug'lik</button>
+      <button class="ham-item" onclick="addParticles();closeHamMenu()"><svg class="ic"><use href="#i-sparkle"></use></svg> Zarrachalar</button>
+      <button class="ham-item" onclick="importBlenderAnim();closeHamMenu()"><svg class="ic"><use href="#i-clapper"></use></svg> Blender Anim</button>
+      <div class="ham-sep"></div>
+      <div class="ham-section-title">MODULLAR</div>
+      <button class="ham-item" onclick="SoundSystem.showPanel();closeHamMenu()"><svg class="ic"><use href="#i-volume"></use></svg> Ovoz Tizimi</button>
+    </div>
+  </div>
+  <div class="sep"></div>
+  <div class="tstat">FPS:<span class="v" id="fps-s">60</span></div><div class="sep"></div>
+  <div class="tstat">Poly:<span class="v" id="poly-s">0</span></div><div class="sep"></div>
+  <div class="tstat">Obj:<span class="v" id="obj-s">0</span></div><div class="sep"></div>
+  <div class="tstat">Fizika:<span class="v" id="phys-s">ON</span></div><div class="sep"></div>
+  <div class="tstat" id="snap-status-lbl" style="color:var(--muted);display:flex;align-items:center;gap:4px"><svg class="ic"><use href="#i-magnet"></use></svg> Snap:<span style="color:var(--muted)" id="snap-status-v">OFF</span><input id="snap-size-input" type="number" min="0.1" max="100" step="0.1" value="0.5" style="width:44px;background:var(--panel2);border:1px solid var(--border);color:var(--accent3);font-family:'Share Tech Mono','Courier New',monospace;font-size:10px;padding:1px 3px;border-radius:var(--r);text-align:center;display:none" oninput="EditorTools.snapGrid=Math.max(0.1,parseFloat(this.value)||0.5);const sv=document.getElementById('snap-status-v');if(sv&amp;&amp;EditorTools.snapEnabled){sv.textContent=EditorTools.snapGrid.toFixed(1)+'m'}"></div><div class="sep"></div>
+  <div class="tstat" id="render-backend-lbl" style="color:var(--accent3);font-size:9px">WebGL2</div>
+</div>
+
+<div id="main">
+<!-- LEFT -->
+<div id="left-col">
+  <div class="panel-tabs">
+    <div class="ptab active" onclick="switchLeftTab('hier',this)">IERARXIYA</div>
+    <div class="ptab" onclick="switchLeftTab('assets',this)">ASSETLAR</div>
+  </div>
+  <div id="tab-hier" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <div id="hier-toolbar">
+      <!-- ⚠ Ikonka ATRIBUT ICHIDA bo'lmaydi. Ilgari bu yerda
+           placeholder="<svg …></svg> Qidirish…" turardi — atributdagi
+           qo'shtirnoq sinib, brauzer maydonni buzib chizardi va xom
+           kod ekranda ko'rinardi. Endi ikonka alohida element,
+           placeholder esa sof matn. -->
+      <div class="hier-search-wrap">
+        <svg class="ic hier-search-ic" aria-hidden="true"><use href="#i-search"></use></svg>
+        <input id="hier-search" type="text" placeholder="Qidirish..." oninput="hierFilter(this.value)" autocomplete="off" spellcheck="false">
+      </div>
+      <button class="hier-tb-btn" title="Papka yaratish (Ctrl+F)" onclick="hierCtxAction('folder')"><svg class="ic"><use href="#i-folder"></use></svg></button>
+      <button class="hier-tb-btn" title="Nusxalash (Ctrl+D)" onclick="hierCtxAction('duplicate')">⧉</button>
+      <button class="hier-tb-btn red" title="O'chirish (Del)" onclick="hierCtxAction('delete')"><svg class="ic"><use href="#i-x"></use></svg></button>
+    </div>
+    <div class="hier-list" id="hier-list"></div>
+    <button class="add-btn" id="add-obj-btn">＋ Obyekt qo'shish</button>
+  </div>
+  <div id="tab-assets" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;padding:4px;border-bottom:1px solid var(--border);flex-shrink:0">
+      <button class="asset-cat-btn active" onclick="assetShowCat('primitives',this)"><svg class="ic"><use href="#i-box"></use></svg> Shakl</button>
+      <button class="asset-cat-btn" onclick="assetShowCat('entities',this)"><svg class="ic"><use href="#i-gamepad"></use></svg> Entity</button>
+      <button class="asset-cat-btn" onclick="assetShowCat('prefabs',this)"><svg class="ic"><use href="#i-star"></use></svg> Prefab</button>
+      <button class="asset-cat-btn" onclick="assetShowCat('models',this)"><svg class="ic"><use href="#i-layers"></use></svg> Model</button>
+      <!--  ⌨🖥 BUTTONS — ekran tugmalari SHABLONLARI.
+            ⚠ Addons dan OLDIN turadi (foydalanuvchi so'ragan joy).
+              Bir nechta shablon saqlanadi, lekin game.zip ga
+              faqat TANLANGANI tushadi. -->
+      <button class="asset-cat-btn" onclick="assetShowCat('buttons',this)"><svg class="ic"><use href="#i-gamepad"></use></svg> Buttons</button>
+      <button class="asset-cat-btn" onclick="assetShowCat('addons',this)"><svg class="ic"><use href="#i-puzzle"></use></svg> Addons</button>
+    </div>
+    <div style="flex:1;overflow-y:auto">
+    <div id="asset-cat-primitives" class="asset-grid"></div>
+    <div id="asset-cat-buttons" style="display:none;padding:4px"></div>
+    <div id="asset-cat-entities" style="display:none;padding:4px">
+      <div class="asset-section-label">FUNKSIONAL ELEMENTLAR</div>
+      <div class="asset-entity-item" onclick="addPath()">
+        <span class="ae-icon"><svg class="ic"><use href="#i-path"></use></svg></span>
+        <div class="ae-info"><div class="ae-name">Yo'l (Path)</div><div class="ae-desc">Nuqta qo'yib chizasiz — obyekt bo'ylab yuradi</div></div>
+        <div class="asset-spawn-badge" style="color:var(--accent3);border-color:rgba(var(--accent3-rgb),.3);background:rgba(var(--accent3-rgb),.08)">SPAWN</div>
+      </div>
+      <div class="asset-entity-item" onclick="addTextBlock()">
+        <span class="ae-icon"><svg class="ic"><use href="#i-edit"></use></svg></span>
+        <div class="ae-info"><div class="ae-name">Matn bloki</div><div class="ae-desc">3D matn — face / o'zboshimcha, timeline'da almashadi</div></div>
+        <div class="asset-spawn-badge" style="color:#ffcc00;border-color:rgba(255,204,0,.3);background:rgba(255,204,0,.08)">SPAWN</div>
+      </div>
+      <div class="asset-entity-item" onclick="assetSpawnEntity('camera')">
+        <span class="ae-icon"><svg class="ic"><use href="#i-video"></use></svg></span>
+        <div class="ae-info"><div class="ae-name">Kamera</div><div class="ae-desc">Cinematic, fixed, follow kamera</div></div>
+        <div class="asset-spawn-badge" style="color:var(--accent4);border-color:rgba(var(--accent4-rgb),.3);background:rgba(var(--accent4-rgb),.08)">SPAWN</div>
+      </div>
+    </div>
+    <div id="asset-cat-prefabs" style="display:none;padding:6px">
+      <div class="asset-section-label">SAQLANGAN PREFABLAR</div>
+      <div style="display:flex;gap:4px;margin-bottom:4px">
+        <button onclick="prefabSaveSelected()" style="flex:1;background:rgba(255,204,0,.08);border:1px solid rgba(255,204,0,.3);color:#ffcc00;font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:11px;font-weight:700;padding:6px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-save"></use></svg> Prefab saqlash</button>
+        <button onclick="prefabImport()" title="ZIP yoki JSON fayldan import" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:14px;padding:4px 8px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-import"></use></svg></button>
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <button onclick="prefabExportSelected()" title="Tanlangan objectni to'g'ridan ZIP qilib eksport (Models/Textures/apex-file.json)" style="flex:1;background:rgba(var(--accent-rgb),.06);border:1px solid rgba(var(--accent-rgb),.3);color:var(--accent);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:10px;font-weight:700;padding:5px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-download"></use></svg> ZIP eksport (apex-prefab-...zip)</button>
+      </div>
+      <div style="font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;color:var(--muted);margin-bottom:6px;line-height:1.6">Tanlangan objectni prefab qiling — oyinchi/avto xarakteri,<br>model + texture, scale va rotation eslab qolinadi (pozitsiya emas).<br>ZIP: <span style="color:var(--accent)">Models/ · Textures/ · apex-file.json</span></div>
+      <div id="prefab-list" style="display:flex;flex-direction:column;gap:3px"></div>
+    </div>
+    <div id="asset-cat-addons" style="display:none;padding:4px">
+      <div class="asset-section-label">KENGAYTMALAR</div>
+      <div id="addon-body"></div>
+    </div>
+    <div id="asset-cat-models" style="display:none;padding:6px">
+      <div class="asset-section-label">GLB / GLTF MODELLAR</div>
+      <button onclick="assetImportGLB()" style="width:100%;background:rgba(var(--accent-rgb),.07);border:1px dashed rgba(var(--accent-rgb),.3);color:var(--accent);font-family:'Rajdhani','Segoe UI',Arial,sans-serif;font-size:12px;font-weight:700;padding:10px;border-radius:var(--r);cursor:pointer;margin-bottom:6px"><svg class="ic"><use href="#i-folder-open"></use></svg> GLB / GLTF Yuklash</button>
+      <div id="asset-model-list" style="display:flex;flex-direction:column;gap:3px"></div>
+      <div style="font-family:'Share Tech Mono','Courier New',monospace;font-size:8px;color:var(--muted);margin-top:8px;line-height:1.8;padding:6px;background:rgba(0,0,0,.2);border-radius:var(--r);border:1px solid var(--border)">
+        Model sahnaga tushgach:<br><svg class="ic"><use href="#i-chev-r"></use></svg> Siljitish / aylantirish mumkin<br><svg class="ic"><use href="#i-chev-r"></use></svg> Script berish mumkin<br><svg class="ic"><use href="#i-chev-r"></use></svg> O'yin rejimida ishlaydi<br><svg class="ic"><use href="#i-chev-r"></use></svg> Animatsiyalar avtomatik yuklanadi
+      </div>
+    </div>
+    </div>
+  </div>
+</div>
+<div class="col-resizer" id="left-resizer" title="Tortib o'lchov o'zgartir"></div>
+
+<!-- CENTER -->
+<div id="center-col">
+  <div id="toolbar">
+    <button class="tool-btn active" id="tool-select" title="1 — Tanlash"><svg class="ic"><use href="#i-square-f"></use></svg></button>
+    <button class="tool-btn" id="tool-move" title="2 — Ko'chirish"><svg class="ic"><use href="#i-crosshair"></use></svg></button>
+    <button class="tool-btn" id="tool-rotate" title="3 — Aylantirish"><svg class="ic"><use href="#i-refresh"></use></svg></button>
+    <button class="tool-btn" id="tool-scale" title="4 — O'lchamni o'zgartirish">⊞</button>
+    <span class="tool-lbl" id="gizmo-lbl" style="font-size:9px;color:var(--accent4);margin-left:2px">GIZMO:SEL</span>
+    <div class="sep" style="margin:0 3px"></div>
+    <button class="tool-btn" id="view-p" title="Perspektiv">P</button>
+    <button class="tool-btn" id="view-t" title="Top">T</button>
+    <button class="tool-btn" id="view-f" title="Front">F</button>
+    <button class="tool-btn" id="cam-fps-btn" title="FPS kamera"><svg class="ic"><use href="#i-eye"></use></svg></button>
+    <span class="tool-lbl" id="cam-lbl">PERSP</span>
+    <div class="sep" style="margin:0 3px"></div>
+    <button class="tool-btn" id="phys-toggle" title="Fizika" style="color:var(--accent3)" onclick="togglePhysics()"><svg class="ic"><use href="#i-wave"></use></svg></button>
+    <button class="tool-btn" title="Audio" onclick="toggleAudio()"><svg class="ic"><use href="#i-volume"></use></svg></button>
+    <button class="tool-btn" id="collider-vis-btn" title="Collider ko'rsat (C)" onclick="toggleColliderVis();this.classList.toggle('active')"><svg class="ic"><use href="#i-square"></use></svg></button>
+    <button class="tool-btn" id="cg-btn" title="Filtrlar / Rang grading" onclick="ColorGrade.togglePanel()"><svg class="ic"><use href="#i-palette"></use></svg></button>
+    <div class="spacer"></div>
+    <button class="play-btn" id="play-btn"><svg class="ic"><use href="#i-play"></use></svg> O'YNA</button>
+  </div>
+  <div id="cvp">
+    <canvas id="three-canvas"></canvas>
+    <svg id="gizmo-svg" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible">
+      <defs>
+        <marker id="ah-x" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#ff4444"></polygon></marker>
+        <marker id="ah-y" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#44ff44"></polygon></marker>
+        <marker id="ah-z" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto"><polygon points="0,0 6,3 0,6" fill="#4488ff"></polygon></marker>
+      </defs>
+      <g id="gizmo-x" style="pointer-events:all;cursor:ew-resize;display:none">
+        <line id="gx-line" stroke="#ff4444" stroke-width="2.5" marker-end="url(#ah-x)"></line>
+        <text id="gx-lbl" fill="#ff4444" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">X</text>
+        <rect id="gx-hit" fill="transparent" height="14" style="cursor:ew-resize"></rect>
+      </g>
+      <g id="gizmo-y" style="pointer-events:all;cursor:ns-resize;display:none">
+        <line id="gy-line" stroke="#44ff44" stroke-width="2.5" marker-end="url(#ah-y)"></line>
+        <text id="gy-lbl" fill="#44ff44" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">Y</text>
+        <rect id="gy-hit" fill="transparent" width="14" style="cursor:ns-resize"></rect>
+      </g>
+      <g id="gizmo-z" style="pointer-events:all;cursor:nesw-resize;display:none">
+        <line id="gz-line" stroke="#4488ff" stroke-width="2.5" marker-end="url(#ah-z)"></line>
+        <text id="gz-lbl" fill="#4488ff" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">Z</text>
+        <rect id="gz-hit" fill="transparent" height="14" style="cursor:nesw-resize"></rect>
+      </g>
+      <g id="rot-ring-y" style="pointer-events:all;cursor:ew-resize;display:none">
+        <ellipse id="rot-y-ellipse" fill="none" stroke="#00ccff" stroke-width="2.5" stroke-opacity="0.95" stroke-linecap="round"></ellipse>
+        <ellipse id="rot-y-hit" fill="transparent" stroke="transparent" stroke-width="14" style="cursor:ew-resize"></ellipse>
+        <text id="rot-y-lbl" fill="#00ccff" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">Y</text>
+      </g>
+      <g id="rot-ring-x" style="pointer-events:all;cursor:ns-resize;display:none">
+        <ellipse id="rot-x-ellipse" fill="none" stroke="#44ff88" stroke-width="2.5" stroke-opacity="0.95" stroke-linecap="round"></ellipse>
+        <ellipse id="rot-x-hit" fill="transparent" stroke="transparent" stroke-width="14" style="cursor:ns-resize"></ellipse>
+        <text id="rot-x-lbl" fill="#44ff88" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">X</text>
+      </g>
+      <g id="rot-ring-z" style="pointer-events:all;cursor:nesw-resize;display:none">
+        <ellipse id="rot-z-ellipse" fill="none" stroke="#ffdd00" stroke-width="2.5" stroke-opacity="0.95" stroke-linecap="round"></ellipse>
+        <ellipse id="rot-z-hit" fill="transparent" stroke="transparent" stroke-width="14" style="cursor:nesw-resize"></ellipse>
+        <text id="rot-z-lbl" fill="#ffdd00" font-size="11" font-family="'Share Tech Mono','Courier New',monospace" font-weight="700">Z</text>
+      </g>
+    </svg>
+    <div id="fps-ov">
+      FPS: <span id="fps-d">60</span><br>
+      Obj: <span id="obj-d">0</span> | Tri: <span id="tri-d">0</span><br>
+      Vaqt: <span id="time-d">0.00s</span>
+    </div>
+    <div id="mode-ov">
+      CAM: <span id="cam-mode-lbl">Perspektiv</span><br>
+      RMB+Sichq: Aylantir | RMB+WASD: Yur<br>
+      Q/E: Pastga/Tepaga | Shift: Tez | Space: Sekin
+    </div>
+    <div id="crosshair">+</div>
+    <!-- <svg class="ic"><use href="#i-type"/></svg> Interaktiv tugma yozuvi (o'yinchi yaqinlashib qaraganda) -->
+    <div id="ibtn-prompt"></div>
+    <!-- <svg class="ic"><use href="#i-timer"/></svg> Qarash bloki taymeri (sanoq ketayotganda ko'rinadi) -->
+    <div id="gaze-timer-hud"></div>
+    <div id="fps-grab-hint">LMB: Ko'tar | Scroll: Aylandir | RMB: Tashlash</div>
+    <div id="fps-held-lbl"><svg class="ic"><use href="#i-box"></use></svg> ushlanmoqda</div>
+    <div id="gltf-drop">
+      <span style="font-size:36px"><svg class="ic"><use href="#i-box"></use></svg></span>
+      GLB / GLTF faylni tashlang
+      <span style="font-size:11px;color:var(--muted);font-weight:400">yoki yuqoridagi Import tugmasini bosing</span>
+    </div>
+  </div>
+  <div id="console-resize-handle"></div>
+  <div id="console-wrap">
+    <div class="panel-tabs" style="height:28px">
+      <div class="ptab active" onclick="switchBottomTab('console',this)">KONSOL</div>
+      <div class="ptab" onclick="switchBottomTab('timeline',this)"><svg class="ic"><use href="#i-timer"></use></svg> TIMELINE</div>
+    </div>
+    <div id="console-body"></div>
+    <div id="timeline-panel">
+      <div id="tl-toolbar">
+        <button class="tl-btn" id="tl-play-btn" onclick="tlPlay()"><svg class="ic"><use href="#i-play"></use></svg></button>
+        <button class="tl-btn" onclick="tlStop()"><svg class="ic"><use href="#i-square-f"></use></svg></button>
+        <div class="sep" style="margin:0 2px"></div>
+        <button class="tl-btn" onclick="tlAddKeyframe()" style="color:var(--accent);border-color:rgba(var(--accent-rgb),.3)"><svg class="ic"><use href="#i-diamond-f"></use></svg> KF</button>
+        <button class="tl-btn vis" onclick="tlAddVisKeyframe()"><svg class="ic"><use href="#i-eye"></use></svg> VIS</button>
+        <!--  ⚠ 💻 PC va 🎨 canvas tugmalari BU YERDAN OLIB
+              TASHLANDI. Sahnada o'nlab PC blok va canvas bo'lishi
+              mumkin — umumiy toolbardagi tugma qaysi biriga
+              tegishini AYTMASDI va dizayner tasodifiy obyektga key
+              qo'yib qo'yardi.
+              Endi ular O'Z menyusida:
+                💻 PC   → inspektor → ⏱ TIMELINE bo'limi
+                🎨 Canvas → canvas muharriri → ⏱ tugmasi
+              U yerda \"qaysi obyekt\" degan savol umuman tug'ilmaydi. -->
+        <button class="tl-btn" onclick="tlDeleteKeyframe()"><svg class="ic"><use href="#i-x"></use></svg></button>
+        <button class="tl-btn" onclick="tlClearAll()" style="color:#ff3b6b;border-color:rgba(255,59,107,.4)" title="Hamma keyframeni o'chirish (Ctrl+Z bilan qaytadi)"><svg class="ic"><use href="#i-trash"></use></svg> Hammasi</button>
+        <button class="tl-btn" onclick="tlDuplicateKeyframe()" style="color:var(--accent4);border-color:rgba(var(--accent4-rgb),.3)">⧉</button>
+        <button class="tl-btn" id="tl-cut-btn" onclick="tlToggleCutMode()" style="color:var(--accent2);border-color:rgba(255,107,53,.3)"><svg class="ic"><use href="#i-cut"></use></svg> Kes</button>
+        <div class="sep" style="margin:0 2px"></div>
+        <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono','Courier New',monospace">Easing:</span>
+        <select id="tl-ease-select" onchange="tlSetGlobalEase(this.value)">
+          <option value="smooth">Smooth</option>
+          <option value="linear">Linear</option>
+          <option value="bounce">Bounce</option>
+          <option value="elastic">Elastic</option>
+          <option value="back">Back</option>
+        </select>
+        <div style="flex:1"></div>
+        <span id="tl-time-lbl">0.00s</span>
+        <div style="width:1px;height:14px;background:var(--border);margin:0 3px"></div>
+
+        <!--  KO'PROQ - kam ishlatiladigan amallar.
+              ⚠ Toolbarda 19 ta tugma bor edi va ular ekranga
+                sig'masdi: eng kerakligi (Play, KF) chetga surilib
+                ketardi. Endi kam ishlatiladiganlari shu menyuda.
+              ⚠ Tugmalar O'CHIRILMADI, ko'chirildi - ular hamon
+                bir bosishda, faqat ikki bosqichda. -->
+        <div style="position:relative;display:inline-block">
+          <button class="tl-btn" id="tl-more-btn" onclick="tlToggleMore()" title="Ko'proq: DUAL, Track, Export, Anim, Video, Import">⋯ Ko'proq</button>
+          <!--  ⚠ Ochilganda `document.body` ga KO'CHIRILADI — timeline
+                panelida `overflow:hidden` bor va menyu shu yerda
+                qolsa KESILARDI. `z-index` yordam bermaydi: u qatlam
+                tartibiga ta'sir qiladi, kesishga emas. -->
+          <div id="tl-more-menu" style="display:none;position:fixed;z-index:9999;
+            background:rgba(10,15,22,.97);border:1px solid rgba(0,255,190,.25);border-radius:5px;
+            padding:6px;z-index:60;box-shadow:0 8px 30px rgba(0,0,0,.6);
+            display:none;flex-direction:column;gap:4px;min-width:150px">
+            <button class="tl-btn" onclick="tlAddDualKeyframe()" style="color:#ff3b6b;border-color:rgba(255,59,107,.35)" title="Dual (cut/teleport) key — silliq emas, sakrab o'tadi">⧉ DUAL</button>
+            <button class="tl-btn" onclick="tlDuplicateTrack()" style="color:var(--accent4);border-color:rgba(var(--accent4-rgb),.3)">⧉ Track</button>
+            <button class="tl-btn" onclick="tlExportJSON()" id="tl-export-btn" style="color:var(--accent);border-color:rgba(var(--accent-rgb),.3);white-space:nowrap"><svg class="ic"><use href="#i-download"></use></svg> Export</button>
+            <button class="tl-btn" onclick="showTimelineExportPanel()" id="tl-obj-anim-btn" style="color:var(--accent2);border-color:rgba(var(--accent2-rgb),.35);white-space:nowrap" title="Bitta obyektning keyframelarini .json qilib eksport — hitbox &quot;Import qilingan animatsiyalar&quot; slotlari uchun"><svg class="ic"><use href="#i-diamond-f"></use></svg> Anim</button>
+            <button class="tl-btn" onclick="showAnimExportPanel()" id="tl-vid-export-btn" style="color:#ff3355;border-color:rgba(255,51,85,.35);white-space:nowrap" title="Animatsiyani video (.webm) qilib yozib olish"><svg class="ic"><use href="#i-clapper"></use></svg> Video</button>
+            <button class="tl-btn" onclick="document.getElementById('tl-import-file').click()" style="color:var(--accent2);border-color:rgba(255,107,53,.3);white-space:nowrap"><svg class="ic"><use href="#i-upload"></use></svg> Import</button>
+          </div>
+        </div>
+        <input type="file" id="tl-import-file" accept=".json,.zip" style="display:none" onchange="tlImportJSON(event)">
+      </div>
+      <div id="tl-body">
+        <div id="tl-scrubber-row">
+          <div id="tl-cut-range" style="display:none;position:absolute;top:0;bottom:0;background:rgba(255,107,53,0.15);border-left:2px solid var(--accent2);border-right:2px solid var(--accent2);pointer-events:none;z-index:10"></div>
+          <div id="tl-playhead"></div>
+        </div>
+        <div id="tl-tracks"></div>
+      </div>
+    </div>
+    <div id="tl-kf-popup">
+      <div class="kfp-row"><span class="kfp-label">EASING</span>
+        <select id="kfp-ease" onchange="tlSetKfEase(this.value)">
+          <option value="smooth">Smooth (EaseInOut)</option>
+          <option value="linear">Linear</option>
+          <option value="bounce">Bounce</option>
+          <option value="elastic">Elastic</option>
+          <option value="back">Back (Qayish)</option>
+        </select>
+      </div>
+      <div class="kfp-row"><span class="kfp-label">TANGENT</span>
+        <select id="kfp-tangent" onchange="tlSetKfTangent(this.value)">
+          <option value="auto">Auto</option>
+          <option value="flat">Tekis (Flat)</option>
+          <option value="sharp">O'tkir (Sharp)</option>
+        </select>
+      </div>
+      <div class="kfp-row" id="kfp-vis-row" style="display:none"><span class="kfp-label">KO'RINISH</span>
+        <select id="kfp-vis" onchange="tlSetKfVis(this.value)">
+          <option value="1">Ko'rinadi <svg class="ic"><use href="#i-check"></use></svg></option>
+          <option value="0">Ko'rinmaydi <svg class="ic"><use href="#i-x"></use></svg></option>
+        </select>
+      </div>
+      <div class="kfp-row">
+        <span class="kfp-label" style="font-size:8px;color:var(--red);cursor:pointer" onclick="tlDeleteKeyframe();$('tl-kf-popup').style.display='none'"><svg class="ic"><use href="#i-x"></use></svg> O'chirish</span>
+        <span class="kfp-label" style="font-size:8px;color:var(--accent);cursor:pointer" onclick="tlDuplicateKeyframe();$('tl-kf-popup').style.display='none'">⧉ Nusxa</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SOUND KF POPUP -->
+<div id="tl-snd-popup">
+  <div style="font-size:9px;color:var(--accent3);letter-spacing:1px;margin-bottom:6px"><svg class="ic"><use href="#i-note"></use></svg> OVOZ KEYFRAME</div>
+  <div class="sp-row">
+    <span class="sp-lbl">Ovoz</span>
+    <select id="sp-sound" style="font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:2px 4px;border-radius:var(--r);outline:none;flex:1"></select>
+  </div>
+  <div class="sp-row">
+    <span class="sp-lbl">Hajm</span>
+    <input type="range" id="sp-volume" min="0" max="1" step="0.05" value="1" oninput="var l=document.getElementById('sp-vol-lbl');if(l)l.textContent=parseFloat(this.value).toFixed(1)" style="flex:1;accent-color:var(--accent3)">
+    <span id="sp-vol-lbl" style="font-size:9px;color:var(--accent3);width:28px;text-align:right">1.0</span>
+  </div>
+  <div class="sp-row">
+    <span class="sp-lbl">3D</span>
+    <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+      <input type="checkbox" id="sp-spatial" checked="" style="accent-color:var(--accent3)">
+      <span style="font-size:9px;color:var(--muted)">Makoniy</span>
+    </label>
+    <button onclick="tlSndKfPreview()" style="background:none;border:1px solid var(--accent3);color:var(--accent3);font-size:9px;padding:2px 6px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-play"></use></svg></button>
+  </div>
+  <div class="sp-row" style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px">
+    <button onclick="tlSndKfSave()" style="flex:1;padding:4px;background:rgba(var(--accent3-rgb),.1);border:1px solid var(--accent3);color:var(--accent3);font-size:9px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-check"></use></svg> Saqlash</button>
+    <button onclick="tlSndKfDelete()" style="padding:4px 8px;background:none;border:1px solid var(--border);color:var(--red);font-size:9px;border-radius:var(--r);cursor:pointer"><svg class="ic"><use href="#i-x"></use></svg></button>
+  </div>
+</div>
+
+<div class="col-resizer" id="right-resizer" title="Tortib o'lchov o'zgartir"></div>
+<div id="right-col">
+  <!-- ONLINE tab olib tashlandi — faqat INSPEKTOR qoldi -->
+  <div class="panel-tabs" style="border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex">
+      <div class="ptab active" id="inspector-tab" data-tabname="inspector" onclick="switchInsTab('inspector')">INSPEKTOR</div>
+      <div class="ptab" id="nest-tab" data-tabname="nest" onclick="switchInsTab('nest')">ICHIGA QOSHISH</div>
+    </div>
+    <button onclick="openCanvasEditor()" title="HUD/Canvas muharrir" style="margin-right:8px;background:rgba(var(--accent-rgb),.08);border:1px solid rgba(var(--accent-rgb),.35);color:var(--accent);padding:4px 10px;border-radius:var(--r);cursor:pointer;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px"><svg class="ic"><use href="#i-palette"></use></svg> CANVAS</button>
+  </div>
+  <div id="inspector-content">
+    <div style="padding:16px;font-size:11px;color:var(--muted);text-align:center;line-height:1.9">
+      Obyektni tanlang<br><span style="font-size:9px;font-family:'Share Tech Mono','Courier New',monospace">LMB: tanlash<br>F: fokus<br>Del: o'chirish</span>
+    </div>
+  </div>
+  <div id="nest-content" style="display:none;overflow-y:auto"></div>
+  <div id="curve-editor-panel">
+    <div id="curve-editor-header" onclick="ceCycleResize()">
+      <span id="curve-editor-title"><svg class="ic"><use href="#i-diamond"></use></svg> EGRI CHIZIQ MUHARRIR</span>
+      <span style="font-family:'Share Tech Mono','Courier New',monospace;font-size:9px;color:var(--muted)" id="ce-track-name">—</span>
+      <span id="curve-editor-close" onclick="event.stopPropagation();ceClose()" title="Yopish"><svg class="ic"><use href="#i-x"></use></svg></span>
+    </div>
+    <div id="curve-editor-body">
+      <div class="ce-track-tabs" id="ce-track-tabs"></div>
+      <div class="ce-ease-row" id="ce-ease-row">
+        <button class="ce-ease-btn" data-ease="linear" onclick="ceSetEase('linear')">Linear</button>
+        <button class="ce-ease-btn active" data-ease="smooth" onclick="ceSetEase('smooth')">Smooth</button>
+        <button class="ce-ease-btn" data-ease="bounce" onclick="ceSetEase('bounce')">Bounce</button>
+        <button class="ce-ease-btn" data-ease="elastic" onclick="ceSetEase('elastic')">Elastic</button>
+        <button class="ce-ease-btn" data-ease="back" onclick="ceSetEase('back')">Back <svg class="ic"><use href="#i-undo"></use></svg></button>
+      </div>
+      <div id="curve-canvas-wrap">
+        <canvas id="curve-canvas" width="209" height="120"></canvas>
+      </div>
+      <div class="ce-info" id="ce-info">Track labeliga bosing</div>
+    </div>
+  </div>
+</div>
+</div>
+
+
+
+
+<!-- <svg class="ic"><use href="#i-bone"/></svg> FBX animatsiya importi uchun. Tartib MUHIM: fflate (binar FBX ni
+     ochadi) va NURBS (splayn egriliklari) FBXLoader dan OLDIN. -->
+
+
+
+
+
+
+<script>
+// ── Ikon yordamchisi ────────────────────────────────────────────
+//  JS panellari HTML matnini o'zi quradi, shuning uchun ikonni
+//  satr sifatida qaytaradigan funksiya kerak. `<use>` sprite ga
+//  ishora qiladi — ikon bitta joyda saqlanadi, panellar faqat
+//  nomini biladi.
+//  ⚠ Emoji o'rniga shu ishlatiladi: emoji shrift va platformaga
+//    qarab har xil ko'rinadi, o'lchamini boshqarish ham qiyin.
+//    SVG esa `currentColor` ni oladi — matn rangiga o'zi moslashadi.
+window.ic = function (name, cls) {
+  return '<svg class="ic' + (cls ? ' ' + cls : '') + '"><use href="#i-' + name + '"/></svg>';
+};
+</script>
+<script>
+(function() {
+  // Rapier WASM lokal libs/ dan yuklanadi (WASM ichida base64 holda — offline ishlaydi).
+  import('./engine/libs/rapier3d-compat.es.js')
+    .then(mod => mod.default || mod)
+    .then(RAPIER => RAPIER.init().then(() => {
+      window.RAPIER = RAPIER;
+      window._rapierReady = true;
+      window.dispatchEvent(new Event('rapier-ready'));
+      console.log('⚡ Rapier WASM yuklandi (lokal, offline)');
+    }))
+    .catch(e => {
+      // ⚠ JIMGINA O'TIB KETMAYMIZ. Rapier yuklanmasa zaxira fizika
+      //   ishlaydi — u ancha soddaroq. Ilgari bu holat faqat
+      //   `console.warn` bilan bildirilardi va foydalanuvchi nega
+      //   jismlar g'alati harakat qilayotganini bilmasdi.
+      //
+      //   ENG KO'P UCHRAYDIGAN SABAB: sahifa `file://` orqali ochilgan.
+      //   Rapier — ES modul, brauzer esa `file://` dan modul import
+      //   qilishni CORS bilan bloklaydi. Yechim: `node server.js`.
+      const msg = e && e.message ? e.message : String(e);
+      console.warn('Rapier WASM yuklanmadi (zaxira fizika):', msg);
+      window._rapierReady = false;
+      window._rapierError = msg;
+      window.dispatchEvent(new Event('rapier-ready'));
+
+      const isFile = location.protocol === 'file:';
+      const line = isFile
+        ? '⚠ Rapier yuklanmadi — sahifa <b>file://</b> orqali ochilgan. ' +
+          'Brauzer bu yerdan ES modul import qilishni bloklaydi.<br>' +
+          'To\'liq fizika uchun: <b style="color:var(--accent3)">node server.js</b> ' +
+          'va <b style="color:var(--accent3)">http://localhost:8000</b> ni oching.'
+        : '⚠ Rapier yuklanmadi (' + msg + ') — zaxira fizika ishlamoqda.';
+
+      const show = () => {
+        if (typeof log === 'function') {
+          log(isFile
+            ? '⚠ Rapier yuklanmadi (file://) — zaxira fizika. To\'liq fizika uchun: node server.js'
+            : '⚠ Rapier yuklanmadi — zaxira fizika ishlamoqda', 'lw');
+        }
+        const el = document.createElement('div');
+        el.id = 'rapier-warn';
+        el.innerHTML = line +
+          '<span style="float:right;cursor:pointer;padding:0 4px;opacity:.7" onclick="this.parentNode.remove()">✕</span>';
+        el.style.cssText =
+          'position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:99999;' +
+          'max-width:640px;padding:9px 14px;border-radius:var(--r);font-size:11px;line-height:1.6;' +
+          'font-family:\'Share Tech Mono\',monospace;background:rgba(40,20,0,.94);' +
+          'color:#ffcc44;border:1px solid rgba(255,204,68,.5);box-shadow:0 6px 24px rgba(0,0,0,.5)';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 20000);
+      };
+      if (document.body) setTimeout(show, 1200);
+      else document.addEventListener('DOMContentLoaded', () => setTimeout(show, 1200));
+    });
+})();
+</script>
+<div id="ss-flash"></div>
+<div id="undo-toast"><svg class="ic"><use href="#i-undo"></use></svg> Bekor qilindi</div>
+<!-- HIERARCHY CONTEXT MENU -->
+<div id="hier-ctx">
+  <div class="cm-item" onclick="hierCtxAction('folder')"><span class="cm-ico"><svg class="ic"><use href="#i-folder"></use></svg></span>Papka qo'shish<span class="cm-key">Ctrl+F</span></div>
+  <div class="cm-item" onclick="hierCtxAction('duplicate')"><span class="cm-ico">⧉</span>Nusxalash<span class="cm-key">Ctrl+D</span></div>
+  <div class="cm-sep"></div>
+  <div class="cm-item" onclick="hierCtxAction('expand')"><span class="cm-ico"><svg class="ic"><use href="#i-chev-d"></use></svg></span>Bolalarni ochish</div>
+  <div class="cm-item" onclick="hierCtxAction('collapse')"><span class="cm-ico"><svg class="ic"><use href="#i-chev-r"></use></svg></span>Bolalarni yopish</div>
+  <div class="cm-item" onclick="hierCtxAction('expand-all')"><span class="cm-ico"><svg class="ic"><use href="#i-resize-v"></use></svg></span>Hammasini ochish</div>
+  <div class="cm-item" onclick="hierCtxAction('collapse-all')"><span class="cm-ico"><svg class="ic"><use href="#i-resize-h"></use></svg></span>Hammasini yopish</div>
+  <div class="cm-sep"></div>
+  <div class="cm-item" onclick="hierCtxAction('select-all')"><span class="cm-ico"><svg class="ic"><use href="#i-square"></use></svg></span>Hammasini tanlash<span class="cm-key">Ctrl+A</span></div>
+  <div class="cm-item" onclick="hierCtxAction('select-kf')"><span class="cm-ico"><svg class="ic"><use href="#i-diamond-f"></use></svg></span>Barcha keyframe</div>
+  <div class="cm-sep"></div>
+  <div class="cm-item red" onclick="hierCtxAction('delete')"><span class="cm-ico" style="color:var(--red)"><svg class="ic"><use href="#i-x"></use></svg></span><span style="color:var(--red)">O'chirish</span><span class="cm-key">Del</span></div>
+</div>
+
+
+
+<!-- ↩ Undo/Redo — `dispose.js` dan KEYIN bo'lishi shart: u
+     `window.disposeMany` ni o'raydi (tarixda turgan obyekt
+     bo'shatilmasin). Qolgan tizimlardan OLDIN, chunki ular
+     `captureState()` ni chaqiradi. -->
+
+<!-- 📦 Aktiv ajratuvchi — `save-load.js` va `map-loader.js` dan OLDIN
+     yuklanishi kerak (ikkalasi ham `AssetBundle` ni chaqiradi). -->
+
+<!-- 🗂 Tizim reyestri — `serialize()` ga ega HAR BIR tizimni o'zi
+     topib chaqiradi. `save-load.js` dan OLDIN yuklanishi kerak. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<script>
+function _keyLabel(code) {
+  if (!code) return '---';
+  const map = {
+    'KeyW':'W','KeyA':'A','KeyS':'S','KeyD':'D','KeyQ':'Q','KeyE':'E',
+    'KeyR':'R','KeyF':'F','KeyG':'G','KeyH':'H','KeyI':'I','KeyJ':'J',
+    'KeyK':'K','KeyL':'L','KeyZ':'Z','KeyX':'X','KeyC':'C','KeyV':'V',
+    'KeyB':'B','KeyN':'N','KeyM':'M','KeyP':'P','KeyO':'O','KeyT':'T',
+    'KeyU':'U','KeyY':'Y',
+    'Space':'SPACE','ShiftLeft':'SHIFT L','ShiftRight':'SHIFT R',
+    'ControlLeft':'CTRL L','ControlRight':'CTRL R',
+    'AltLeft':'ALT L','AltRight':'ALT R',
+    'ArrowUp':'↑','ArrowDown':'↓','ArrowLeft':'←','ArrowRight':'→',
+    'Digit1':'1','Digit2':'2','Digit3':'3','Digit4':'4','Digit5':'5',
+    'Digit6':'6','Digit7':'7','Digit8':'8','Digit9':'9','Digit0':'0',
+    'Enter':'ENTER','Backspace':'BKSP','Tab':'TAB','Escape':'ESC','CapsLock':'CAPS',
+  };
+  return map[code] || code.replace('Key','').replace('Digit','');
+}
+window._kbAnimations = window._kbAnimations || {};
+window._mouseAnimEvents = window._mouseAnimEvents || {
+  click:'', dblclick:'', presshold:'', wheelup:'', wheeldown:'',
+  dirUp:'', dirDown:'', dirLeft:'', dirRight:''
+};
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--  🔌 Tarmoq adapterlari — multiplayer DAN OLDIN: u yuklanishida
+      adapterlar ro'yxatdan o'tgan bo'lishi kerak. -->
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+<!-- 🔒 O'yin qulfi — eksportda redaktor boshqaruvini o'chiradi.
+     `keyboard.js` va `orbit-controls.js` dan OLDIN: ular
+     `window.APEX_GAME` ni o'qiydi. Redaktorda passiv turadi. -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <svg class="ic"><use href="#i-search"/></svg> Tashxis: apexAnimDiag() <svg class="ic"><use href="#i-arrow-r"/></svg> sinang <svg class="ic"><use href="#i-arrow-r"/></svg> apexAnimDiag.report() -->
+
+
+
+<!--  ⚠ EKSPORT QILINGAN O'YIN BELGISI. Skriptlardan OLDIN, chunki
+      ⏸ pauza menyusi yuklanishida shu bayroqni o'qiydi.
+      Muharrirda u YO'Q — shu bois ESC u yerda o'z ishini qiladi
+      (⏹ Stop, kamera rejimidan chiqish) va menyu aralashmaydi. -->
+<script>window.__APEX_GAME__ = true;
+//  ⚠ QURILISH BELGISI — "eski arxivmi?" degan savolga javob.
+//    Foydalanuvchi "o'yin bor, lekin ulanish yo'q" deganda
+//    birinchi savol shu bo'ladi va uni tekshirishning yo'li
+//    YO'Q edi. Endi konsolda ko'rinadi.
+window.__APEX_BUILD__ = "2026-09-20 11:00";
+window.__APEX_HAS_MP__ = true;
+console.log('%c🎮 APEX GAME — qurilgan: ' + window.__APEX_BUILD__,
+            'color:#4de2c8;font-weight:700');
+console.log('   🌐 Multiplayer: bor (net-adapter · net-ws · net-firebase)');
+</script>
+<!--  👤 NIK SO'RASH — o'yin boshlanishidan oldin.
+      ⚠ O'yinda 🌐 multiplayer paneli YO'Q va o'yinchi nikini
+        kirita olmasdi — hamma "Player 123" bo'lib ko'rinardi.
+      ⚠ So'ralgan nik va UID brauzerда SAQLANADI: o'yinchi har
+        kirganda qayta yozishi shart emas va UID o'zgarmaydi. -->
+<script>
+(function () {
+  'use strict';
+  //  ⚠ Multiplayer O'CHIQ bo'lsa so'ramaymiz — yakka o'yinda
+  //    keraksiz oyna chiqib turardi.
+  //  ⚠ PROMISE qaytaradi: chaqiruvchi javobni KUTISHI shart.
+  //    XATO BOR EDI: oyna ochilardi-yu, ▶ Play DARHOL bosilardi va
+  //    ulanish nik BO'SH holda ketardi. O'yinchi nomini yozsa ham
+  //    boshqalar uni "Player 456" deb ko'rardi.
+  window.__APEX_ASK_NICK__ = function () {
+    return new Promise(function (done) {
+    try {
+      var S = window.MultiplayerSystem;
+      if (!S || !S.cfg || S.cfg.autoJoin !== true) { done(); return; }
+
+      var KEY = 'apex.mp.id';
+      var saved = null;
+      try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+      //  ⚠ UID BIR MARTA yasaladi va SAQLANADI: u o'yinchini
+      //    xonada tanitadi. Har kirganda yangisini bersak
+      //    ballari va mulki begona bo'lib qolardi.
+      if (saved && saved.uid && saved.name) {
+        S.cfg.name = saved.name;
+        S.cfg.uid = saved.uid;
+        done();
+        return;
+      }
+
+      var ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;' +
+        'align-items:center;justify-content:center;background:#04070c;' +
+        "font-family:'Share Tech Mono',monospace";
+      ov.innerHTML =
+        '<div style="min-width:280px;max-width:90%;background:rgba(10,15,22,.97);' +
+        'border:1px solid rgba(0,255,190,.3);border-radius:8px;padding:22px 24px">' +
+        '<div style="font-size:14px;letter-spacing:3px;color:#4de2c8;text-align:center;' +
+        'margin-bottom:14px">NIKINGIZ</div>' +
+        '<input id="apex-nick" maxlength="20" placeholder="Ismingiz…" ' +
+        'style="width:100%;box-sizing:border-box;padding:9px 11px;border-radius:5px;' +
+        'border:1px solid rgba(0,255,190,.3);background:#0a0f16;color:#e8f0ee;' +
+        //  ⚠ BIR TIRNOQLI satr: ichida QO'SHTIRNOQ bor va uni
+        //    qochirish SHART EMAS. Ilgari qo'shtirnoqli satr ichida
+        //    qochirilgan qo'shtirnoq yozilgandi — lekin bu blok
+        //    SHABLON SATRI ichida yaratiladi va u qochirishni
+        //    YEB QO'YARDI. Natijada chiqarilgan faylda satr o'sha
+        //    yerda UZILARDI:
+        //        SyntaxError: string literal contains an
+        //        unescaped line break
+        //    va o'yin UMUMAN ishga tushmasdi.
+        'font-family:inherit;font-size:13px;outline:none">' +
+        '<button id="apex-nick-ok" style="width:100%;margin-top:12px;padding:10px;' +
+        'border-radius:5px;cursor:pointer;font-family:inherit;font-size:13px;' +
+        'border:1px solid #4de2c8;background:rgba(0,255,190,.1);color:#4de2c8">' +
+        'BOSHLASH</button></div>';
+      document.body.appendChild(ov);
+
+      var inp = ov.querySelector('#apex-nick');
+      var go = function () {
+        var v = (inp.value || '').trim().slice(0, 20);
+        //  ⚠ Bo'sh nik ham QABUL qilinadi — o'yinchi shoshayotgan
+        //    bo'lishi mumkin. Unga avtomatik nom beriladi.
+        if (!v) v = 'Player ' + Math.floor(Math.random() * 900 + 100);
+        //  UID: vaqt + tasodif. Kriptografik emas — maqsad
+        //  o'yinchini ajratish, himoya emas.
+        var uid = (saved && saved.uid) ||
+          (Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+        try { localStorage.setItem(KEY, JSON.stringify({ name: v, uid: uid })); } catch (e) {}
+        S.cfg.name = v;
+        S.cfg.uid = uid;
+        ov.remove();
+        //  ⚠ SHU YERDA — nom qo'yilgandan KEYIN. Oldin chaqirsak
+        //    ulanish yana bo'sh nom bilan ketardi.
+        done();
+      };
+      ov.querySelector('#apex-nick-ok').onclick = go;
+      //  ⚠ Hodisa PASTGA O'TMAYDI: busiz har harf o'yinga tushib
+      //    personaj yurib ketardi.
+      inp.addEventListener('keydown', function (e) {
+        e.stopPropagation();
+        if (e.key === 'Enter') go();
+      }, true);
+      setTimeout(function () { try { inp.focus(); } catch (e) {} }, 0);
+    } catch (e) { done(); }
+    });
+  };
+})();
+</script>
+<script src="engine/libs/jszip.min.js"></script>
+<script src="engine/libs/three.min.js"></script>
+<script src="engine/libs/CSS3DRenderer.js"></script>
+<script src="engine/libs/GLTFLoader.js"></script>
+<script src="engine/libs/fflate.min.js"></script>
+<script src="engine/libs/NURBSUtils.js"></script>
+<script src="engine/libs/NURBSCurve.js"></script>
+<script src="engine/libs/FBXLoader.js"></script>
+<script src="engine/libs/DRACOLoader.js"></script>
+<script src="engine/scripts/core/dispose.js"></script>
+<script src="engine/scripts/core/engine.js"></script>
+<script src="engine/scripts/core/undo.js"></script>
+<script src="engine/scripts/core/asset-bundle.js"></script>
+<script src="engine/scripts/core/system-registry.js"></script>
+<script src="engine/scripts/core/lang.js"></script>
+<script src="engine/scripts/ui/theme.js"></script>
+<script src="engine/scripts/core/renderer.js"></script>
+<script src="engine/scripts/core/gltf-loader.js"></script>
+<script src="engine/scripts/core/hierarchy.js"></script>
+<script src="engine/scripts/core/lights.js"></script>
+<script src="engine/scripts/core/skybox.js"></script>
+<script src="engine/scripts/core/particles.js"></script>
+<script src="engine/scripts/core/scene-types.js"></script>
+<script src="engine/scripts/systems/physics.js"></script>
+<script src="engine/scripts/systems/center-of-mass.js"></script>
+<script src="engine/scripts/systems/audio.js"></script>
+<script src="engine/scripts/core/scene-objects.js"></script>
+<script src="engine/scripts/core/pivot.js"></script>
+<script src="engine/scripts/systems/fog-weather.js"></script>
+<script src="engine/scripts/systems/animation.js"></script>
+<script src="engine/scripts/core/inspector.js"></script>
+<script src="engine/scripts/systems/per-face-textures.js"></script>
+<script src="engine/scripts/systems/texture-loop.js"></script>
+<script src="engine/scripts/systems/object-role.js"></script>
+<script src="engine/scripts/systems/color-grade.js"></script>
+<script src="engine/scripts/systems/reverse-playback.js"></script>
+<script src="engine/scripts/systems/hitbox.js"></script>
+<script src="engine/scripts/systems/map-loader.js"></script>
+<script src="engine/scripts/systems/sound-block.js"></script>
+<script src="engine/scripts/systems/text-block.js"></script>
+<script src="engine/scripts/systems/path.js"></script>
+<script src="engine/scripts/systems/pc-block.js"></script>
+<script src="engine/scripts/systems/player-model.js"></script>
+<script src="engine/scripts/systems/car-parts.js"></script>
+<script src="engine/scripts/systems/timeline-export.js"></script>
+<script src="engine/scripts/systems/interactive-button.js"></script>
+<script src="engine/scripts/systems/head-look.js"></script>
+<script src="engine/scripts/systems/key-sound.js"></script>
+<script src="engine/scripts/systems/ladder.js"></script>
+<script src="engine/scripts/ui/particle-inspector.js"></script>
+<script src="engine/scripts/ui/model-orient-inspector.js"></script>
+<script src="engine/scripts/ui/anim-inspector.js"></script>
+<script src="engine/scripts/systems/start-finish.js"></script>
+<script src="engine/scripts/systems/gravity-gun.js"></script>
+<script src="engine/scripts/systems/inventory.js"></script>
+<script src="engine/scripts/systems/kinocam.js"></script>
+<script src="engine/scripts/systems/object-glow.js"></script>
+<script src="engine/scripts/systems/gif-decoder.js"></script>
+<script src="engine/scripts/systems/gif-texture.js"></script>
+<script src="engine/scripts/ui/gif-inspector.js"></script>
+<script src="engine/scripts/systems/ai/ai-perception.js"></script>
+<script src="engine/scripts/systems/ai/ai-navigation.js"></script>
+<script src="engine/scripts/systems/ai/ai-agent.js"></script>
+<script src="engine/scripts/ui/ai-inspector.js"></script>
+<script src="engine/scripts/systems/project.js"></script>
+<script src="engine/scripts/ui/project-panel.js"></script>
+<script src="engine/scripts/systems/noscript.js"></script>
+<script src="engine/scripts/systems/optimize.js"></script>
+<script src="engine/scripts/systems/game-hud.js"></script>
+<script src="engine/scripts/systems/hud.js"></script>
+<script src="engine/scripts/systems/pause-menu.js"></script>
+<script src="engine/scripts/ui/noscript-inspector.js"></script>
+<script src="engine/scripts/ui/html-fx.js"></script>
+<script src="engine/scripts/systems/minipad.js"></script>
+<script src="engine/scripts/ui/minipad-inspector.js"></script>
+<script src="engine/scripts/systems/key-noscript.js"></script>
+<script src="engine/scripts/systems/screen-keys.js"></script>
+<script src="engine/scripts/net/net-adapter.js"></script>
+<script src="engine/scripts/net/net-ws.js"></script>
+<script src="engine/scripts/net/net-firebase.js"></script>
+<script src="engine/scripts/systems/multiplayer.js"></script>
+<script src="engine/scripts/ui/multiplayer-panel.js"></script>
+<script src="engine/scripts/systems/car-key-profile.js"></script>
+<script src="engine/scripts/systems/allkey.js"></script>
+<script src="engine/scripts/ui/allkey-inspector.js"></script>
+<script src="engine/scripts/ui/screen-keys-panel.js"></script>
+<script src="engine/scripts/ui/button-templates.js"></script>
+<script src="engine/scripts/ui/add-object-menu.js"></script>
+<script src="engine/scripts/ui/save-load.js"></script>
+<script src="engine/scripts/ui/map-library.js"></script>
+<script src="engine/scripts/ui/game-export.js"></script>
+<script src="engine/scripts/ui/game-zip.js"></script>
+<script src="engine/scripts/ui/anim-export.js"></script>
+<script src="engine/scripts/gameplay/camera-modes.js"></script>
+<script src="engine/scripts/gameplay/orbit-controls.js"></script>
+<script src="engine/scripts/gameplay/game-lock.js"></script>
+<script src="engine/scripts/gameplay/keyboard.js"></script>
+<script src="engine/scripts/gameplay/edit-mode.js"></script>
+<script src="engine/scripts/gameplay/play-mode.js"></script>
+<script src="engine/scripts/misc/stats.js"></script>
+<script src="engine/scripts/misc/fullscreen.js"></script>
+<script src="engine/scripts/gameplay/touch-controls.js"></script>
+<script src="engine/scripts/systems/anim-import.js"></script>
+<script src="engine/scripts/gameplay/keybindings.js"></script>
+<script src="engine/scripts/gameplay/weapon.js"></script>
+<script src="engine/scripts/ui/tools.js"></script>
+<script src="engine/scripts/core/camera-vars.js"></script>
+<script src="engine/scripts/core/camera-module.js"></script>
+<script src="engine/scripts/core/main-loop.js"></script>
+<script src="engine/scripts/core/gizmo.js"></script>
+<script src="engine/scripts/misc/screenshot.js"></script>
+<script src="engine/scripts/misc/gltf-import.js"></script>
+<script src="engine/scripts/core/nested-objects.js"></script>
+<script src="engine/scripts/systems/physics-modes.js"></script>
+<script src="engine/scripts/systems/deform.js"></script>
+<script src="engine/scripts/systems/jelly-update.js"></script>
+<script src="engine/scripts/ui/bottom-tabs.js"></script>
+<script src="engine/scripts/systems/script-system.js"></script>
+<script src="engine/scripts/entities/player.js"></script>
+<script src="engine/scripts/misc/car-proximity.js"></script>
+<script src="engine/scripts/systems/timeline.js"></script>
+<script src="engine/scripts/ui/camera-objects.js"></script>
+<script src="engine/scripts/systems/curve-editor.js"></script>
+<script src="engine/scripts/gameplay/fps-interaction.js"></script>
+<script src="engine/scripts/ui/asset-category.js"></script>
+<script src="engine/scripts/ui/functional-blocks.js"></script>
+<script src="engine/scripts/ui/canvas-overlay.js"></script>
+<script src="engine/scripts/ui/nest-tab.js"></script>
+<script src="engine/scripts/entities/car.js"></script>
+<script src="engine/scripts/entities/animal-ai.js"></script>
+<script src="engine/scripts/systems/addons.js"></script>
+<script src="engine/scripts/systems/prefab.js"></script>
+<script src="engine/scripts/systems/scene-manager.js"></script>
+<script src="engine/scripts/systems/pbr-hdr.js"></script>
+<script src="engine/scripts/systems/asset-importer.js"></script>
+<script src="engine/scripts/systems/editor-tools.js"></script>
+<script src="engine/scripts/core/camera-preview.js"></script>
+<script src="engine/scripts/systems/camera-shake.js"></script>
+<script src="engine/scripts/systems/motion-fx.js"></script>
+<script src="engine/scripts/systems/camera-rig.js"></script>
+<script src="engine/scripts/systems/camera-states.js"></script>
+<script src="engine/scripts/systems/keyboard-fx.js"></script>
+<script src="engine/scripts/systems/capsule-system.js"></script>
+<script src="engine/scripts/systems/bone-system.js"></script>
+<script src="engine/scripts/systems/anim-diag.js"></script>
+
+<script src="game-boot.js"></script>
+</body>
+</html>

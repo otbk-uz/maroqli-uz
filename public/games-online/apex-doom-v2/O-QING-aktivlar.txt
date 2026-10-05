@@ -1,0 +1,13 @@
+Bu papkalar KO'RISH/TAHRIRLASH uchun ochib qo'yilgan:
+
+  sound/    ovozlar (mp3, wav, ogg…)
+  video/    videolar (mp4, webm)
+  texture/  rasmlar (png, jpg, webp…)
+  models/   3D modellar (glb, gltf)
+  html/     PC blok, tugma sahifalari, teleport pre-anim
+  maps/     ichma-ich kartalar (.zip)
+  addons/   kengaytmalar (addon.json + main.js)
+
+O'YIN ULARNI O'QIMAYDI — hammasi jsons/scene.zip ichida.
+Ikki manba bo'lsa ular bir-biridan uzilib ketardi.
+O'zgartirmoqchi bo'lsangiz — redaktorda tahrirlab, qayta eksport qiling.

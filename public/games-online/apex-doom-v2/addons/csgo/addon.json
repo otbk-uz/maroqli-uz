@@ -1,0 +1,8 @@
+{
+  "id": "csgo",
+  "name": "CS:GO Mode",
+  "icon": "🔫",
+  "version": "1.0.0",
+  "author": "APEX",
+  "description": "CS:GO uslubidagi competitive gameplay layer: multiplayer, qurollar, recoil, reload, inventar, magazin, iqtisod, granatalar, C4 va A/B zonalar, raund tizimi. Maplar va model/animatsiya assetlari keyin ulanadi."
+}
