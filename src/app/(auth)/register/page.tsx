@@ -187,22 +187,10 @@ const RegisterPage = () => {
             }
           },
         });
-        (window as any).google.accounts.id.prompt((notification: any) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            supabase.auth.signInWithOAuth({
-              provider: "google",
-              options: { redirectTo: `${window.location.origin}/auth/callback` }
-            }).catch(() => {});
-          }
-        });
+        (window as any).google.accounts.id.prompt();
       } else {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback`,
-          },
-        });
-        if (error) throw error;
+        setGlobalError("Google xizmati yuklanmoqda, iltimos sahifani yangilab qaytadan bosing.");
+        setIsLoading(false);
       }
     } catch (err: any) {
       console.error("Google Auth Error:", err);
