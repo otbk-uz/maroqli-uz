@@ -282,13 +282,16 @@ const GameDetailPage = () => {
             console.warn("Top scores fetch warning:", sErr);
           }
 
-          // Fetch total wishlist count and user status for game via API (RLS bypass)
+          // Fetch total wishlist count and user status for game via API (guaranteed DB read)
           try {
             const wRes = await fetch(`/api/wishlist?game_id=${id}&user_id=${user?.id || ''}`);
             if (wRes.ok) {
               const wData = await wRes.json();
               if (wData.count !== undefined) setWishlistCount(wData.count);
-              if (wData.isWishlisted) setIsWishlisted(true);
+              if (wData.isWishlisted) {
+                setIsWishlisted(true);
+                setIsInPurchasePlan(true);
+              }
             }
           } catch (wCountErr) {
             console.warn("Wishlist count fetch warning:", wCountErr);
@@ -296,45 +299,6 @@ const GameDetailPage = () => {
         }
         
         if (isAuthenticated && user) {
-          try {
-            const { data: wishData } = await supabase
-              .from('game_wishlist')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('game_id', id)
-              .maybeSingle();
-
-            if (wishData) {
-              setIsWishlisted(true);
-            }
-          } catch (wErr) {
-            console.warn("Wishlist check warning:", wErr);
-          }
-
-          try {
-            const { data: planData } = await supabase
-              .from('game_wishlist')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('game_id', id)
-              .maybeSingle();
-
-            if (planData) {
-              setIsInPurchasePlan(true);
-            } else {
-              const saved = localStorage.getItem(`game_purchase_plan_${user.id}`);
-              if (saved) {
-                const list: string[] = JSON.parse(saved);
-                if (list.includes(String(id))) setIsInPurchasePlan(true);
-              }
-            }
-          } catch (pErr) {
-            const saved = localStorage.getItem(`game_purchase_plan_${user.id}`);
-            if (saved) {
-              const list: string[] = JSON.parse(saved);
-              if (list.includes(String(id))) setIsInPurchasePlan(true);
-            }
-          }
           const { data: libraryData, error: libraryError } = await supabase
             .from('bought_games')
             .select('*')
@@ -392,6 +356,7 @@ const GameDetailPage = () => {
         if (!res.ok) throw new Error("Delete failed");
         const data = await res.json();
         setIsWishlisted(false);
+        setIsInPurchasePlan(false);
         if (data.count !== undefined) setWishlistCount(data.count);
       } else {
         const res = await fetch('/api/wishlist', {
@@ -406,6 +371,7 @@ const GameDetailPage = () => {
         if (!res.ok) throw new Error("Insert failed");
         const data = await res.json();
         setIsWishlisted(true);
+        setIsInPurchasePlan(true);
         if (data.count !== undefined) setWishlistCount(data.count);
       }
     } catch (err: any) {
@@ -416,55 +382,7 @@ const GameDetailPage = () => {
     }
   };
 
-  const handleTogglePurchasePlan = async () => {
-    if (!isAuthenticated || !user) {
-      router.push("/login");
-      return;
-    }
-    if (!game) return;
-
-    setPurchasePlanLoading(true);
-    try {
-      const localKey = `game_purchase_plan_${user.id}`;
-      const savedLocal = localStorage.getItem(localKey);
-      let localList: string[] = savedLocal ? JSON.parse(savedLocal) : [];
-
-      if (isInPurchasePlan) {
-        try {
-          await supabase
-            .from('game_wishlist')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('game_id', game.id);
-        } catch (err) {
-          console.warn("DB purchase plan delete error, using local fallback:", err);
-        }
-        localList = localList.filter((gid: string) => String(gid) !== String(game.id));
-        localStorage.setItem(localKey, JSON.stringify(localList));
-        setIsInPurchasePlan(false);
-      } else {
-        try {
-          await supabase
-            .from('game_wishlist')
-            .insert({
-              user_id: user.id,
-              game_id: game.id
-            });
-        } catch (err) {
-          console.warn("DB purchase plan insert error, using local fallback:", err);
-        }
-        if (!localList.includes(String(game.id))) {
-          localList.push(String(game.id));
-        }
-        localStorage.setItem(localKey, JSON.stringify(localList));
-        setIsInPurchasePlan(true);
-      }
-    } catch (err) {
-      console.error("Purchase plan toggle error:", err);
-    } finally {
-      setPurchasePlanLoading(false);
-    }
-  };
+  const handleTogglePurchasePlan = handleToggleWishlist;
 
   const handlePostReview = async (e: React.FormEvent) => {
     e.preventDefault();
