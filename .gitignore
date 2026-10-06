@@ -65,4 +65,7 @@ public/xonotic-0.8.6.zip
 # Scratch test scripts
 scratch/
 
+# Supabase temp CLI files
+supabase/.temp/
+
 
