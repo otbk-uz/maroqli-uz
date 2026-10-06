@@ -707,14 +707,13 @@ export default function AdminPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="glass-card p-5 border border-white/5 relative overflow-hidden group hover:border-primary/30 transition-all">
-            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Jami Obunachilar</span>
+            <span className="text-[10px] text-secondary uppercase font-bold tracking-wider">Sayt A'zolari (Foydalanuvchilar)</span>
             <h3 className="text-xl font-extrabold mt-2 flex items-center gap-2 text-white">
               <Users className="text-primary shrink-0" size={18} /> 
-              <span>{stats.totalCombinedSubscribers.toLocaleString()}</span>
+              <span>{stats.totalUsers.toLocaleString()}</span>
             </h3>
             <div className="flex items-center gap-2 text-[10px] text-secondary mt-2">
-              <span className="text-emerald-400 font-bold">{stats.totalUsers} sayt</span> • 
-              <span>{stats.totalBotSubscribers} bot</span>
+              <span className="text-emerald-400 font-bold">Platformadagi haqiqiy a'zolar</span>
             </div>
           </div>
 
