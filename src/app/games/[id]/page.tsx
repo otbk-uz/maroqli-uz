@@ -282,15 +282,13 @@ const GameDetailPage = () => {
             console.warn("Top scores fetch warning:", sErr);
           }
 
-          // Fetch total wishlist count for game
+          // Fetch total wishlist count and user status for game via API (RLS bypass)
           try {
-            const { count: wCount } = await supabase
-              .from('game_wishlist')
-              .select('*', { count: 'exact', head: true })
-              .eq('game_id', id);
-
-            if (wCount !== null) {
-              setWishlistCount(wCount);
+            const wRes = await fetch(`/api/wishlist?game_id=${id}&user_id=${user?.id || ''}`);
+            if (wRes.ok) {
+              const wData = await wRes.json();
+              if (wData.count !== undefined) setWishlistCount(wData.count);
+              if (wData.isWishlisted) setIsWishlisted(true);
             }
           } catch (wCountErr) {
             console.warn("Wishlist count fetch warning:", wCountErr);
@@ -387,26 +385,28 @@ const GameDetailPage = () => {
     setWishlistLoading(true);
     try {
       if (isWishlisted) {
-        const { error } = await supabase
-          .from('game_wishlist')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('game_id', game.id);
+        const res = await fetch(`/api/wishlist?user_id=${user.id}&game_id=${game.id}`, {
+          method: 'DELETE'
+        });
 
-        if (error) throw error;
+        if (!res.ok) throw new Error("Delete failed");
+        const data = await res.json();
         setIsWishlisted(false);
-        setWishlistCount(prev => Math.max(0, prev - 1));
+        if (data.count !== undefined) setWishlistCount(data.count);
       } else {
-        const { error } = await supabase
-          .from('game_wishlist')
-          .upsert({
+        const res = await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
             user_id: user.id,
             game_id: game.id
-          }, { onConflict: 'user_id,game_id' });
+          })
+        });
 
-        if (error) throw error;
+        if (!res.ok) throw new Error("Insert failed");
+        const data = await res.json();
         setIsWishlisted(true);
-        setWishlistCount(prev => prev + 1);
+        if (data.count !== undefined) setWishlistCount(data.count);
       }
     } catch (err: any) {
       console.error("Wishlist toggle error:", err);

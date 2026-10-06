@@ -301,13 +301,12 @@ export default function AdminPage() {
         // 7. Fetch Purchase Plans (Sotib olish rejasiga qo'shganlar)
         let plansList: PurchasePlanEntry[] = [];
         try {
-          const { data: pData } = await supabase
-            .from('game_wishlist')
-            .select('id, created_at, user_id, game_id, profiles(id, username, full_name, phone_number, avatar_url), developed_games(id, title, slug, price, cover)')
-            .order('created_at', { ascending: false });
-
-          if (pData) {
-            plansList = pData as any;
+          const res = await fetch('/api/wishlist');
+          if (res.ok) {
+            const wData = await res.json();
+            if (wData.items) {
+              plansList = wData.items;
+            }
           }
         } catch (pErr) {
           console.warn("Purchase plans fetch warning:", pErr);

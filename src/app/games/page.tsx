@@ -217,20 +217,14 @@ const GamesPage = () => {
           setGames(mappedGames);
         }
 
-        // Fetch wishlist counts for all games
+        // Fetch wishlist counts for all games via API (RLS bypass)
         try {
-          const { data: wishData } = await supabase
-            .from('game_wishlist')
-            .select('game_id');
-
-          if (wishData) {
-            const countsMap: Record<string, number> = {};
-            wishData.forEach((w: any) => {
-              if (w.game_id) {
-                countsMap[w.game_id] = (countsMap[w.game_id] || 0) + 1;
-              }
-            });
-            setWishlistCountsMap(countsMap);
+          const wRes = await fetch('/api/wishlist');
+          if (wRes.ok) {
+            const wData = await wRes.json();
+            if (wData.countsMap) {
+              setWishlistCountsMap(wData.countsMap);
+            }
           }
         } catch (wErr) {
           console.warn("Wishlist counts map fetch warning:", wErr);
