@@ -62,4 +62,7 @@ public/xonotic-0.8.6.zip
 # Obfuscated build folder
 /dist-obfuscated/
 
+# Scratch test scripts
+scratch/
+
 
