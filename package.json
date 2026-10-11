@@ -24,6 +24,7 @@
     "lucide-react": "^0.378.0",
     "next": "14.2.3",
     "node-telegram-bot-api": "^1.1.2",
+    "pg": "^8.23.1",
     "react": "^18",
     "react-dom": "^18",
     "tailwind-merge": "^2.3.0",
