@@ -17,8 +17,8 @@ export async function POST(req: Request) {
     const cleanUsername = username.trim().toLowerCase();
     const cleanEmail = email.trim().toLowerCase();
 
-    // 1. Local bazada bor-yo'qligini tekshirish
-    const existingLocal = findLocalUser(cleanUsername) || findLocalUser(cleanEmail);
+    // 1. Local / Cloud bazada bor-yo'qligini tekshirish
+    const existingLocal = (await findLocalUser(cleanUsername)) || (await findLocalUser(cleanEmail));
     if (existingLocal) {
       if (existingLocal.email === cleanEmail) {
         return NextResponse.json(
@@ -70,12 +70,12 @@ export async function POST(req: Request) {
         supabaseUserId = supaData.user.id;
       }
     } catch (supaEx) {
-      // Supabase trigger xatosi bo'lsa ham mahalliy ro'yxatdan o'tish to'xtamasin
+      // Supabase trigger xatosi bo'lsa ham ro'yxatdan o'tish to'xtamasin
       console.warn("Supabase signUp warning (trigger fallback active):", supaEx);
     }
 
-    // 4. Foydalanuvchini mahalliy bazada yaratish
-    const newUser = createLocalUser({
+    // 4. Foydalanuvchini bulutli va xavfsiz bazada yaratish
+    const newUser = await createLocalUser({
       email: cleanEmail,
       username: username.trim(),
       full_name: full_name.trim(),

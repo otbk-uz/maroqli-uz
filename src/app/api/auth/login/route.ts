@@ -33,8 +33,8 @@ export async function POST(req: Request) {
     const cleanLower = rawInput.toLowerCase().replace(/^@/, '');
     const cleanDigits = rawInput.replace(/\D/g, '');
 
-    // 1. Mahalliy ro'yxatdan o'tgan foydalanuvchilarni tekshirish
-    const localUser = findLocalUser(rawInput);
+    // 1. Mahalliy va bulutli ro'yxatdan o'tgan foydalanuvchilarni tekshirish
+    const localUser = await findLocalUser(rawInput);
     if (localUser) {
       const isValid = verifyLocalPassword(localUser, password);
       if (isValid) {
@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       try {
         const salt = crypto.randomBytes(16).toString('hex');
         const password_hash = hashPassword(password, salt);
-        upsertLocalUser({
+        await upsertLocalUser({
           id: authData.user.id,
           email: authData.user.email?.toLowerCase() || emailToUse.toLowerCase(),
           username: resolvedUsername,
