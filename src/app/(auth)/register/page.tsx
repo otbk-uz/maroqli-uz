@@ -235,74 +235,40 @@ const RegisterPage = () => {
     setIsLoading(true);
 
     try {
-      // 1. Supabase Auth orqali ro'yxatdan o'tish
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            username: formData.username,
-            full_name: formData.full_name,
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        let avatar_url = null;
-
-        // 2. Agar avatar bo'lsa, Storage'ga yuklash
-        if (formData.avatar) {
-          const fileExt = formData.avatar.name.split('.').pop();
-          const fileName = `${authData.user.id}-${Math.random()}.${fileExt}`;
-          const { data: uploadData, error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(fileName, formData.avatar);
-          
-          if (!uploadError && uploadData) {
-            // Supabase saqlagan rasmni ochiq URL'ini olish
-            const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-            avatar_url = publicUrlData.publicUrl;
-          } else {
-            console.warn("Avatar yuklashda xatolik:", uploadError);
-          }
-        }
-
-        // 3. Qolgan ma'lumotlarni profiles jadvaliga saqlash
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: authData.user.id,
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           full_name: formData.full_name,
           username: formData.username,
-          age: formData.age ? parseInt(formData.age) : null,
+          email: formData.email,
+          password: formData.password,
+          age: formData.age,
           region: formData.region,
           phone_number: formData.phone_number,
           role: formData.role,
-          avatar_url: avatar_url
-        });
+          avatar_url: avatarPreview || null,
+        }),
+      });
 
-        if (profileError) throw profileError;
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Ro'yxatdan o'tishda xatolik yuz berdi.");
+      }
 
-        if (formData.role === 'STREAMER') {
-          await supabase.from('streamers').insert({
-            user_id: authData.user.id,
-            stream_url: '',
-            platform: 'Twitch',
-            title: 'Yangi Strimer',
-            game: 'O\'yin tanlanmagan'
-          });
-        }
+      // Foydalanuvchini avtomatik kirgan holatga o'tkazish
+      if (data.user && data.token) {
+        setAuth(data.user, data.token);
       }
 
       setIsSuccess(true);
       setTimeout(() => {
-        router.push("/login");
-      }, 3000);
+        router.push("/");
+      }, 2000);
     } catch (err: any) {
       console.error("Registration error:", err);
-      // Xatolik xabarini to'g'rilash
-      const mainError = err.message || "Ro'yxatdan o'tishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.";
-      setGlobalError(mainError);
+      const errMsg = err.message || "";
+      setGlobalError(errMsg || "Ro'yxatdan o'tishda xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
     } finally {
       setIsLoading(false);
     }

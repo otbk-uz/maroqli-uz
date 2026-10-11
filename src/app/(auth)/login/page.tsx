@@ -60,46 +60,25 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Supabase orqali kirish
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email, // email kiritilishi shart
-        password: formData.password,
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identifier: formData.email,
+          password: formData.password,
+        }),
       });
 
-      if (authError) throw authError;
-
-      if (authData.user && authData.session) {
-        // User profilini olish
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authData.user.id)
-          .single();
-
-        if (profileError) {
-          console.warn("Profil topilmadi:", profileError);
-        }
-
-        // Store'ga saqlash
-        setAuth({
-          id: authData.user.id,
-          nickname: profile?.username || "Foydalanuvchi",
-          full_name: profile?.full_name || "",
-          email: authData.user.email,
-          role: profile?.role || "GAMER",
-          avatar: profile?.avatar_url,
-          is_premium: profile?.is_premium || false
-        }, authData.session.access_token);
-
-        router.push("/");
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Email, foydalanuvchi nomi yoki parol noto'g'ri.");
       }
+
+      setAuth(data.user, data.token);
+      router.push("/");
     } catch (err: any) {
-      console.error(err);
-      if (err.message.includes("Invalid login credentials")) {
-        setErrorMsg(t("invalid_credentials", "Email yoki parol noto'g'ri."));
-      } else {
-        setErrorMsg(err.message || t("login_error_generic", "Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring."));
-      }
+      console.error("Login error:", err);
+      setErrorMsg(err.message || t("login_error_generic", "Kirishda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring."));
     } finally {
       setIsLoading(false);
     }
@@ -174,13 +153,13 @@ const LoginPage = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-secondary ml-1">{t("email_label", "Email manzilingiz")}</label>
+            <label className="text-sm font-medium text-secondary ml-1">{t("email_label", "Email, foydalanuvchi nomi yoki telefon raqami")}</label>
             <input
               type="text"
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder={t("email_placeholder", "Emailingizni kiriting")}
+              placeholder={t("email_placeholder", "gamer_uz, +998901234567 yoki email")}
               className={`w-full bg-white/5 border ${errors.email ? 'border-red-500/50' : 'border-white/10'} rounded-xl px-4 py-3 outline-none focus:border-primary/50 transition-colors text-sm text-white`}
             />
             {errors.email && <p className="text-[10px] text-red-400 ml-1 mt-0.5">{errors.email}</p>}
