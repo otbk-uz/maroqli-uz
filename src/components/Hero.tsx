@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Trophy, Users, Shield, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, X, ShoppingCart, ChevronRight, Sparkles } from "lucide-react";
+import { Play, Trophy, Users, Shield, Gamepad2, Radio, Crown, TrendingUp, Code, MessageSquare, Newspaper, X, ShoppingCart, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useTranslation } from "@/lib/store";
 
@@ -97,16 +97,6 @@ const Hero = ({ stats }: { stats?: HeroStats }) => {
           
           {/* Main Hero Column */}
           <div className="lg:col-span-7 xl:col-span-8">
-            <motion.div
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-display font-black tracking-widest uppercase mb-6"
-            >
-              <Sparkles size={14} className="animate-spin" style={{ animationDuration: '6s' }} />
-              <span>{t("national_platform_tag", "O'zbekiston Milliy Gaming Ekotizimi")}</span>
-            </motion.div>
-
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
