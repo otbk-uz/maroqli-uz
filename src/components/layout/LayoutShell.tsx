@@ -1,0 +1,99 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import FloatingConsoleHUD from "../player/FloatingConsoleHUD";
+import Footer from "./Footer";
+import MobileNav from "./MobileNav";
+import { WifiOff } from "lucide-react";
+import { useTranslation, useAuthStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
+
+export default function LayoutShell({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const { t } = useTranslation();
+  const pathname = usePathname();
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return;
+
+    const updateLastSeen = async () => {
+      try {
+        await supabase
+          .from("profiles")
+          .update({ last_seen: new Date().toISOString() })
+          .eq("id", user.id);
+
+        // Record visit once per session
+        const sessionVisitedKey = `maroqli_visited_${user.id}_${new Date().toDateString()}`;
+        if (!sessionStorage.getItem(sessionVisitedKey)) {
+          sessionStorage.setItem(sessionVisitedKey, "1");
+          try {
+            await supabase.rpc('increment_user_visit_count', { target_user_id: user.id });
+          } catch (e) {
+            // Fallback if RPC function is not created yet
+            const { data: pData } = await supabase.from('profiles').select('visit_count').eq('id', user.id).single();
+            if (pData) {
+              await supabase.from('profiles').update({ visit_count: (pData.visit_count || 1) + 1 }).eq('id', user.id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error updating last_seen:", err);
+      }
+    };
+
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 1000 * 60 * 3); // every 3 minutes
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    setMounted(true);
+    if (typeof navigator !== "undefined") {
+      setIsOffline(!navigator.onLine);
+    }
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  return (
+    <>
+      <FloatingConsoleHUD />
+
+      {/* Offline Status Warning Banner */}
+      {mounted && isOffline && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[99999] w-[90%] max-w-sm">
+          <div className="bg-[#14080a]/90 border border-red-500/20 text-white p-3.5 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.5),0_0_20px_rgba(239,68,68,0.15)] backdrop-blur-md flex items-center gap-3 animate-pulse">
+            <div className="bg-red-500/10 border border-red-500/20 p-2 rounded-xl text-red-500 flex-shrink-0">
+              <WifiOff size={18} />
+            </div>
+            <div className="min-w-0">
+              <h5 className="font-display font-black text-[10px] uppercase tracking-widest text-red-400">{t("offline_mode_title", "Offline Rejim Faol")}</h5>
+              <p className="text-[9px] text-secondary leading-normal mt-0.5">{t("offline_mode_desc", "Internet ulanishi uzildi. Keshdan olingan ma'lumotlar ko'rsatilmoqda.")}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="min-h-screen flex flex-col bg-background text-foreground pb-28 lg:pb-0 transition-all duration-300 ease-in-out">
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
+        <MobileNav />
+      </div>
+    </>
+  );
+}
