@@ -4,7 +4,9 @@ const TelegramBot = require('node-telegram-bot-api');
 
 // 1. .env.local faylini yuklash funksiyasi
 function loadEnv() {
-  const envPath = path.join(__dirname, '.env.local');
+  const envPath = fs.existsSync(path.join(__dirname, '.env.local'))
+    ? path.join(__dirname, '.env.local')
+    : path.join(__dirname, '..', '.env.local');
   if (fs.existsSync(envPath)) {
     const content = fs.readFileSync(envPath, 'utf8');
     content.split('\n').forEach(line => {

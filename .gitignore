@@ -56,6 +56,8 @@ backend/media/
 *.tar.gz
 *.zip
 *.rar
+storage/
+public/downloads/
 public/SuperTuxKart-1.5-setup.exe
 public/xonotic-0.8.6.zip
 

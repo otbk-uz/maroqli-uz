@@ -10,7 +10,7 @@
     "lint": "next lint",
     "desktop-dev": "electron .",
     "desktop-pack": "npm run build && electron-builder --win -c electron-builder.config.js",
-    "telegram-bot": "node telegram-bot.js",
+    "telegram-bot": "node scripts/telegram-bot.js",
     "publish-obfuscated": "node scripts/obfuscate.js"
   },
   "dependencies": {
