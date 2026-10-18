@@ -68,4 +68,9 @@ scratch/
 # Supabase temp CLI files
 supabase/.temp/
 
+# Safe local backups
+/backups/
+
+# Lean AI cache
+.lean_ai/
 

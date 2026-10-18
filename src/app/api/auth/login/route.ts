@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { findLocalUser, verifyLocalPassword, createSessionToken, upsertLocalUser, hashPassword } from '@/lib/localAuth';
 import crypto from 'crypto';
 
@@ -75,18 +76,58 @@ export async function POST(req: Request) {
     });
 
     if (!authError && authData.user && authData.session) {
-      // Foydalanuvchi profilini xavfsiz olish (profiles.email ustunini so'ramasdan)
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id, username, full_name, phone_number, role, avatar_url')
-        .eq('id', authData.user.id)
-        .maybeSingle();
+      // Foydalanuvchi profilini xavfsiz olish (supabaseAdmin orqali RLS to'siqlarsiz)
+      let profile: any = null;
+      try {
+        const { data: supaProf } = await supabaseAdmin
+          .from('profiles')
+          .select('id, username, full_name, phone_number, role, avatar_url, coins, level, is_premium')
+          .eq('id', authData.user.id)
+          .maybeSingle();
+        profile = supaProf;
+      } catch (err) {
+        console.warn("supabaseAdmin profile lookup warning:", err);
+      }
 
-      const resolvedUsername = profile?.username || authData.user.user_metadata?.username || cleanLower || "Gamer";
+      if (!profile) {
+        try {
+          const { data: fallbackProf } = await supabase
+            .from('profiles')
+            .select('id, username, full_name, phone_number, role, avatar_url, coins, level, is_premium')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+          profile = fallbackProf;
+        } catch {
+          // ignore
+        }
+      }
+
+      const resolvedUsername = profile?.username || authData.user.user_metadata?.username || cleanLower || "kuzatuvchi";
       const resolvedFullName = profile?.full_name || authData.user.user_metadata?.full_name || resolvedUsername;
-      const resolvedRole = profile?.role || "GAMER";
-      const resolvedAvatar = profile?.avatar_url || null;
-      const resolvedPhone = profile?.phone_number || null;
+      const resolvedRole = profile?.role || authData.user.user_metadata?.role || "VIEWER";
+      const resolvedAvatar = profile?.avatar_url || authData.user.user_metadata?.avatar_url || null;
+      const resolvedPhone = profile?.phone_number || authData.user.user_metadata?.phone_number || null;
+
+      // Agar profiles jadvalida hali yo'q bo'lsa, avtomatik yaratib qo'yamiz (profil yo'qolmasligi uchun!)
+      if (!profile) {
+        try {
+          await supabaseAdmin.from('profiles').upsert({
+            id: authData.user.id,
+            email: authData.user.email?.toLowerCase() || emailToUse.toLowerCase(),
+            username: resolvedUsername,
+            full_name: resolvedFullName,
+            phone_number: resolvedPhone,
+            role: resolvedRole,
+            avatar_url: resolvedAvatar,
+            coins: 50,
+            visit_count: 1,
+            created_at: new Date().toISOString(),
+            last_seen: new Date().toISOString(),
+          });
+        } catch (autoProfErr) {
+          console.warn("Auto profile upsert warning:", autoProfErr);
+        }
+      }
 
       // Kelgusi tezkor kirish uchun mahalliy bazaga ham sinxronlash
       try {

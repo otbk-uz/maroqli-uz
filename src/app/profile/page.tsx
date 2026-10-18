@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "../../components/Navbar";
-import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy, CalendarPlus, Bookmark } from "lucide-react";
+import { User, Settings, Shield, Award, LogOut, ChevronRight, Star, Camera, Check, X, Edit3, Crown, Gamepad2, Download, Zap, TrendingUp, Heart, Trash2, ShoppingCart, Trophy, CalendarPlus, Bookmark, Eye, Radio, Bell, Play, Flame, Sparkles, MessageSquare, Newspaper, ArrowRight, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -53,6 +53,17 @@ const ProfilePage = () => {
   const [userScores, setUserScores] = useState<any[]>([]);
   const [loadingScores, setLoadingScores] = useState(false);
 
+  // Kuzatuvchi (Viewer) & Role states
+  const [mounted, setMounted] = useState(false);
+  const [followedStreamers, setFollowedStreamers] = useState<any[]>([]);
+  const [loadingFollowed, setLoadingFollowed] = useState(false);
+  const [upgradingRole, setUpgradingRole] = useState(false);
+  const [selectedUpgradeRole, setSelectedUpgradeRole] = useState("GAMER");
+  const [upgradeSuccess, setUpgradeSuccess] = useState(false);
+  const [liveStreamers, setLiveStreamers] = useState<any[]>([]);
+  const [featuredFreeGames, setFeaturedFreeGames] = useState<any[]>([]);
+  const [loadingViewerContent, setLoadingViewerContent] = useState(false);
+
   // Electron launch states for Library
   const [isElectron, setIsElectron] = useState(false);
   const [installedGames, setInstalledGames] = useState<Record<string, boolean>>({});
@@ -60,6 +71,7 @@ const ProfilePage = () => {
   const [installingGames, setInstallingGames] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
+    setMounted(true);
     setIsElectron(typeof window !== 'undefined' && 'electron' in window);
   }, []);
 
@@ -149,7 +161,8 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (activeSetting === "my_library" && libraryGames.length === 0) {
-      if (profileData?.role !== "GAMER" && profileData?.role !== "ADMIN") {
+      const effectiveRole = profileData?.role || user?.role;
+      if (effectiveRole !== "GAMER" && effectiveRole !== "ADMIN") {
         setActiveSetting(null);
         return;
       }
@@ -269,46 +282,231 @@ const ProfilePage = () => {
     }
   };
 
+  // Followed streamers fetch for Kuzatuvchi / Streamer
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (user?.id) {
+      const fetchFollowed = async () => {
+        setLoadingFollowed(true);
+        try {
+          const { data: followRows, error: followErr } = await supabase
+            .from("streamer_followers")
+            .select("streamer_id, created_at, streamers(*)")
+            .eq("follower_id", user.id);
+
+          if (!followErr && followRows) {
+            setFollowedStreamers(
+              followRows.map((r: any) => ({
+                ...(r.streamers || {}),
+                followed_at: r.created_at,
+              }))
+            );
+          }
+        } catch (err) {
+          console.error("Followed streamers fetch error:", err);
+        } finally {
+          setLoadingFollowed(false);
+        }
+      };
+      fetchFollowed();
+    }
+  }, [user?.id, activeSetting]);
+
+  // Fetch live streamers and free games for Kuzatuvchi (Viewer) hub
+  useEffect(() => {
+    if (!mounted) return;
+
+    const fetchViewerContent = async () => {
+      setLoadingViewerContent(true);
+      try {
+        const { data: streamers } = await supabase
+          .from("streamers")
+          .select("*")
+          .order("is_live", { ascending: false })
+          .limit(4);
+
+        if (streamers) {
+          setLiveStreamers(streamers);
+        }
+
+        const { data: games } = await supabase
+          .from("developed_games")
+          .select("id, title, slug, cover, platform, price, rating")
+          .order("rating", { ascending: false })
+          .limit(4);
+
+        if (games) {
+          setFeaturedFreeGames(games);
+        }
+      } catch (err) {
+        console.warn("Viewer content fetch notice:", err);
+      } finally {
+        setLoadingViewerContent(false);
+      }
+    };
+
+    fetchViewerContent();
+  }, [mounted]);
+
+  const handleUnfollowStreamer = async (streamerId: string) => {
+    if (!user?.id) return;
+    try {
+      await supabase
+        .from("streamer_followers")
+        .delete()
+        .eq("streamer_id", streamerId)
+        .eq("follower_id", user.id);
+      setFollowedStreamers(prev => prev.filter(s => s.id !== streamerId));
+    } catch (err) {
+      console.error("Unfollow error:", err);
+    }
+  };
+
+  const handleUpgradeRole = async () => {
+    if (!user) return;
+    setUpgradingRole(true);
+    try {
+      const res = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          id: user.id,
+          username: user.username,
+          role: selectedUpgradeRole,
+        }),
+      });
+
+      if (!res.ok) throw new Error("Rolni yangilashda xatolik yuz berdi.");
+
+      setProfileData((prev: any) => ({
+        ...prev,
+        role: selectedUpgradeRole,
+      }));
+      setAuth({ ...user, role: selectedUpgradeRole }, token || "");
+      setUpgradeSuccess(true);
+      setTimeout(() => {
+        setUpgradeSuccess(false);
+        setActiveSetting(null);
+      }, 1500);
+    } catch (err: any) {
+      alert(err.message || "Xatolik yuz berdi. Iltimos qayta urinib ko'ring.");
+    } finally {
+      setUpgradingRole(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!mounted) return;
+
+    // Check authentication with localStorage fallback
+    if (!isAuthenticated && !user) {
+      try {
+        const stored = typeof window !== 'undefined' ? localStorage.getItem('auth-storage') : null;
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (parsed?.state?.user && parsed?.state?.token) {
+            setAuth(parsed.state.user, parsed.state.token);
+            return;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       router.push("/login");
       return;
     }
 
     const fetchProfile = async () => {
       try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user?.id)
-          .single();
+        let pData: any = null;
 
-        if (error) throw error;
+        // 1. Try fetching from Supabase profiles table
+        if (user?.id) {
+          try {
+            const { data, error } = await supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", user.id)
+              .maybeSingle();
 
-        setProfileData(data);
-        setEditForm({
-          full_name: data.full_name || "",
-          username: data.username || "",
-        });
+            if (data && !error) {
+              pData = data;
+            }
+          } catch (supaErr) {
+            console.warn("Supabase fetch notice:", supaErr);
+          }
+        }
 
-        // Fetch streamer data if exists
-        const { data: sData } = await supabase
-          .from("streamers")
-          .select("*")
-          .eq("user_id", user?.id)
-          .single();
+        // 2. If not found in Supabase, fetch from internal API
+        if (!pData && (user?.id || user?.username)) {
+          try {
+            const targetParam = user.id ? `id=${encodeURIComponent(String(user.id))}` : `username=${encodeURIComponent(user.username || "")}`;
+            const res = await fetch(`/api/users/profile?${targetParam}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (res.ok) {
+              const resJson = await res.json();
+              if (resJson.profile) {
+                pData = resJson.profile;
+              }
+            }
+          } catch (apiErr) {
+            console.warn("API profile fetch notice:", apiErr);
+          }
+        }
 
-        if (sData) {
-          setStreamerData(sData);
-          setStreamForm({
-            stream_url: sData.stream_url || "",
-            platform: sData.platform || "Twitch",
-            game: sData.game || "",
-            title: sData.title || "",
-            is_live: sData.is_live || false
+        // 3. Fallback to auth store user data (guarantees profileData is NEVER null!)
+        if (!pData && user) {
+          pData = {
+            id: user.id,
+            full_name: user.full_name || user.nickname || user.username || "Kuzatuvchi",
+            username: user.username || user.nickname || "kuzatuvchi",
+            email: user.email || "",
+            phone_number: user.phone_number || "",
+            role: user.role || "VIEWER",
+            avatar_url: user.avatar || null,
+            coins: user.coins ?? 50,
+            elo: user.elo ?? 1000,
+            level: 1,
+            is_premium: user.is_premium || false,
+            created_at: new Date().toISOString(),
+          };
+        }
+
+        if (pData) {
+          setProfileData(pData);
+          setEditForm({
+            full_name: pData.full_name || "",
+            username: pData.username || "",
           });
         }
 
+        // Fetch streamer data if exists
+        if (user?.id) {
+          try {
+            const { data: sData } = await supabase
+              .from("streamers")
+              .select("*")
+              .eq("user_id", user.id)
+              .maybeSingle();
+
+            if (sData) {
+              setStreamerData(sData);
+              setStreamForm({
+                stream_url: sData.stream_url || "",
+                platform: sData.platform || "Twitch",
+                game: sData.game || "",
+                title: sData.title || "",
+                is_live: sData.is_live || false
+              });
+            }
+          } catch (sErr) {
+            // streamer data optional
+          }
+        }
 
       } catch (err) {
         console.error("Profile yuklashda xatolik:", err);
@@ -318,7 +516,7 @@ const ProfilePage = () => {
     };
 
     fetchProfile();
-  }, [isAuthenticated, user, router]);
+  }, [mounted, isAuthenticated, user, router, token, setAuth]);
 
   const handleLogout = () => {
     logout();
@@ -333,15 +531,36 @@ const ProfilePage = () => {
 
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          full_name: editForm.full_name,
-          username: editForm.username,
-        })
-        .eq("id", user?.id);
+      // 1. Update API
+      try {
+        await fetch("/api/users/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            id: user?.id,
+            username: editForm.username,
+            full_name: editForm.full_name,
+          }),
+        });
+      } catch (apiErr) {
+        console.warn("API profile update notice:", apiErr);
+      }
 
-      if (error) throw error;
+      // 2. Also attempt Supabase update
+      try {
+        await supabase
+          .from("profiles")
+          .update({
+            full_name: editForm.full_name,
+            username: editForm.username,
+          })
+          .eq("id", user?.id);
+      } catch (supaErr) {
+        // ignore
+      }
 
       setProfileData((prev: any) => ({
         ...prev,
@@ -355,9 +574,10 @@ const ProfilePage = () => {
       }
 
       setIsEditing(false);
+      alert(t("profile_saved", "Profil muvaffaqiyatli saqlandi!"));
     } catch (err) {
       console.error("Profilni saqlashda xatolik:", err);
-      alert(t("profile_save_error", "Xatolik yuz berdi. Bu taxallus band bo'lishi mumkin."));
+      alert(t("profile_save_error", "Xatolik yuz berdi. Iltimos qayta urinib ko'ring."));
     } finally {
       setSaving(false);
     }
@@ -374,32 +594,68 @@ const ProfilePage = () => {
 
     setUploadingAvatar(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+      let newAvatarUrl: string | null = null;
 
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file);
+      // 1. Try Supabase storage
+      try {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(fileName, file, { upsert: true });
 
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      const newAvatarUrl = publicUrlData.publicUrl;
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+          newAvatarUrl = publicUrlData.publicUrl;
+        }
+      } catch (storageErr) {
+        console.warn("Storage upload notice:", storageErr);
+      }
 
-      // Update profile
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ avatar_url: newAvatarUrl })
-        .eq("id", user.id);
+      // 2. Fallback to base64 Data URL if storage bucket fails
+      if (!newAvatarUrl) {
+        newAvatarUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
 
-      if (updateError) throw updateError;
+      // Update via API
+      try {
+        await fetch("/api/users/profile", {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            id: user.id,
+            avatar_url: newAvatarUrl,
+          }),
+        });
+      } catch (e) {
+        console.warn("API avatar update notice:", e);
+      }
+
+      // Also try Supabase update
+      try {
+        await supabase
+          .from("profiles")
+          .update({ avatar_url: newAvatarUrl })
+          .eq("id", user.id);
+      } catch (e) {
+        // ignore
+      }
 
       setProfileData((prev: any) => ({ ...prev, avatar_url: newAvatarUrl }));
       setAuth({ ...user, avatar: newAvatarUrl }, token || "");
 
     } catch (err: any) {
       console.error("Avatar yuklash xatosi:", err);
-      alert(t("image_upload_error", "Rasm yuklashda xatolik yuz berdi.") + " (" + (err.message || err) + ")");
+      alert(t("image_upload_error", "Rasm yuklashda xatolik yuz berdi."));
     } finally {
       setUploadingAvatar(false);
     }
@@ -448,22 +704,68 @@ const ProfilePage = () => {
 
 
 
-  if (loading) {
+  if (!mounted || (loading && !profileData && !user)) {
     return (
       <main className="min-h-screen bg-background relative flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-secondary font-bold uppercase tracking-widest">Profil yuklanmoqda...</span>
+        </div>
       </main>
     );
   }
 
-  if (!profileData) return null;
+  const currentProfile = profileData || (user ? {
+    id: user.id,
+    full_name: user.full_name || user.nickname || user.username || "Kuzatuvchi",
+    username: user.username || user.nickname || "kuzatuvchi",
+    email: user.email || "",
+    phone_number: user.phone_number || "",
+    role: user.role || "VIEWER",
+    avatar_url: user.avatar || null,
+    coins: user.coins ?? 50,
+    elo: user.elo ?? 1000,
+    level: 1,
+    is_premium: user.is_premium || false,
+    created_at: new Date().toISOString(),
+  } : null);
+
+  if (!currentProfile) {
+    return (
+      <main className="min-h-screen bg-background relative flex flex-col items-center justify-center p-4">
+        <div className="glass-card p-8 text-center max-w-md w-full border-primary/20">
+          <User size={48} className="mx-auto text-primary mb-4" />
+          <h2 className="text-xl font-bold text-white mb-2">{t("login_required", "Profilni ko'rish uchun kiring")}</h2>
+          <p className="text-secondary text-xs mb-6">Profil ma'lumotlarini ko'rish uchun iltimos hisobingizga kiring.</p>
+          <Link href="/login" className="btn-primary py-2.5 px-6 inline-flex text-xs font-bold uppercase tracking-wider">
+            {t("login", "Kirish")}
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   const roleBadge: Record<string, string> = {
-    ADMIN: "bg-primary/15 border-primary/30 text-primary",
-    GAMEDEV: "bg-violet/15 border-violet/30 text-violet",
-    GAMER: "bg-cyan/15 border-cyan/30 text-cyan",
+    ADMIN: "bg-primary/15 border-primary/30 text-primary shadow-[0_0_12px_rgba(255,51,85,0.2)]",
+    GAMEDEV: "bg-violet-500/15 border-violet-500/30 text-violet-400 shadow-[0_0_12px_rgba(139,92,246,0.2)]",
+    GAMER: "bg-cyan-500/15 border-cyan-500/30 text-cyan-400 shadow-[0_0_12px_rgba(6,182,212,0.2)]",
+    STREAMER: "bg-pink-500/15 border-pink-500/30 text-pink-400 shadow-[0_0_12px_rgba(236,72,153,0.2)]",
+    INVESTOR: "bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.2)]",
+    VIEWER: "bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.2)]",
   };
-  const roleClass = roleBadge[profileData.role as string] || "bg-white/5 border-white/10 text-secondary";
+  const roleClass = roleBadge[currentProfile.role as string] || "bg-white/5 border-white/10 text-secondary";
+
+  const getRoleTitle = (role: string) => {
+    switch (role) {
+      case "VIEWER": return t("role_viewer", "Kuzatuvchi");
+      case "GAMER": return t("role_gamer", "Gamer");
+      case "GAMEDEV": return t("role_gamedev", "GameDev");
+      case "STREAMER": return t("role_streamer", "Strimer");
+      case "INVESTOR": return t("role_investor", "Investor");
+      case "ADMIN": return "Admin";
+      default: return role;
+    }
+  };
 
   return (
     <main className="min-h-screen bg-background">
@@ -486,11 +788,11 @@ const ProfilePage = () => {
 
           <div className="px-6 md:px-10 pb-8">
             <div className="flex flex-col md:flex-row md:items-end gap-6">
-              {/* Avatar — faqat avatar banner ustiga chiqadi, ism pastda to'liq ko'rinadi */}
+              {/* Avatar */}
               <div className="relative w-32 h-32 md:w-36 md:h-36 group shrink-0 mx-auto md:mx-0 -mt-20 md:-mt-24">
                 <div className="w-full h-full rounded-3xl overflow-hidden border-4 border-background bg-card flex items-center justify-center relative z-10 shadow-glow">
-                  {profileData.avatar_url ? (
-                    <img src={profileData.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                  {currentProfile.avatar_url ? (
+                    <img src={currentProfile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
                   ) : (
                     <User size={56} className="text-secondary" />
                   )}
@@ -552,7 +854,7 @@ const ProfilePage = () => {
                     <button
                       onClick={() => {
                         setIsEditing(false);
-                        setEditForm({ full_name: profileData.full_name, username: profileData.username });
+                        setEditForm({ full_name: currentProfile.full_name, username: currentProfile.username });
                       }}
                       className="btn-outline !py-2.5 !px-4 text-sm"
                     >
@@ -564,8 +866,8 @@ const ProfilePage = () => {
                 <div className="flex-1 w-full flex flex-col md:flex-row md:items-end justify-between gap-4 pt-2 text-center md:text-left">
                   <div>
                     <div className="flex items-center justify-center md:justify-start gap-2.5 flex-wrap mb-2">
-                      <h1 className="font-display text-2xl md:text-3xl font-black text-white tracking-tight">{profileData.full_name}</h1>
-                      {profileData.is_premium && (
+                      <h1 className="font-display text-2xl md:text-3xl font-black text-white tracking-tight">{currentProfile.full_name}</h1>
+                      {currentProfile.is_premium && (
                         <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-black text-[10px] font-black uppercase px-2.5 py-1 rounded-full inline-flex items-center gap-1 shadow-[0_0_14px_rgba(245,158,11,0.4)]">
                           <Crown size={10} className="fill-current" />
                           PRO
@@ -573,13 +875,14 @@ const ProfilePage = () => {
                       )}
                     </div>
                     <div className="flex items-center justify-center md:justify-start gap-2.5 flex-wrap">
-                      <p className="text-primary font-bold text-sm">@{profileData.username}</p>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${roleClass}`}>
-                        {profileData.role}
+                      <p className="text-primary font-bold text-sm">@{currentProfile.username}</p>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${roleClass} inline-flex items-center gap-1`}>
+                        {currentProfile.role === 'VIEWER' && <Eye size={12} className="stroke-[2.5]" />}
+                        {getRoleTitle(currentProfile.role)}
                       </span>
                     </div>
                     <p className="text-secondary text-xs mt-2">
-                      {t("joined_date", "A'zo bo'ldi: ")}{new Date(profileData.created_at).toLocaleDateString(localeStr, { month: 'long', year: 'numeric' })}
+                      {t("joined_date", "A'zo bo'ldi: ")}{new Date(currentProfile.created_at || Date.now()).toLocaleDateString(localeStr, { month: 'long', year: 'numeric' })}
                     </p>
                   </div>
 
@@ -609,33 +912,302 @@ const ProfilePage = () => {
                 <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto mb-2 text-base">
                   🪙
                 </div>
-                <p className="font-display text-xl md:text-2xl font-black text-amber-300 tabular-nums">{(profileData.coins || user?.coins || 0).toLocaleString()}</p>
+                <p className="font-display text-xl md:text-2xl font-black text-amber-300 tabular-nums">{(currentProfile.coins || user?.coins || 0).toLocaleString()}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">Tangalar</p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-2">
                   <TrendingUp size={16} />
                 </div>
-                <p className="font-display text-xl md:text-2xl font-black text-white tabular-nums">{profileData.level || 1}</p>
+                <p className="font-display text-xl md:text-2xl font-black text-white tabular-nums">{currentProfile.level || 1}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("level_label", "Daraja")}</p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
-                <div className="w-9 h-9 rounded-xl bg-violet/10 text-violet flex items-center justify-center mx-auto mb-2">
-                  <Zap size={16} />
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto mb-2">
+                  {currentProfile.role === 'VIEWER' ? <Eye size={16} /> : <Zap size={16} className="text-violet-400" />}
                 </div>
-                <p className="font-display text-xl md:text-2xl font-black text-white tabular-nums">{profileData.elo ?? 1000}</p>
-                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">ELO</p>
+                <p className="font-display text-base md:text-xl font-black text-white truncate">
+                  {currentProfile.role === 'VIEWER' ? "Faol" : (currentProfile.elo ?? 1000)}
+                </p>
+                <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">
+                  {currentProfile.role === 'VIEWER' ? "Tomoshabin" : "ELO"}
+                </p>
               </div>
               <div className="glass-card !rounded-2xl p-4 md:p-5 text-center">
-                <div className="w-9 h-9 rounded-xl bg-cyan/10 text-cyan flex items-center justify-center mx-auto mb-2">
+                <div className="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center mx-auto mb-2">
                   <Shield size={16} />
                 </div>
-                <p className="font-display text-base md:text-xl font-black text-white truncate">{profileData.role}</p>
+                <p className="font-display text-base md:text-xl font-black text-white truncate">{getRoleTitle(currentProfile.role)}</p>
                 <p className="text-[10px] font-bold text-secondary uppercase tracking-widest mt-1">{t("your_role", "Rolingiz")}</p>
               </div>
             </div>
           </div>
         </motion.div>
+
+        {/* ==================== KUZATUVCHI (VIEWER) DEDICATED HUB ==================== */}
+        {currentProfile.role === "VIEWER" && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08 }}
+            className="space-y-6 mt-6"
+          >
+            {/* VIP Status & Privileges Banner */}
+            <div className="relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-gradient-to-r from-emerald-950/40 via-card/80 to-background p-6 md:p-8 backdrop-blur-2xl shadow-[0_0_35px_rgba(16,185,129,0.12)]">
+              <div className="absolute top-0 right-0 -mt-10 -mr-10 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.25)]">
+                      <Eye size={13} className="stroke-[2.5]" />
+                      Faol Kuzatuvchi (Tomoshabin)
+                    </span>
+                    <span className="text-[11px] text-secondary font-medium">
+                      Platformadagi barcha bepul xizmatlardan foydalanishingiz mumkin
+                    </span>
+                  </div>
+                  <h2 className="font-display text-xl md:text-2xl font-black text-white">
+                    Xush kelibsiz, {currentProfile.full_name}! 👋
+                  </h2>
+                  <p className="text-secondary text-xs md:text-sm leading-relaxed">
+                    Siz Maroqli platformasida tomoshabin sifatida strimlarni kuzatishingiz, bepul brauzer o'yinlarini o'ynashingiz va forumlarda qatnashishingiz mumkin.
+                  </p>
+                  
+                  {/* Privilege Pills */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
+                    <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
+                      <Radio size={16} className="text-pink-400 shrink-0" />
+                      <span className="text-[11px] font-bold text-white truncate">Jonli Strimlar</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
+                      <Gamepad2 size={16} className="text-cyan-400 shrink-0" />
+                      <span className="text-[11px] font-bold text-white truncate">Bepul O'yinlar</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
+                      <MessageSquare size={16} className="text-amber-400 shrink-0" />
+                      <span className="text-[11px] font-bold text-white truncate">Ochiq Forum</span>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.03] p-2.5">
+                      <Sparkles size={16} className="text-emerald-400 shrink-0" />
+                      <span className="text-[11px] font-bold text-white truncate">Tangalar yig'ish</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upgrade Role Action Box */}
+                <div className="w-full lg:w-auto shrink-0 bg-white/[0.04] border border-white/10 rounded-2xl p-5 text-center lg:text-left flex flex-col justify-between space-y-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Imkoniyatlarni oshirish</span>
+                    <h4 className="text-sm font-black text-white mt-0.5">Gamer yoki Strimer bo'lmoqchimisiz?</h4>
+                    <p className="text-[11px] text-secondary mt-1 max-w-xs">Turnirlarda qatnashish yoki jonli efirlarni boshlash uchun rolingizni bir zumda yangilang.</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveSetting("upgrade_role")}
+                    className="btn-primary w-full !py-2.5 !px-4 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 shadow-glow"
+                  >
+                    <Zap size={14} />
+                    <span>Rolni Yangilash</span>
+                    <ArrowRight size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Streams & Followed Streamers Section */}
+            <div className="glass-card p-6 md:p-8">
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center">
+                    <Radio size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base md:text-lg font-black text-white">Jonli Strimlar & Kuzatilayotganlar</h3>
+                    <p className="text-[11px] text-secondary">Platformadagi iqtidorli strimerlar va ularning efirlari</p>
+                  </div>
+                </div>
+                <Link
+                  href="/streamers"
+                  className="text-xs font-bold text-primary hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <span>Barcha strimerlar</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              {liveStreamers.length === 0 && followedStreamers.length === 0 ? (
+                <div className="text-center py-10 bg-white/[0.02] border border-white/5 rounded-2xl">
+                  <Radio size={36} className="text-pink-400/40 mx-auto mb-3" />
+                  <p className="text-sm font-bold text-white mb-1">Hozircha strimlar sahifasida yangi efirlar kutilmoqda</p>
+                  <p className="text-xs text-secondary mb-4">Maroqli platformasining strimlar katalogiga o'tib, qiziqarli efirlarni tomosha qiling.</p>
+                  <Link
+                    href="/streamers"
+                    className="btn-primary inline-flex !py-2 !px-5 text-xs font-bold uppercase tracking-wider"
+                  >
+                    Strimlar katalogiga o'tish
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {(liveStreamers.length > 0 ? liveStreamers : followedStreamers).slice(0, 4).map((s: any, idx: number) => {
+                    const isLive = s.is_live ?? true;
+                    return (
+                      <div
+                        key={s.id || idx}
+                        className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-pink-500/40 hover:bg-white/[0.06]"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl overflow-hidden bg-brand-gradient text-sm font-bold text-white">
+                            {s.avatar_url ? (
+                              <img src={s.avatar_url} alt={s.username || "streamer"} className="h-full w-full object-cover" />
+                            ) : (
+                              (s.username?.[0] || "S").toUpperCase()
+                            )}
+                          </div>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-wider ${
+                            isLive
+                              ? "bg-red-500/20 border border-red-500/40 text-red-400 animate-pulse"
+                              : "bg-white/10 text-secondary"
+                          }`}>
+                            {isLive && <span className="h-1.5 w-1.5 rounded-full bg-red-400" />}
+                            {isLive ? "LIVE" : (s.platform || "Twitch")}
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-sm text-white truncate">{s.full_name || s.username || "Strimer"}</h4>
+                        <p className="text-[11px] text-pink-400 font-medium truncate">@{s.username || "streamer"}</p>
+                        <p className="text-[10px] text-secondary mt-1 truncate">
+                          🎮 {s.game || "Turli o'yinlar"}
+                        </p>
+                        <div className="mt-3 flex items-center justify-between gap-2 pt-2 border-t border-white/5">
+                          <span className="text-[10px] text-secondary font-bold">
+                            👁️ {(s.viewers_count || 12).toLocaleString()} tomoshabin
+                          </span>
+                          <Link
+                            href={s.username ? `/streams/${s.username}` : `/streamers/${s.id || ''}`}
+                            className="inline-flex items-center gap-1 text-[10px] font-bold text-white bg-primary/20 hover:bg-primary border border-primary/30 hover:border-primary px-2.5 py-1 rounded-lg transition-all"
+                          >
+                            <Play size={10} className="fill-current" />
+                            <span>Ko'rish</span>
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Free Instant Play Games Section */}
+            <div className="glass-card p-6 md:p-8">
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center">
+                    <Gamepad2 size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-display text-base md:text-lg font-black text-white">Kuzatuvchilar Uchun Bepul O'yinlar</h3>
+                    <p className="text-[11px] text-secondary">Brauzerda hech narsa o'rnatmasdan to'g'ridan-to'g'ri o'ynang</p>
+                  </div>
+                </div>
+                <Link
+                  href="/games"
+                  className="text-xs font-bold text-cyan-400 hover:text-white transition-colors flex items-center gap-1"
+                >
+                  <span>Barcha o'yinlar</span>
+                  <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {(featuredFreeGames.length > 0 ? featuredFreeGames : [
+                  { id: 1, title: "Aks", slug: "aks-nusxa", platform: "WEB", cover: "/games-online/aks-nusxa/covers/aks-nusxa.png" },
+                  { id: 2, title: "Arqon tortish", slug: "arqon", platform: "WEB", cover: "/games-online/arqon/cover.png" },
+                  { id: 3, title: "Aks Sado", slug: "aks-sado", platform: "WEB", cover: "/games-online/aks-sado/covers/aks-sado.png" },
+                  { id: 4, title: "Death Mine", slug: "death-mine", platform: "WEB", cover: "" }
+                ]).map((game: any, idx: number) => (
+                  <div
+                    key={game.id || idx}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 transition-all hover:border-cyan-500/40 hover:bg-white/[0.06]"
+                  >
+                    <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl bg-white/5 mb-3 flex items-center justify-center">
+                      {game.cover ? (
+                        <img
+                          src={game.cover}
+                          alt={game.title}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                          onError={(e: any) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      ) : (
+                        <Gamepad2 size={28} className="text-secondary/50" />
+                      )}
+                      <span className="absolute top-2 left-2 rounded-full border border-emerald-500/30 bg-emerald-500/20 px-2 py-0.5 text-[9px] font-black uppercase text-emerald-400 backdrop-blur-md">
+                        BEPUL
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="font-bold text-sm text-white truncate">{game.title}</h4>
+                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider mt-0.5">
+                        {game.platform || "WEB"} BRAUZER
+                      </p>
+                    </div>
+
+                    <Link
+                      href={game.slug ? `/games/play/${game.slug}` : `/games/${game.id}`}
+                      className="mt-3 flex items-center justify-center gap-1.5 w-full py-2 bg-cyan-500/15 hover:bg-cyan-500 text-cyan-300 hover:text-black border border-cyan-500/30 rounded-xl text-xs font-bold transition-all"
+                    >
+                      <Play size={12} className="fill-current" />
+                      <span>O'ynash</span>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Navigation Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link
+                href="/streamers"
+                className="glass-card p-5 group hover:border-pink-500/40 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-pink-500/15 border border-pink-500/30 text-pink-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <Radio size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-sm text-white group-hover:text-pink-400 transition-colors">Strimlar Zali</h4>
+                  <p className="text-[11px] text-secondary line-clamp-1 mt-0.5">Jonli efirlarni kuzating va chatda qatnashing</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/forum"
+                className="glass-card p-5 group hover:border-amber-500/40 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <MessageSquare size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-sm text-white group-hover:text-amber-400 transition-colors">Hamjamiyat Forumi</h4>
+                  <p className="text-[11px] text-secondary line-clamp-1 mt-0.5">Mavzularni o'qing va fikringizni qoldiring</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/tournaments"
+                className="glass-card p-5 group hover:border-cyan-500/40 transition-all flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                  <Trophy size={22} />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-bold text-sm text-white group-hover:text-cyan-400 transition-colors">Kiber Turnirlar</h4>
+                  <p className="text-[11px] text-secondary line-clamp-1 mt-0.5">Bahslarni kuzating va natijalardan boxabar bo'ling</p>
+                </div>
+              </Link>
+            </div>
+          </motion.div>
+        )}
 
         {/* Content grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
@@ -657,7 +1229,7 @@ const ProfilePage = () => {
                 </div>
                 <p className="text-xs font-bold text-white">{t("new_member_achievement", "Yangi a'zo")}</p>
               </div>
-              {profileData.is_premium && (
+              {currentProfile.is_premium && (
                 <div className="text-center group">
                   <div className="w-16 h-16 bg-white/5 border border-white/10 group-hover:border-amber-500/50 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center">
                     <Crown size={24} className="text-amber-400 fill-amber-400/20" />
@@ -665,7 +1237,16 @@ const ProfilePage = () => {
                   <p className="text-xs font-bold text-white">{t("premium_achievement", "Premium")}</p>
                 </div>
               )}
-              {profileData.role === 'GAMEDEV' && (
+              {currentProfile.role === 'VIEWER' && (
+                <div className="text-center group">
+                  <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 group-hover:border-emerald-500/60 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                    <Eye size={24} className="text-emerald-400" />
+                  </div>
+                  <p className="text-xs font-bold text-white">{t("role_viewer", "Kuzatuvchi")}</p>
+                  <span className="text-[9px] text-emerald-400 font-bold uppercase tracking-wider block mt-0.5">Tomoshabin</span>
+                </div>
+              )}
+              {currentProfile.role === 'GAMEDEV' && (
                 <div className="text-center group">
                   <div className="w-16 h-16 bg-white/5 border border-white/10 group-hover:border-violet/50 transition-colors rounded-2xl mx-auto mb-3 flex items-center justify-center">
                     <Shield size={24} className="text-violet" />
@@ -694,10 +1275,16 @@ const ProfilePage = () => {
             </div>
             <div className="divide-y divide-white/5">
               {[
+                ...(currentProfile.role === "VIEWER" ? [
+                  { key: "followed_streamers", label: "👀 Kuzatilayotgan Strimerlar va Jonli Efirlar" },
+                  { key: "upgrade_role", label: "⚡ Rolni Yangilash (Gamer yoki Strimer bo'lish)" },
+                ] : [
+                  { key: "upgrade_role", label: "⚡ Rolni O'zgartirish (Rol tanlash)" },
+                ]),
                 { key: "game_high_scores", label: "🏆 O'yin Rekordlarim va Statistika" },
                 { key: "my_wishlist", label: "Sotib olish rejasi" },
-                ...(profileData.role === "GAMER" || profileData.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
-                ...((streamerData !== null || profileData.role === "ADMIN") ? [{ key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") }] : []),
+                ...(currentProfile.role === "GAMER" || currentProfile.role === "ADMIN" ? [{ key: "my_library", label: t("my_library", "Mening Kutubxonam") }] : []),
+                ...((streamerData !== null || currentProfile.role === "ADMIN" || currentProfile.role === "STREAMER") ? [{ key: "streaming_settings", label: t("streaming_settings", "Striming sozlamalari") }] : []),
                 { key: "account_security", label: t("account_security", "Hisob xavfsizligi") },
                 { key: "notification_settings", label: t("notification_settings", "Xabarnomalar sozlamalari") },
                 { key: "payment_methods", label: t("payment_methods", "To'lov usullari") },
@@ -744,11 +1331,17 @@ const ProfilePage = () => {
               <div className="flex items-center space-x-3 mb-6">
                 {activeSetting === "game_high_scores" ? (
                   <Trophy size={24} className="text-amber-400" />
+                ) : activeSetting === "followed_streamers" ? (
+                  <Radio size={24} className="text-emerald-400" />
+                ) : activeSetting === "upgrade_role" ? (
+                  <Zap size={24} className="text-primary" />
                 ) : (
                   <Settings size={24} className="text-primary" />
                 )}
                 <h3 className="text-xl font-bold">
                   {activeSetting === "game_high_scores" ? "🏆 O'yin Rekordlarim va Statistika" :
+                   activeSetting === "followed_streamers" ? "👀 Kuzatilayotgan Strimerlar" :
+                   activeSetting === "upgrade_role" ? "⚡ Rolni O'zgartirish / Yangilash" :
                    activeSetting === "my_wishlist" ? "Sotib olish rejasi" :
                    activeSetting === "my_team" ? t("my_team", "Mening Jamoam") :
                    activeSetting === "my_library" ? t("my_library", "Mening Kutubxonam") :
@@ -760,7 +1353,126 @@ const ProfilePage = () => {
                 </h3>
               </div>
 
-              {activeSetting === "game_high_scores" ? (
+              {activeSetting === "followed_streamers" ? (
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <p className="text-secondary text-xs">
+                    Siz kuzatib borayotgan platforma strimerlari va ularning jonli efirlari.
+                  </p>
+
+                  {loadingFollowed ? (
+                    <div className="py-12 flex items-center justify-center">
+                      <div className="w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : followedStreamers.length === 0 ? (
+                    <div className="text-center py-12 bg-white/5 border border-white/10 rounded-2xl">
+                      <Radio size={40} className="text-emerald-400/40 mx-auto mb-4" />
+                      <p className="text-white font-bold text-sm mb-1">Hozircha hech qanday strimer kuzatilmayapti</p>
+                      <p className="text-secondary text-xs max-w-xs mx-auto mb-4">Maroqli platformasidagi iqtidorli strimerlarni kuzatib boring!</p>
+                      <Link
+                        href="/streamers"
+                        onClick={() => setActiveSetting(null)}
+                        className="btn-primary inline-flex py-2 px-5 text-xs font-bold uppercase tracking-wider"
+                      >
+                        Strimerlarni ko'rish
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {followedStreamers.map((st: any) => (
+                        <div key={st.id || Math.random()} className="bg-white/5 border border-white/10 rounded-2xl p-4 flex items-center justify-between group hover:border-emerald-500/30 transition-all">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold shrink-0">
+                              <Radio size={18} />
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-bold text-sm text-white truncate">{st.title || st.game || "Jonli Strim"}</h4>
+                                {st.is_live && (
+                                  <span className="flex items-center gap-1 rounded-full bg-red-500/20 border border-red-500/30 px-2 py-0.5 text-[8px] font-black uppercase text-red-400 animate-pulse">
+                                    LIVE
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-secondary truncate">{st.platform} • {st.followers_count || 0} kuzatuvchi</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Link
+                              href={st.id ? `/streamers/${st.id}` : "/streamers"}
+                              onClick={() => setActiveSetting(null)}
+                              className="py-1.5 px-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all"
+                            >
+                              Tomosha
+                            </Link>
+                            <button
+                              onClick={() => handleUnfollowStreamer(st.id)}
+                              className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl transition-colors"
+                              title="Kuzatuvni bekor qilish"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : activeSetting === "upgrade_role" ? (
+                <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+                  <p className="text-secondary text-xs">
+                    Platformadagi rolingizni o'zgartirib yangi imkoniyatlarni ochishingiz mumkin.
+                  </p>
+
+                  <div className="space-y-2">
+                    {[
+                      { role: "VIEWER", label: "Kuzatuvchi", desc: "Yangiliklar va forumlarni o'qish, bepul tomosha" },
+                      { role: "GAMER", label: "Gamer", desc: "Turnirlarda ishtirok etish, o'yin rekordlari, kutubxona" },
+                      { role: "STREAMER", label: "Strimer", desc: "Jonli efirlar, obunachilar, strim paneli" },
+                      { role: "GAMEDEV", label: "GameDev", desc: "O'yinlar yuklash va sotish, daromad paneli" },
+                      { role: "INVESTOR", label: "Investor", desc: "Loyiha taqdimotlari va hamkorlik" },
+                    ].map((item) => (
+                      <div
+                        key={item.role}
+                        onClick={() => setSelectedUpgradeRole(item.role)}
+                        className={`p-3 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                          selectedUpgradeRole === item.role
+                            ? "bg-primary/10 border-primary text-white"
+                            : "bg-white/5 border-white/10 text-secondary hover:border-white/20 hover:text-white"
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-white">{item.label}</span>
+                            {currentProfile.role === item.role && (
+                              <span className="text-[9px] bg-white/10 border border-white/20 px-2 py-0.5 rounded-full uppercase">Joriy rol</span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-secondary mt-0.5">{item.desc}</p>
+                        </div>
+                        {selectedUpgradeRole === item.role && (
+                          <div className="w-5 h-5 bg-primary text-white rounded-full flex items-center justify-center shrink-0">
+                            <Check size={12} className="stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {upgradeSuccess && (
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-xl text-xs font-bold text-center animate-pulse">
+                      Tabriklaymiz! Sizning rolingiz muvaffaqiyatli o'zgartirildi!
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleUpgradeRole}
+                    disabled={upgradingRole || selectedUpgradeRole === currentProfile.role}
+                    className="btn-primary w-full !py-3 text-xs font-bold uppercase tracking-wider disabled:opacity-50"
+                  >
+                    {upgradingRole ? "Yangilanmoqda..." : "Rolni tasdiqlash va saqlash"}
+                  </button>
+                </div>
+              ) : activeSetting === "game_high_scores" ? (
                 <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
                   <p className="text-secondary text-xs">Maroqli.uz platformasidagi onlayn o'yinlarda erishgan shaxsiy rekordlaringiz ro'yxati.</p>
 

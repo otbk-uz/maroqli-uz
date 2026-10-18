@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { findLocalUser, createLocalUser, createSessionToken } from '@/lib/localAuth';
 
 export async function POST(req: Request) {
@@ -52,6 +53,8 @@ export async function POST(req: Request) {
 
     // 3. Supabase Auth orqali ham ro'yxatdan o'tishni sinab ko'rish (fon rejimida)
     let supabaseUserId = null;
+    const finalRole = role || 'VIEWER';
+
     try {
       const { data: supaData, error: supaErr } = await supabase.auth.signUp({
         email: cleanEmail,
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
           data: {
             username: username.trim(),
             full_name: full_name.trim(),
-            role: role || 'GAMER',
+            role: finalRole,
             phone_number: phone_number?.trim(),
             region: region,
           }
@@ -76,6 +79,7 @@ export async function POST(req: Request) {
 
     // 4. Foydalanuvchini bulutli va xavfsiz bazada yaratish
     const newUser = await createLocalUser({
+      id: supabaseUserId || undefined,
       email: cleanEmail,
       username: username.trim(),
       full_name: full_name.trim(),
@@ -83,16 +87,56 @@ export async function POST(req: Request) {
       age: age ? Number(age) : undefined,
       region,
       phone_number: phone_number?.trim(),
-      role: role || 'GAMER',
+      role: finalRole,
       avatar_url: avatar_url || null,
     });
+
+    // 5. profiles jadvaliga ham to'g'ridan-to'g'ri sinxronlash (supabaseAdmin orqali RLS cheklovisiz)
+    try {
+      await supabaseAdmin.from('profiles').upsert({
+        id: newUser.id,
+        email: cleanEmail,
+        username: newUser.username,
+        full_name: newUser.full_name,
+        age: newUser.age || null,
+        region: newUser.region || null,
+        phone_number: newUser.phone_number || null,
+        role: newUser.role,
+        avatar_url: newUser.avatar_url || null,
+        visit_count: 1,
+        coins: 50,
+        created_at: new Date().toISOString(),
+        last_seen: new Date().toISOString(),
+      });
+    } catch (profErr) {
+      console.warn("Direct profile upsert attempt with supabaseAdmin:", profErr);
+      try {
+        await supabase.from('profiles').upsert({
+          id: newUser.id,
+          email: cleanEmail,
+          username: newUser.username,
+          full_name: newUser.full_name,
+          age: newUser.age || null,
+          region: newUser.region || null,
+          phone_number: newUser.phone_number || null,
+          role: newUser.role,
+          avatar_url: newUser.avatar_url || null,
+          visit_count: 1,
+          coins: 50,
+          created_at: new Date().toISOString(),
+          last_seen: new Date().toISOString(),
+        });
+      } catch (fallbackErr) {
+        console.warn("Fallback direct profile upsert:", fallbackErr);
+      }
+    }
 
     const token = createSessionToken(newUser);
 
     return NextResponse.json({
       success: true,
       user: {
-        id: supabaseUserId || newUser.id,
+        id: newUser.id,
         username: newUser.username,
         nickname: newUser.username,
         full_name: newUser.full_name,

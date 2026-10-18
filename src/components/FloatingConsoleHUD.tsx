@@ -103,6 +103,7 @@ export default function FloatingConsoleHUD() {
     { name: t("gamedev", "GameDev"), href: "/gamedev", icon: Code2 },
     { name: t("forum", "Forum"), href: "/forum", icon: MessageSquare },
     { name: t("news", "Yangiliklar"), href: "/news", icon: Newspaper },
+    ...(isAuthenticated ? [{ name: t("profile", "Profil"), href: "/profile", icon: User }] : []),
   ];
 
   if (user && user.role === "ADMIN") {
@@ -358,6 +359,7 @@ export default function FloatingConsoleHUD() {
               <Link
                 href="/profile"
                 className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 transition-colors hover:border-white/20 hover:bg-white/10"
+                title={`${user.full_name || user.username} (${user.role === 'VIEWER' ? 'Kuzatuvchi' : user.role})`}
               >
                 <div className="relative flex h-7 w-7 items-center justify-center rounded-full bg-brand-gradient text-[11px] font-bold text-white">
                   {user.username?.[0]?.toUpperCase() || <User size={12} />}
@@ -367,14 +369,24 @@ export default function FloatingConsoleHUD() {
                     </div>
                   )}
                 </div>
-                <span className="flex max-w-[80px] items-center gap-1 truncate text-[11px] font-bold text-white">
-                  <span className="truncate">{user.username}</span>
-                  {user.is_premium && (
-                    <span className="rounded bg-amber-500/15 px-1 text-[7px] font-extrabold text-amber-400">
-                      PRO
-                    </span>
-                  )}
-                </span>
+                <div className="flex flex-col text-left">
+                  <span className="flex max-w-[90px] items-center gap-1 truncate text-[11px] font-bold text-white leading-tight">
+                    <span className="truncate">{user.username}</span>
+                    {user.is_premium && (
+                      <span className="rounded bg-amber-500/15 px-1 text-[7px] font-extrabold text-amber-400">
+                        PRO
+                      </span>
+                    )}
+                  </span>
+                  <span className={`text-[8px] font-black uppercase tracking-wider ${
+                    user.role === 'VIEWER' ? 'text-emerald-400' :
+                    user.role === 'ADMIN' ? 'text-primary' :
+                    user.role === 'GAMEDEV' ? 'text-violet-400' :
+                    user.role === 'STREAMER' ? 'text-pink-400' : 'text-cyan-400'
+                  }`}>
+                    {user.role === 'VIEWER' ? "Kuzatuvchi" : user.role || "Gamer"}
+                  </span>
+                </div>
               </Link>
             </div>
           ) : (
@@ -571,6 +583,40 @@ export default function FloatingConsoleHUD() {
 
             <div className="relative z-10 flex h-full flex-col justify-between">
               <nav className="flex flex-col gap-2">
+                {isAuthenticated && user && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-2"
+                  >
+                    <Link
+                      href="/profile"
+                      onClick={() => setShowMobileMenu(false)}
+                      className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/10 p-3 shadow-[0_0_20px_rgba(255,51,85,0.15)] transition-all active:scale-95"
+                    >
+                      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold text-white shadow-glow">
+                        {user.username?.[0]?.toUpperCase() || <User size={16} />}
+                        {user.is_premium && (
+                          <div className="absolute -right-1 -top-1 rounded-full bg-amber-500 p-0.5 text-black shadow-[0_0_6px_rgba(245,158,11,0.6)]">
+                            <Crown size={8} className="fill-current" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="truncate font-display text-sm font-black text-white">{user.full_name || user.username}</h4>
+                          <span className={`rounded-full border px-2 py-0.5 text-[9px] font-black uppercase ${
+                            user.role === 'VIEWER' ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-400' :
+                            'border-primary/30 bg-primary/20 text-primary'
+                          }`}>
+                            {user.role === 'VIEWER' ? "Kuzatuvchi" : user.role || "KUZATUVCHI"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-bold text-secondary">@{user.username} • 🪙 {(user.coins || 0).toLocaleString()} tanga</p>
+                      </div>
+                    </Link>
+                  </motion.div>
+                )}
                 {allNavLinks.map((link, idx) => {
                   const isActive = isRouteActive(link.href);
                   const Icon = link.icon;

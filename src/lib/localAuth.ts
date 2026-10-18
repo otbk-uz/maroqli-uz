@@ -104,21 +104,28 @@ export async function getAllLocalUsers(): Promise<LocalUser[]> {
  * Searches in-memory cache first, then Supabase cloud database.
  */
 export async function findLocalUser(identifier: string): Promise<LocalUser | undefined> {
-  const clean = identifier.trim().toLowerCase().replace(/^@/, '');
-  const cleanDigits = identifier.replace(/\D/g, '');
+  const trimmed = identifier.trim();
+  const clean = trimmed.toLowerCase().replace(/^@/, '');
+  const cleanDigits = trimmed.replace(/\D/g, '');
+
+  // 1. Direct ID check in memory cache
+  if (memoryCache.has(trimmed)) {
+    return memoryCache.get(trimmed);
+  }
 
   const matchesUser = (u: LocalUser) => {
+    if (u.id && (u.id === trimmed || String(u.id).toLowerCase() === clean)) return true;
     if (u.email && u.email.toLowerCase() === clean) return true;
     if (u.username && u.username.toLowerCase() === clean) return true;
     if (u.phone_number) {
       const uDigits = u.phone_number.replace(/\D/g, '');
-      if (u.phone_number === identifier.trim()) return true;
+      if (u.phone_number === trimmed) return true;
       if (cleanDigits.length >= 7 && (uDigits.endsWith(cleanDigits) || cleanDigits.endsWith(uDigits))) return true;
     }
     return false;
   };
 
-  // 1. Check in-memory cache first
+  // 2. Check all in-memory cache users
   for (const user of Array.from(memoryCache.values())) {
     if (matchesUser(user)) return user;
   }
@@ -156,6 +163,7 @@ export async function findLocalUser(identifier: string): Promise<LocalUser | und
  * Create a new user and persist both to Supabase cloud database and in-memory cache.
  */
 export async function createLocalUser(params: {
+  id?: string;
   email: string;
   username: string;
   full_name: string;
@@ -168,7 +176,7 @@ export async function createLocalUser(params: {
 }): Promise<LocalUser> {
   const salt = crypto.randomBytes(16).toString('hex');
   const password_hash = hashPassword(params.password, salt);
-  const userId = crypto.randomUUID();
+  const userId = params.id || crypto.randomUUID();
 
   const newUser: LocalUser = {
     id: userId,
@@ -204,7 +212,27 @@ export async function createLocalUser(params: {
     console.warn("Warning: Could not save user to Supabase cloud:", cloudErr);
   }
 
-  // 3. Optional local disk write (silently ignores EROFS in serverless)
+  // 3. Attempt direct insert into public.profiles
+  try {
+    await supabase.from('profiles').upsert({
+      id: newUser.id,
+      email: newUser.email,
+      username: newUser.username,
+      full_name: newUser.full_name,
+      age: newUser.age || null,
+      region: newUser.region || null,
+      phone_number: newUser.phone_number || null,
+      role: newUser.role,
+      avatar_url: newUser.avatar_url || null,
+      visit_count: 1,
+      coins: 50,
+      created_at: newUser.created_at,
+    });
+  } catch (profErr) {
+    // In case foreign key to auth.users fails, silently proceed
+  }
+
+  // 4. Optional local disk write (silently ignores EROFS in serverless)
   tryWriteLocalDisk(Array.from(memoryCache.values()));
 
   return newUser;
