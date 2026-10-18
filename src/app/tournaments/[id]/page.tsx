@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { BackButton } from "../../../components/ui/BackButton";
 import TournamentBracket from "@/components/TournamentBracket";
 import TournamentLive from "@/components/TournamentLive";
+import { useToast } from "@/components/ui/Toast";
 
 interface Tournament {
   id: string;
@@ -30,6 +31,7 @@ const TournamentDetail = () => {
   const id = params.id as string;
   const { user, isAuthenticated } = useAuthStore();
   const { t } = useTranslation();
+  const { success, error, warning } = useToast();
 
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [participants, setParticipants] = useState<any[]>([]);
@@ -95,18 +97,18 @@ const TournamentDetail = () => {
     if (!tournament) return;
 
     if (tournament.is_premium && !user?.is_premium && user?.role !== "ADMIN") {
-      alert("Ushbu turnir faqat PREMIUM a'zolar uchun! Iltimos, oldin obunani faollashtiring.");
+      error("Ushbu turnir faqat VIP Premium a'zolar uchun! Iltimos, oldin obunani faollashtiring.", "Premium Talab Qilinadi");
       router.push("/premium");
       return;
     }
 
     if (!userTeam) {
-      alert("Sizda jamoa yo'q!");
+      warning("Sizda ro'yxatdan o'tgan jamoa mavjud emas. Avval jamoa yarating.", "Jamoa Topilmadi");
       return;
     }
 
     if (userTeam.currentUserRole !== 'CAPTAIN') {
-      alert("Faqat jamoa sardori ro'yxatdan o'tkaza oladi.");
+      warning("Faqat jamoa sardori jamoani turnirga ro'yxatdan o'tkaza oladi.", "Ruxsat Cheklangan");
       return;
     }
 
@@ -121,11 +123,11 @@ const TournamentDetail = () => {
           .delete()
           .eq("tournament_id", tournament.id)
           .eq("team_id", userTeam.id);
-        alert("Turnirdan muvaffaqiyatli chiqdingiz.");
+        success("Turnirdan muvaffaqiyatli chiqdingiz.");
       } else {
         // Join
         if (participants.length >= tournament.max_teams) {
-          alert("Turnir to'lgan!");
+          warning("Ushbu turnirda bo'sh joy qolmagan (to'lgan).", "Turnir To'lgan");
           setActionLoading(false);
           return;
         }
@@ -135,7 +137,7 @@ const TournamentDetail = () => {
             tournament_id: tournament.id,
             team_id: userTeam.id
           });
-        alert("Turnirga muvaffaqiyatli ro'yxatdan o'tdingiz!");
+        success("Turnirga jamoangiz bilan muvaffaqiyatli ro'yxatdan o'tdingiz!", "Tabriklaymiz!");
       }
       
       // refetch participants

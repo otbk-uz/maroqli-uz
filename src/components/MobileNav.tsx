@@ -20,8 +20,8 @@ const MobileNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 pb-[env(safe-area-inset-bottom,0px)] lg:hidden">
-      <nav className="relative mx-auto flex max-w-md items-center justify-around rounded-full border border-white/10 bg-card/80 px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
+    <div className="fixed bottom-4 left-4 right-4 z-40 pb-[env(safe-area-inset-bottom,0px)] lg:hidden">
+      <nav className="relative mx-auto flex max-w-md items-center justify-around rounded-full border border-white/10 bg-card/85 px-2 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
         {/* Ambient glow behind the dock */}
         <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-primary/5 blur-xl" />
 

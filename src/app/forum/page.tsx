@@ -10,6 +10,7 @@ import { useAuthStore, useTranslation } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { BackButton } from "@/components/ui/BackButton";
 import { GlobalChat } from "@/components/forum/GlobalChat";
+import { useToast } from "@/components/ui/Toast";
 
 interface Section {
   id: number;
@@ -44,6 +45,7 @@ const SECTION_ICONS = [MessageSquare, Flame, Trophy, Users, Gamepad2, Hash];
 const ForumPage = () => {
   const router = useRouter();
   const { t, locale } = useTranslation();
+  const { success, error: toastError, warning } = useToast();
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const user = useAuthStore((state) => state.user);
 
@@ -78,7 +80,7 @@ const ForumPage = () => {
   const handleSupportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supportForm.name.trim() || !supportForm.contactInfo.trim() || !supportForm.message.trim()) {
-      alert(t("fill_name_username", "Iltimos, barcha maydonlarni to'ldiring!"));
+      warning(t("fill_name_username", "Iltimos, barcha maydonlarni to'ldiring!"), "Ma'lumot Yetarli Emas");
       return;
     }
 
@@ -96,10 +98,11 @@ const ForumPage = () => {
       if (error) throw error;
 
       setSupportSuccess(true);
+      success("Murojaatingiz moderatorlarga yetkazildi!", "Qabul Qilindi");
       setSupportForm((prev) => ({ ...prev, message: "" }));
     } catch (err: any) {
       console.error("Support request insert error:", err);
-      alert(err.message || t("stream_settings_error", "Xatolik yuz berdi. Iltimos qayta urinib ko'ring."));
+      toastError(err.message || t("stream_settings_error", "Xatolik yuz berdi. Iltimos qayta urinib ko'ring."), "Xatolik");
     } finally {
       setSubmittingSupport(false);
     }

@@ -93,7 +93,7 @@ export default function AdminPage() {
   const [paymentFilterStatus, setPaymentFilterStatus] = useState<"ALL" | "AUTO" | "APPROVED" | "PENDING">("ALL");
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCustomAdmin, setIsCustomAdmin] = useState(true);
+  const [isCustomAdmin, setIsCustomAdmin] = useState(false);
   const [loginForm, setLoginForm] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [stats, setStats] = useState({
@@ -125,10 +125,34 @@ export default function AdminPage() {
   const [selectedReceiptUrl, setSelectedReceiptUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    // Open Admin Panel directly (login/password check removed)
-    setIsCustomAdmin(true);
-    fetchAdminData();
-  }, []);
+    const verifyAuth = async () => {
+      // 1. Agar foydalanuvchi tizimga ADMIN sifatida kirgan bo'lsa
+      if (user && user.role === 'ADMIN') {
+        setIsCustomAdmin(true);
+        fetchAdminData();
+        return;
+      }
+
+      // 2. Aks holda server cookie sessiyasini tekshiramiz
+      try {
+        const res = await fetch('/api/admin/session');
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.authenticated) {
+          setIsCustomAdmin(true);
+          fetchAdminData();
+          return;
+        }
+      } catch (err) {
+        console.warn("Admin session check error:", err);
+      }
+
+      // 3. Agar ruxsat bo'lmasa, login formasini ko'rsatamiz
+      setIsCustomAdmin(false);
+      setLoading(false);
+    };
+
+    verifyAuth();
+  }, [user]);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();

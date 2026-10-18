@@ -157,7 +157,7 @@ export async function POST(req: Request) {
     }
 
     // Update Telegram message caption & remove inline buttons
-    const botToken = '8917394976:AAH8rn5mRC7hk70JKtqfL4dEaM_86-wczCM';
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (botToken && message) {
       const telegramUrl = `https://api.telegram.org/bot${botToken}/editMessageCaption`;
       await fetch(telegramUrl, {

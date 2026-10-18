@@ -102,18 +102,17 @@ const GamesPage = () => {
 
     try {
       if (isCurrentlyWishlisted) {
-        await supabase
-          .from('game_wishlist')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('game_id', gameId);
+        await fetch('/api/wishlist', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, game_id: gameId })
+        });
       } else {
-        await supabase
-          .from('game_wishlist')
-          .insert({
-            user_id: user.id,
-            game_id: gameId
-          });
+        await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, game_id: gameId })
+        });
       }
     } catch (err) {
       console.error("Wishlist update error:", err);
@@ -148,11 +147,11 @@ const GamesPage = () => {
       localList = localList.filter((gid: string) => String(gid) !== String(gameId));
       localStorage.setItem(localKey, JSON.stringify(localList));
       try {
-        await supabase
-          .from('game_wishlist')
-          .delete()
-          .eq('user_id', user.id)
-          .eq('game_id', gameId);
+        await fetch('/api/wishlist', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, game_id: gameId })
+        });
       } catch (err) {
         console.warn("DB purchase plan delete fallback:", err);
       }
@@ -162,12 +161,11 @@ const GamesPage = () => {
       }
       localStorage.setItem(localKey, JSON.stringify(localList));
       try {
-        await supabase
-          .from('game_wishlist')
-          .insert({
-            user_id: user.id,
-            game_id: gameId
-          });
+        await fetch('/api/wishlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, game_id: gameId })
+        });
       } catch (err) {
         console.warn("DB purchase plan insert fallback:", err);
       }

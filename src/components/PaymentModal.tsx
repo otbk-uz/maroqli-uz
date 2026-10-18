@@ -27,6 +27,8 @@ export default function PaymentModal({
   onSuccess
 }: PaymentModalProps) {
   const { user } = useAuthStore();
+  const [paymentTab, setPaymentTab] = useState<'WLCM' | 'MANUAL'>('WLCM');
+  const [wlcmLoading, setWlcmLoading] = useState(false);
   const [copiedCard, setCopiedCard] = useState(false);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
@@ -37,6 +39,47 @@ export default function PaymentModal({
 
   const cardNumber = "5614688706762274";
   const cardHolder = "Isfandiyor Zokirjonov";
+
+  const handleWlcmPayment = async () => {
+    if (!user) {
+      alert("Iltimos, avval tizimga kiring.");
+      return;
+    }
+    setWlcmLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch('/api/payments/wlcm/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          itemType,
+          itemId: itemId ? String(itemId) : null,
+          amount: itemPrice,
+          itemName: itemName,
+          returnUrl: typeof window !== 'undefined' ? window.location.href : undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "WLCM to'lov shlyuziga ulanishda xatolik.");
+      }
+
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error("To'lov havolasi olinmadi.");
+      }
+    } catch (err: any) {
+      console.error("WLCM payment error:", err);
+      setErrorMessage(err.message || "Onlayn to'lov tizimida vaqtincha xatolik. Karta orqali to'lov tabidan foydalanishingiz mumkin.");
+    } finally {
+      setWlcmLoading(false);
+    }
+  };
 
   const handleCopyCard = () => {
     navigator.clipboard.writeText(cardNumber);
@@ -134,7 +177,7 @@ export default function PaymentModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -227,8 +270,8 @@ export default function PaymentModal({
               </button>
             </div>
           ) : (
-            /* Main Payment Form */
-            <form onSubmit={handleSubmitPayment} className="space-y-6">
+            /* Main Payment View */
+            <div className="space-y-6">
               {/* Item Summary Box */}
               <div className="glass-card p-4 border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-transparent to-transparent flex justify-between items-center">
                 <div>
@@ -239,124 +282,224 @@ export default function PaymentModal({
                 </div>
                 <div className="text-right">
                   <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full">
-                    <ShieldCheck size={12} /> Xavfsiz Chek Tekshiruvi
+                    <ShieldCheck size={12} /> Xavfsiz To'lov
                   </span>
                 </div>
               </div>
 
-              {/* Bank Card Info Box */}
-              <div className="bg-black/60 border border-white/10 rounded-2xl p-5 space-y-3 relative overflow-hidden">
-                <div className="flex justify-between items-center">
-                  <p className="text-[10px] text-secondary font-bold uppercase tracking-wider">To'lov qilish uchun Karta</p>
-                  <span className="text-[10px] text-emerald-400 font-mono font-bold">UzCard / Humo</span>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
-                  <div>
-                    <code className="text-lg font-mono font-black text-white tracking-widest">{cardNumber}</code>
-                    <p className="text-[11px] text-secondary font-bold mt-0.5">{cardHolder}</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCopyCard}
-                    className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
-                      copiedCard 
-                        ? 'bg-emerald-500 text-black' 
-                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
-                    }`}
-                  >
-                    {copiedCard ? (
-                      <>
-                        <Check size={14} /> Nusxalandi
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} /> Nusxalash
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Upload Receipt Section */}
-              <div className="space-y-3">
-                <label className="block text-xs font-bold text-white uppercase tracking-wider">
-                  📸 To'lov Cheki Skrinshotini Yuklang:
-                </label>
-
-                {errorMessage && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-xl font-bold">
-                    {errorMessage}
-                  </div>
-                )}
-
-                <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-white/10 border-dashed rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors relative overflow-hidden group">
-                  {receiptPreview ? (
-                    <div className="relative w-full h-full p-2 flex items-center justify-center bg-black/60">
-                      <img src={receiptPreview} alt="Chek" className="max-h-full max-w-full object-contain rounded-xl" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold text-white">
-                        Rasmni o'zgartirish
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <Upload className="w-8 h-8 mb-2 text-emerald-400 animate-bounce" />
-                      <p className="text-xs text-white font-bold">
-                        Chek rasmini bu yerga tashlang yoki tanlang
-                      </p>
-                      <p className="text-[10px] text-secondary mt-1">PNG, JPG yoki screenshot</p>
-                    </div>
-                  )}
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                  />
-                </label>
-              </div>
-
-              {/* Option 2: Telegram Bot Activation Link */}
-              <div className="bg-sky-500/10 border border-sky-500/20 p-3.5 rounded-2xl flex items-center justify-between gap-3">
-                <div className="text-xs text-sky-300 font-medium">
-                  Yoki to'lov chekini rasmiy Telegram botimizga yuborishingiz mumkin:
-                </div>
-                <a
-                  href="https://t.me/maroqlitolovrasmiybot"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-black font-extrabold text-[10px] uppercase rounded-lg shrink-0 flex items-center gap-1 transition-colors"
-                >
-                  <span>@maroqlitolovrasmiybot</span>
-                  <ExternalLink size={12} />
-                </a>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex gap-3 pt-2">
+              {/* Payment Method Selector Tabs */}
+              <div className="grid grid-cols-2 gap-2 p-1.5 bg-black/40 border border-white/10 rounded-2xl">
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="w-1/3 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-xl transition-colors"
+                  onClick={() => { setPaymentTab('WLCM'); setErrorMessage(null); }}
+                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                    paymentTab === 'WLCM'
+                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black shadow-glow-emerald'
+                      : 'text-secondary hover:text-white bg-transparent'
+                  }`}
                 >
-                  Bekor qilish
+                  <Zap size={14} className={paymentTab === 'WLCM' ? 'fill-black' : ''} />
+                  <span>⚡ Onlayn To'lov (WLCM)</span>
                 </button>
                 <button
-                  type="submit"
-                  disabled={submitting || (!receiptFile && !receiptPreview)}
-                  className="w-2/3 btn-primary py-3.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-emerald"
+                  type="button"
+                  onClick={() => { setPaymentTab('MANUAL'); setErrorMessage(null); }}
+                  className={`py-3 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                    paymentTab === 'MANUAL'
+                      ? 'bg-white/15 text-white shadow-lg border border-white/10'
+                      : 'text-secondary hover:text-white bg-transparent'
+                  }`}
                 >
-                  {submitting ? (
-                    <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Zap size={16} />
-                      <span>To'lovni Tasdiqlash</span>
-                    </>
-                  )}
+                  <CreditCard size={14} />
+                  <span>💳 Karta / Chek</span>
                 </button>
               </div>
-            </form>
+
+              {errorMessage && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3.5 rounded-xl font-bold flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{errorMessage}</span>
+                </div>
+              )}
+
+              {/* TAB 1: WLCM ONLINE PAYMENT */}
+              {paymentTab === 'WLCM' ? (
+                <div className="space-y-5">
+                  <div className="bg-black/60 border border-white/10 rounded-2xl p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                        Qo'llab-quvvatlanadigan provayderlar
+                      </span>
+                      <span className="text-[10px] text-secondary font-mono">1 soniyada avto-tasdiq</span>
+                    </div>
+
+                    {/* Provider Pills */}
+                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-cyan-400">Payme</span>
+                        <span className="text-[8px] text-secondary mt-0.5">Ilova orqali</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-sky-400">Click</span>
+                        <span className="text-[8px] text-secondary mt-0.5">Click Up / Web</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-purple-400">Uzum</span>
+                        <span className="text-[8px] text-secondary mt-0.5">Uzum Pay / Bank</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-emerald-400">UzCard</span>
+                        <span className="text-[8px] text-secondary mt-0.5">Barcha banklar</span>
+                      </div>
+                      <div className="bg-white/5 border border-white/10 rounded-xl p-2.5 text-center flex flex-col items-center justify-center">
+                        <span className="text-xs font-black text-amber-400">Humo</span>
+                        <span className="text-[8px] text-secondary mt-0.5">Barcha kartalar</span>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-secondary leading-relaxed pt-1">
+                      To'lov tugmasini bosganingizdan so'ng xavfsiz WLCM to'lov sahifasiga o'tasiz. To'lov amalga oshirilishi bilan o'yin kalitingiz darhol yaratiladi yoki obunangiz faollashadi.
+                    </p>
+                  </div>
+
+                  {/* WLCM Action Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-1/3 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-xl transition-colors"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleWlcmPayment}
+                      disabled={wlcmLoading}
+                      className="w-2/3 btn-primary py-3.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-emerald"
+                    >
+                      {wlcmLoading ? (
+                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Zap size={16} className="fill-black" />
+                          <span>WLCM orqali To'lash</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* TAB 2: MANUAL CARD TRANSFER & RECEIPT */
+                <form onSubmit={handleSubmitPayment} className="space-y-6">
+                  {/* Bank Card Info Box */}
+                  <div className="bg-black/60 border border-white/10 rounded-2xl p-5 space-y-3 relative overflow-hidden">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] text-secondary font-bold uppercase tracking-wider">To'lov qilish uchun Karta</p>
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold">UzCard / Humo</span>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 bg-white/5 p-3 rounded-xl border border-white/5">
+                      <div>
+                        <code className="text-lg font-mono font-black text-white tracking-widest">{cardNumber}</code>
+                        <p className="text-[11px] text-secondary font-bold mt-0.5">{cardHolder}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleCopyCard}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+                          copiedCard 
+                            ? 'bg-emerald-500 text-black' 
+                            : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'
+                        }`}
+                      >
+                        {copiedCard ? (
+                          <>
+                            <Check size={14} /> Nusxalandi
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={14} /> Nusxalash
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Upload Receipt Section */}
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-white uppercase tracking-wider">
+                      📸 To'lov Cheki Skrinshotini Yuklang:
+                    </label>
+
+                    <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-white/10 border-dashed rounded-2xl cursor-pointer bg-white/5 hover:bg-white/10 transition-colors relative overflow-hidden group">
+                      {receiptPreview ? (
+                        <div className="relative w-full h-full p-2 flex items-center justify-center bg-black/60">
+                          <img src={receiptPreview} alt="Chek" className="max-h-full max-w-full object-contain rounded-xl" />
+                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-bold text-white">
+                            Rasmni o'zgartirish
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          <Upload className="w-8 h-8 mb-2 text-emerald-400 animate-bounce" />
+                          <p className="text-xs text-white font-bold">
+                            Chek rasmini bu yerga tashlang yoki tanlang
+                          </p>
+                          <p className="text-[10px] text-secondary mt-1">PNG, JPG yoki screenshot</p>
+                        </div>
+                      )}
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Option 2: Telegram Bot Activation Link */}
+                  <div className="bg-sky-500/10 border border-sky-500/20 p-3.5 rounded-2xl flex items-center justify-between gap-3">
+                    <div className="text-xs text-sky-300 font-medium">
+                      Yoki to'lov chekini rasmiy Telegram botimizga yuborishingiz mumkin:
+                    </div>
+                    <a
+                      href="https://t.me/maroqlitolovrasmiybot"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-black font-extrabold text-[10px] uppercase rounded-lg shrink-0 flex items-center gap-1 transition-colors"
+                    >
+                      <span>@maroqlitolovrasmiybot</span>
+                      <ExternalLink size={12} />
+                    </a>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={onClose}
+                      className="w-1/3 py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold text-xs rounded-xl transition-colors"
+                    >
+                      Bekor qilish
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting || (!receiptFile && !receiptPreview)}
+                      className="w-2/3 btn-primary py-3.5 text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-glow-emerald"
+                    >
+                      {submitting ? (
+                        <div className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                      ) : (
+                        <>
+                          <Zap size={16} />
+                          <span>Chekni Yuborish</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
         </motion.div>
       </div>

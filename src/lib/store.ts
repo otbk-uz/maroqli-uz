@@ -10,6 +10,7 @@ interface User {
   email?: string;
   role: string;
   avatar?: string;
+  phone_number?: string;
   elo?: number;
   is_premium?: boolean;
   coins?: number;
