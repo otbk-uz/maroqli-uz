@@ -376,18 +376,20 @@ export default function Home() {
                   className="card-interactive overflow-hidden group flex flex-col h-full border-white/10 hover:border-violet/50 bg-card p-0"
                 >
                   <div className="aspect-[16/10] relative overflow-hidden bg-black/60">
-                    {game.cover ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-violet/20 via-black/80 to-black">
+                      <Gamepad2 size={64} className="text-white/20" />
+                    </div>
+                    {game.cover && (
                       <img
                         src={game.cover}
                         alt={game.title}
-                        className="w-full h-full object-cover opacity-75 group-hover:scale-105 group-hover:opacity-95 transition-all duration-500"
+                        className="relative z-10 w-full h-full object-cover opacity-75 group-hover:scale-105 group-hover:opacity-95 transition-all duration-500"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-violet/20 via-black/80 to-black">
-                        <Gamepad2 size={64} className="text-white/20" />
-                      </div>
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-black/20 to-transparent" />
+                    <div className="absolute inset-0 z-20 bg-gradient-to-t from-background via-black/20 to-transparent pointer-events-none" />
                     
                     <div className="absolute top-3 left-3 flex gap-1.5">
                       <Badge variant={game.platform === 'WEB' ? 'violet' : 'cyan'}>
